@@ -1,0 +1,395 @@
+/* ── Page layout ──────────────────────────────────────────────── */
+.config-page-header {
+  margin-bottom: 24px;
+}
+
+.config-page-header h1 {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.config-page-header p {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-top: 4px;
+}
+
+.config-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+/* ── Card ─────────────────────────────────────────────────────── */
+.config-card {
+  background: var(--card-bg);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  border: 1px solid var(--border-color);
+}
+
+.config-card-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.config-card-header svg {
+  width: 20px;
+  height: 20px;
+  color: var(--accent);
+}
+
+.config-card-header h2 {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.config-card-desc {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 20px;
+  line-height: 1.5;
+}
+
+/* ── Grade table ──────────────────────────────────────────────── */
+.grade-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.grade-table thead th {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 0 12px 10px;
+  text-align: left;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.grade-table thead th:first-child {
+  padding-left: 0;
+}
+
+.grade-table tbody td {
+  padding: 12px;
+  vertical-align: middle;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.grade-table tbody td:first-child {
+  padding-left: 0;
+}
+
+.grade-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* Grade badge */
+.grade-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.grade-badge.grade-a { background: #22c55e; }
+.grade-badge.grade-b { background: #3b82f6; }
+.grade-badge.grade-c { background: #f59e0b; }
+.grade-badge.grade-d { background: #ef4444; }
+.grade-badge.grade-e { background: #7c3aed; }
+
+/* Score range display */
+.score-range {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.score-input {
+  width: 56px;
+  padding: 6px 8px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 500;
+  text-align: center;
+  color: var(--text-primary);
+  background: #f8fafc;
+  transition: border-color 0.15s;
+}
+
+.score-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  background: #fff;
+}
+
+.score-separator {
+  font-size: 12px;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+/* Limit input */
+.limit-input {
+  width: 110px;
+  padding: 6px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+  background: #f8fafc;
+  transition: border-color 0.15s;
+  text-align: right;
+}
+
+.limit-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  background: #fff;
+}
+
+.limit-unit {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-left: 4px;
+}
+
+.grade-action-text {
+  font-size: 12px;
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+/* ── Approval thresholds ──────────────────────────────────────── */
+.approval-levels {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.approval-level {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+  background: #fafbfc;
+}
+
+.approval-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.approval-icon svg {
+  width: 20px;
+  height: 20px;
+  color: #fff;
+}
+
+.approval-icon.approve { background: #22c55e; }
+.approval-icon.review { background: #f59e0b; }
+.approval-icon.reject { background: #ef4444; }
+
+.approval-info {
+  flex: 1;
+}
+
+.approval-info h4 {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 2px;
+}
+
+.approval-info p {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+.approval-threshold {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.approval-threshold label {
+  font-size: 12px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.threshold-input {
+  width: 56px;
+  padding: 8px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  font-weight: 600;
+  text-align: center;
+  color: var(--text-primary);
+  background: #fff;
+  transition: border-color 0.15s;
+}
+
+.threshold-input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+/* Score bar visualization */
+.score-bar-container {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border-color);
+}
+
+.score-bar-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.score-bar {
+  display: flex;
+  height: 36px;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+}
+
+.score-bar-segment {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 600;
+  color: #fff;
+  position: relative;
+}
+
+.score-bar-segment.reject-seg {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.score-bar-segment.review-seg {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.score-bar-segment.approve-seg {
+  background: #dcfce7;
+  color: #16a34a;
+}
+
+/* ── Save button ──────────────────────────────────────────────── */
+.config-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding-top: 8px;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 600;
+  transition: opacity 0.15s, background 0.15s;
+  cursor: pointer;
+  border: none;
+}
+
+.btn:hover {
+  opacity: 0.9;
+}
+
+.btn-primary {
+  background: var(--accent);
+  color: #fff;
+}
+
+.btn-outline {
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
+}
+
+.btn-outline:hover {
+  background: #f8fafc;
+}
+
+.btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* ── Note card ────────────────────────────────────────────────── */
+.config-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  background: #eff6ff;
+  border-radius: var(--radius-sm);
+  border: 1px solid #bfdbfe;
+  margin-top: 16px;
+}
+
+.config-note svg {
+  width: 16px;
+  height: 16px;
+  color: var(--accent);
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.config-note p {
+  font-size: 12px;
+  color: #1e40af;
+  line-height: 1.5;
+}
+
+.config-error {
+  font-size: 13px;
+  color: var(--danger);
+  margin-right: auto;
+}
+
+.config-saved {
+  font-size: 13px;
+  color: var(--success);
+  font-weight: 500;
+  margin-right: auto;
+}

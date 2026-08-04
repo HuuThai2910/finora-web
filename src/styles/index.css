@@ -1,0 +1,79 @@
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  /* Sidebar — Sapphire & Cyan */
+  --sidebar-width: 262px;
+  --sidebar-bg: linear-gradient(185deg, #12224a 0%, #0a1530 100%);
+  --sidebar-card-bg: rgba(255, 255, 255, 0.05);
+  --sidebar-card-border: rgba(255, 255, 255, 0.07);
+  --sidebar-text: #aeb9d4;
+  --sidebar-text-hover: #ffffff;
+  --sidebar-text-active: #ffffff;
+  --sidebar-active-bg: linear-gradient(90deg, rgba(29, 78, 216, 0.55), rgba(6, 182, 212, 0.16));
+  --sidebar-section-label: #22d3ee;
+  --sidebar-divider: rgba(255, 255, 255, 0.07);
+  --sidebar-status-green: #059669;
+  --sidebar-border-right: rgba(255, 255, 255, 0.06);
+
+  /* Brand */
+  --brand: #1d4ed8;
+  --brand-600: #1e40af;
+  --cyan: #06b6d4;
+  --cyan-bright: #22d3ee;
+
+  /* Layout */
+  --header-height: 56px;
+  --content-bg: #e9eef8;
+  --card-bg: #ffffff;
+  --text-primary: #0f1b30;
+  --text-secondary: #4a5670;
+  --border-color: #e2e8f4;
+
+  --accent: #1d4ed8;
+  --danger: #e11d2e;
+  --success: #059669;
+
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+
+  --ease: cubic-bezier(0.2, 0.8, 0.3, 1);
+  --shadow-sm: 0 1px 2px rgba(15, 27, 48, 0.05), 0 1px 1px rgba(15, 27, 48, 0.03);
+  --shadow: 0 2px 6px rgba(15, 27, 48, 0.06), 0 12px 30px rgba(15, 27, 48, 0.08);
+
+  font-family: 'Be Vietnam Pro', 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-size: 15px;
+  line-height: 1.55;
+  letter-spacing: 0.005em;
+  color: var(--text-primary);
+  background: var(--content-bg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  min-height: 100vh;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+button {
+  border: none;
+  background: none;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+}
+
+ul, ol {
+  list-style: none;
+}
