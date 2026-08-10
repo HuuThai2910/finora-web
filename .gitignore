@@ -1,0 +1,15 @@
+# Dependencies
+node_modules/
+
+# Build and test output (web `dist` đang được repository theo dõi để bàn giao bản demo)
+coverage/
+
+# Local environment (keep the template)
+.env
+.env.*
+!.env.example
+
+# Tool and OS files
+*.log
+.DS_Store
+Thumbs.db

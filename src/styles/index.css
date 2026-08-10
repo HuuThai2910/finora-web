@@ -29,6 +29,11 @@
 
   /* Layout */
   --header-height: 56px;
+  --admin-shell-gutter: clamp(14px, 1.35vw, 22px);
+  --admin-header-inline-padding: clamp(14px, 1.25vw, 20px);
+  --admin-page-inline-padding: calc(
+    var(--admin-shell-gutter) + var(--admin-header-inline-padding)
+  );
   --content-bg: #e9eef8;
   --card-bg: #ffffff;
   --text-primary: #0f1b30;

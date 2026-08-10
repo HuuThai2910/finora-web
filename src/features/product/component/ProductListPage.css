@@ -70,6 +70,22 @@
 .prod-card-body { padding: 20px; }
 .prod-card-body.no-pad { padding: 0; }
 
+.prod-pagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-top: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.prod-pagination > div {
+  display: flex;
+  gap: 8px;
+}
+
 /* ── Table ───────────────────────────────────────────────────── */
 .prod-table-wrap { overflow-x: auto; }
 
@@ -116,6 +132,8 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+.prod-actions { display: flex; gap: 6px; flex-wrap: wrap; }
 
 /* ── Tags ────────────────────────────────────────────────────── */
 .ptag {

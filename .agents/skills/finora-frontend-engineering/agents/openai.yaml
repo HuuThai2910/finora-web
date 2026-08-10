@@ -1,0 +1,4 @@
+interface:
+  display_name: "FINORA Frontend Engineering"
+  short_description: "React and React Native engineering rules"
+  default_prompt: "Use $finora-frontend-engineering to implement or review this FINORA frontend feature."
