@@ -163,3 +163,41 @@ export interface ScoringRetryAcceptedResponse {
 
 export type AdminLoanReviewPage = PageResponse<AdminLoanReviewSummary>;
 export type AssessmentPage = PageResponse<CreditAssessmentSummary>;
+
+/* ── AI Config (finora-ai /api/v1/ai/config/product) ────────────────────── */
+
+export interface GradeConfig {
+  grade: string;
+  min_score: number;
+  max_score: number;
+  limit: number;
+}
+
+export interface ApprovalThresholds {
+  auto_approve: number;
+  auto_reject: number;
+}
+
+export interface ModelWeights {
+  pd_weight: number;
+  risk_weight: number;
+}
+
+export interface LegalLimits {
+  max_platform_limit: number;
+  max_interest_rate: number;
+  max_term_months: number;
+}
+
+export interface AiProductConfig {
+  grades: GradeConfig[];
+  approval_thresholds: ApprovalThresholds;
+  model_weights: ModelWeights;
+  legal_limits: LegalLimits;
+}
+
+export interface AiProductConfigUpdate {
+  grades: GradeConfig[];
+  approval_thresholds: ApprovalThresholds;
+  model_weights?: ModelWeights;
+}
