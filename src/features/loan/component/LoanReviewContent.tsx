@@ -99,8 +99,8 @@ function AssessmentTab({ application, action }: { application: AdminLoanReviewDe
           <>
             <div className="review-score-summary">
               <div className="review-score-circle">
-                <strong>{assessment.riskScore ?? '—'}</strong>
-                <span>điểm rủi ro</span>
+                <strong>{assessment.evaluationScore ?? '—'}</strong>
+                <span>điểm đánh giá</span>
               </div>
               <div>
                 <strong className="review-grade">Hạng {assessment.creditGrade ?? '—'}</strong>

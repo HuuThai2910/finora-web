@@ -39,9 +39,9 @@
 .review-assessment-layout { display: grid; gap: 16px; }
 .review-ai-card { background: linear-gradient(135deg, #fff 60%, #eef6ff); }
 .review-score-summary { display: flex; align-items: center; gap: 18px; margin-bottom: 20px; padding: 16px; background: #f1f6ff; border-radius: 14px; }
-.review-score-circle { width: 92px; height: 92px; flex: 0 0 92px; display: grid; place-content: center; text-align: center; color: var(--brand); background: #fff; border: 7px solid #60a5fa; border-radius: 50%; }
-.review-score-circle strong { font-size: 25px; line-height: 1; }
-.review-score-circle span { margin-top: 4px; color: var(--text-secondary); font-size: 9px; }
+.review-score-circle { width: 72px; height: 72px; flex: 0 0 72px; display: grid; place-content: center; text-align: center; color: var(--brand); background: #fff; border: 5px solid #60a5fa; border-radius: 50%; }
+.review-score-circle strong { font-size: 17px; line-height: 1; }
+.review-score-circle span { margin-top: 2px; color: var(--text-secondary); font-size: 8px; }
 .review-grade { display: block; margin-bottom: 4px; font-size: 20px; }
 .review-score-summary p { margin-bottom: 5px; color: var(--text-secondary); }
 .review-empty-inline, .review-explanation { color: var(--text-secondary); font-size: 13px; line-height: 1.65; }
@@ -71,7 +71,7 @@
   .review-card { padding: 15px; }
   .review-data { grid-template-columns: 1fr; gap: 14px; }
   .review-score-summary { align-items: flex-start; }
-  .review-score-circle { width: 76px; height: 76px; flex-basis: 76px; border-width: 6px; }
+  .review-score-circle { width: 64px; height: 64px; flex-basis: 64px; border-width: 4px; }
   .review-actions { flex-direction: column-reverse; }
   .review-actions .review-button { width: 100%; }
   .review-schedule-heading { align-items: flex-start; flex-direction: column; gap: 5px; }

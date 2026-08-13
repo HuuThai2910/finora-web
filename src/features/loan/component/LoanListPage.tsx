@@ -84,7 +84,7 @@ export default function LoanListPage() {
                     <span className="review-muted">{application.requestedTermMonths} tháng · {application.annualInterestRate}%/năm</span>
                   </td>
                   <td>
-                    <strong>{application.assessment?.riskScore ?? '—'}</strong>
+                    <strong>{application.assessment?.evaluationScore ?? '—'}</strong>
                     <span className="review-muted">Hạng {application.assessment?.creditGrade ?? '—'}</span>
                   </td>
                   <td>{formatDateTime(application.submittedAt)}</td>
