@@ -54,6 +54,7 @@ export const ADMIN_NAV_SECTIONS: AdminNavigationSection[] = [
     label: 'CẤU HÌNH & HỆ THỐNG',
     items: [
       { to: '/loans/evaluation', label: 'Chính sách đánh giá AI', icon: 'shield', isAvailable: true },
+      { to: '/loans/scoring', label: 'Chấm điểm & Giải thích AI', icon: 'scan', isAvailable: true },
       { to: '/loans/npl-config', label: 'Cấu hình xử lý nợ xấu', icon: 'alert', isAvailable: false },
       { to: '/fraud-monitoring', label: 'Fraud & Cảnh báo sớm', icon: 'scan', isAvailable: false },
       { to: '/blockchain', label: 'Blockchain Explorer', icon: 'chain', isAvailable: false },
@@ -67,5 +68,6 @@ export function getAdminPageTitle(pathname: string): string {
   if (pathname === '/loans') return 'Quản lý khoản vay';
   if (pathname === '/products') return 'Sản phẩm vay';
   if (pathname === '/loans/evaluation') return 'Chính sách đánh giá AI';
+  if (pathname === '/loans/scoring') return 'Chấm điểm & Giải thích AI';
   return 'Tổng quan';
 }

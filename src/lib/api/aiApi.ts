@@ -5,6 +5,6 @@ export const aiApi = createApi({
   baseQuery: fetchBaseQuery({
     baseUrl: import.meta.env.VITE_AI_API_URL ?? '/api/v1/ai',
   }),
-  tagTypes: ['AiConfig'],
+  tagTypes: ['AiConfig', 'AiRules'],
   endpoints: () => ({}),
 });

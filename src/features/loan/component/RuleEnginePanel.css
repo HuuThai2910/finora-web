@@ -1,0 +1,138 @@
+/* Bảng cấu hình luật chấm điểm — dùng lại biến và class chung của policy page. */
+
+.rule-panel { margin-top: 20px; }
+
+.rule-subtitle {
+  margin: 6px 0 0;
+  max-width: 62ch;
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.rule-summary {
+  margin: 0;
+  padding: 12px 19px;
+  border-bottom: 1px solid var(--border-color);
+  background: #f8fafc;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+.rule-summary strong { color: var(--brand); }
+
+.rule-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 1px;
+  background: var(--border-color);
+}
+
+.rule-item {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 17px 19px;
+  background: #fff;
+}
+
+/* Luật đã tắt vẫn đọc được nhưng lùi về sau về mặt thị giác. */
+.rule-item-off { background: #fafafa; }
+.rule-item-off .rule-table,
+.rule-item-off .rule-item-foot { opacity: .55; }
+
+.rule-item-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.rule-item-head h3 {
+  margin: 0 0 6px;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.rule-tags { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+
+.rule-tag {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: var(--brand);
+  font-size: 11px;
+  font-weight: 600;
+}
+.rule-tag-muted { background: #f1f5f9; color: var(--text-secondary); }
+
+.rule-code {
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.rule-state {
+  flex-shrink: 0;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: #ecfdf5;
+  color: #047857;
+  font-size: 11px;
+  font-weight: 700;
+}
+.rule-state-off { background: #f1f5f9; color: var(--text-secondary); }
+
+.rule-toggle {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-secondary);
+  font-size: 12px;
+  cursor: pointer;
+}
+.rule-toggle input { width: 15px; height: 15px; accent-color: var(--brand); cursor: pointer; }
+
+.rule-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.rule-table th,
+.rule-table td {
+  padding: 7px 10px;
+  text-align: left;
+  border-bottom: 1px solid var(--border-color);
+}
+.rule-table th {
+  background: #f2f6fd;
+  color: var(--text-secondary);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+.rule-table tbody tr:last-child td { border-bottom: none; }
+.rule-table td:last-child { width: 90px; }
+.rule-table strong { color: var(--brand); }
+
+.rule-input { width: 100%; padding: 5px 8px; font-size: 13px; }
+
+.rule-item-foot {
+  display: grid;
+  grid-template-columns: auto 90px;
+  align-items: center;
+  gap: 8px 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-color);
+  font-size: 13px;
+}
+.rule-item-foot > span { color: var(--text-secondary); }
+.rule-item-foot strong { color: var(--brand); text-align: center; }
+
+.rule-hint {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+@media (max-width: 640px) {
+  .rule-list { grid-template-columns: 1fr; }
+}
