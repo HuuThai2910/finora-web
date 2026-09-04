@@ -185,6 +185,8 @@ export interface ModelWeights {
 
 export interface LegalLimits {
   max_platform_limit: number;
+  /** Trần tổng dư nợ một khách hàng trên toàn bộ nền tảng — QĐ 2866/QĐ-NHNN. */
+  max_total_debt_all_platforms: number;
   max_interest_rate: number;
   max_term_months: number;
 }
@@ -201,3 +203,25 @@ export interface AiProductConfigUpdate {
   approval_thresholds: ApprovalThresholds;
   model_weights?: ModelWeights;
 }
+
+/* ── Re-exports from @/features/rule-engine and @/features/credit-score ─── */
+export type {
+  RuleBac,
+  AiRule,
+  AiTruong,
+  AiRulesResponse,
+  AiRulesUpdate,
+} from '@/features/rule-engine';
+
+export type {
+  CreditScoreRequest,
+  RuleTraceItem,
+  CreditScoreResponse,
+  YeuToAnhHuong,
+  YeuToGop,
+  TomTatYeuTo,
+  GiaiThichMoHinh,
+  DienGiaiNguoiDung,
+  CreditExplainResponse,
+} from '@/features/credit-score';
+

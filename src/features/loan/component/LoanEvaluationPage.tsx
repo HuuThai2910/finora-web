@@ -2,14 +2,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { useGetAiConfigQuery, useUpdateAiConfigMutation } from '../api/aiConfigApi';
 import { formatMoney } from '../formatters';
 import type { GradeConfig, ApprovalThresholds, ModelWeights, AiProductConfigUpdate } from '../types';
+import { RuleEnginePanel } from '@/features/rule-engine';
 import './LoanEvaluationPage.css';
-
-const RULE_FACTORS = [
-  { name: 'Tỷ lệ khoản vay/thu nhập năm', detail: '≤20%: 25 điểm · ≤50%: 15 điểm · còn lại: 5 điểm' },
-  { name: 'Thâm niên làm việc', detail: '≥5 năm: 25 điểm · ≥2 năm: 15 điểm · còn lại: 5 điểm' },
-  { name: 'Tình trạng nhà ở', detail: 'Sở hữu: 25 · thế chấp: 20 · thuê: 10 · khác: 5 điểm' },
-  { name: 'Thu nhập năm', detail: '≥300 triệu: 25 điểm · ≥120 triệu: 15 điểm · còn lại: 5 điểm' },
-];
 
 const GRADE_RISK_LABELS: Record<string, string> = {
   A: 'Thấp', B: 'Trung bình', C: 'Cao', D: 'Rất cao', E: 'Cực kỳ cao',
@@ -137,7 +131,7 @@ export default function LoanEvaluationPage() {
     <section className="policy-page">
       <header className="policy-header">
         <div>
-          <span className="policy-eyebrow">Mô hình v13.0.0</span>
+          <span className="policy-eyebrow">Rule Engine D4</span>
           <h1>Chính sách đánh giá AI</h1>
           <p>Cấu hình khoảng điểm, hạng tín dụng, ngưỡng duyệt tự động và trọng số mô hình.</p>
         </div>
@@ -333,30 +327,24 @@ export default function LoanEvaluationPage() {
         </div>
       </article>
 
-      {/* ── Rule engine + Knock-outs ─────────────────────────── */}
-      <div className="policy-grid">
-        <article className="policy-panel">
-          <div className="policy-panel-heading">
-            <div><span className="policy-eyebrow">Rule engine 5C</span><h2>Bốn yếu tố chấm điểm</h2></div>
-          </div>
-          <ol className="policy-list">
-            {RULE_FACTORS.map(f => (
-              <li key={f.name}><strong>{f.name}</strong><span>{f.detail}</span></li>
-            ))}
-          </ol>
-        </article>
-        <article className="policy-panel">
-          <div className="policy-panel-heading">
-            <div><span className="policy-eyebrow">Knock-out rules</span><h2>Điều kiện chặn cứng</h2></div>
-          </div>
-          <ul className="policy-list">
-            <li><strong>Lãi suất không hợp lệ</strong><span>Không lớn hơn {(config.legal_limits.max_interest_rate * 100).toFixed(0)}%/năm và phải lớn hơn 0.</span></li>
-            <li><strong>Kỳ hạn vượt giới hạn</strong><span>Không quá {config.legal_limits.max_term_months} tháng theo policy hiện tại.</span></li>
-            <li><strong>Áp lực trả nợ quá cao</strong><span>Khoản trả tháng vượt 50% thu nhập tháng.</span></li>
-            <li><strong>Tuổi và kinh nghiệm bất hợp lý</strong><span>Loại khi dữ liệu cho thấy bắt đầu làm việc trước 10 tuổi.</span></li>
-          </ul>
-        </article>
-      </div>
+      {/* ── Knock-outs (cố định, không cấu hình được) ─────────── */}
+      <article className="policy-panel">
+        <div className="policy-panel-heading">
+          <div><span className="policy-eyebrow">Knock-out rules</span><h2>Điều kiện chặn cứng</h2></div>
+          <span>Chỉ đọc — là quy định pháp luật, không phải tham số nghiệp vụ</span>
+        </div>
+        <ul className="policy-list">
+          <li><strong>Lãi suất không hợp lệ</strong><span>Không lớn hơn {(config.legal_limits.max_interest_rate * 100).toFixed(0)}%/năm và phải lớn hơn 0 — Điều 468 Bộ luật Dân sự 2015.</span></li>
+          <li><strong>Kỳ hạn vượt giới hạn</strong><span>Không quá {config.legal_limits.max_term_months} tháng — Nghị định 94/2025/NĐ-CP.</span></li>
+          <li><strong>Áp lực trả nợ quá cao</strong><span>Khoản trả tháng vượt 50% thu nhập tháng.</span></li>
+          <li><strong>Nợ xấu tại CIC</strong><span>Đang có nợ từ nhóm 3 trở lên — Thông tư 11/2021/TT-NHNN.</span></li>
+          <li><strong>Vượt trần tổng dư nợ</strong><span>Dư nợ hiện có cộng khoản vay này vượt {(config.legal_limits.max_total_debt_all_platforms / 1_000_000).toLocaleString('vi-VN')} triệu trên toàn bộ nền tảng — Quyết định 2866/QĐ-NHNN.</span></li>
+          <li><strong>Tuổi và kinh nghiệm bất hợp lý</strong><span>Loại khi dữ liệu cho thấy bắt đầu làm việc trước 10 tuổi.</span></li>
+        </ul>
+      </article>
+
+      {/* ── Luật chấm điểm (cấu hình được) ────────────────────── */}
+      <RuleEnginePanel />
     </section>
   );
 }

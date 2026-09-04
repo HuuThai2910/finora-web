@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import AdminLayout from '@/layouts/AdminLayout';
 import { LoanListPage, LoanApprovalPage, LoanEvaluationPage } from '@/features/loan';
+import { CreditScoringPage } from '@/features/credit-score';
 import { ProductListPage } from '@/features/product';
 import { UserListPage } from '@/features/user';
 
@@ -16,6 +17,7 @@ export default function App() {
           <Route path="loans/overdue" element={<Navigate to="/loans" replace />} />
           <Route path="disbursement" element={<Navigate to="/loans" replace />} />
           <Route path="loans/evaluation" element={<LoanEvaluationPage />} />
+          <Route path="loans/scoring" element={<CreditScoringPage />} />
           <Route path="products" element={<ProductListPage />} />
           <Route path="products/config" element={<Navigate to="/products" replace />} />
           <Route path="users" element={<UserListPage />} />
