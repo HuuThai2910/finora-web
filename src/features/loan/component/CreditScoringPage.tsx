@@ -1,9 +1,14 @@
-import { useState } from 'react';
-import { useExplainCreditMutation } from '../api/aiScoringApi';
+import { useState } from "react";
+import { useExplainCreditMutation } from "../api/aiScoringApi";
 import type {
-  CreditScoreRequest, DienGiaiNguoiDung, RuleTraceItem, TomTatYeuTo, YeuToAnhHuong, YeuToGop,
-} from '../types';
-import './CreditScoringPage.css';
+  CreditScoreRequest,
+  DienGiaiNguoiDung,
+  RuleTraceItem,
+  TomTatYeuTo,
+  YeuToAnhHuong,
+  YeuToGop,
+} from "../types";
+import "./CreditScoringPage.css";
 
 /**
  * Màn hình chấm điểm tín dụng và giải thích quyết định (D4 + C1.2).
@@ -21,14 +26,14 @@ import './CreditScoringPage.css';
 
 /** Hồ sơ mẫu — cũng là giá trị khởi tạo của form. */
 const HO_SO_MAC_DINH: CreditScoreRequest = {
-  so_cccd: '075047842393',
+  so_cccd: "075047842393",
   person_age: 30,
-  emp_length: '5 years',
+  emp_length: "5 years",
   annual_inc: 300_000_000,
   loan_amnt: 50_000_000,
-  home_ownership: 'MORTGAGE',
-  purpose: 'debt_consolidation',
-  verification_status: 'Verified',
+  home_ownership: "MORTGAGE",
+  purpose: "debt_consolidation",
+  verification_status: "Verified",
   dti: 15.5,
   installment: 4_500_000,
   int_rate: 12,
@@ -42,65 +47,131 @@ const HO_SO_MAC_DINH: CreditScoreRequest = {
  * tổng dư nợ) chỉ kích hoạt được qua CCCD vì dữ liệu đó do CIC cấp, không nhận từ
  * người dùng tự khai.
  */
-const KICH_BAN: { ten: string; mo_ta: string; ghi_de: Partial<CreditScoreRequest> }[] = [
-  { ten: 'Hồ sơ sạch', mo_ta: 'Nợ nhóm 1, dư nợ thấp', ghi_de: { so_cccd: '075047842393' } },
-  { ten: 'Nợ xấu nhóm 5', mo_ta: 'Vi phạm chốt nợ xấu CIC', ghi_de: { so_cccd: '089182000010' } },
-  { ten: 'Dư nợ 1,3 tỷ', mo_ta: 'Vượt trần tổng 400 triệu', ghi_de: { so_cccd: '001668101246' } },
-  { ten: 'Lãi suất 25%', mo_ta: 'Vượt trần 20%/năm', ghi_de: { so_cccd: '075047842393', int_rate: 25 } },
-  { ten: 'Trả nợ 80% thu nhập', mo_ta: 'Vượt trần DSR 50%', ghi_de: { so_cccd: '075047842393', annual_inc: 60_000_000, installment: 4_000_000 } },
-  { ten: 'Tuổi 19 · 10+ năm KN', mo_ta: 'Mâu thuẫn tuổi và thâm niên', ghi_de: { so_cccd: '075047842393', person_age: 19, emp_length: '10+ years' } },
+const KICH_BAN: {
+  ten: string;
+  mo_ta: string;
+  ghi_de: Partial<CreditScoreRequest>;
+}[] = [
+  {
+    ten: "Hồ sơ sạch",
+    mo_ta: "Nợ nhóm 1, dư nợ thấp",
+    ghi_de: { so_cccd: "075047842393" },
+  },
+  {
+    ten: "Nợ xấu nhóm 5",
+    mo_ta: "Vi phạm chốt nợ xấu CIC",
+    ghi_de: { so_cccd: "089182000010" },
+  },
+  {
+    ten: "Dư nợ 1,3 tỷ",
+    mo_ta: "Vượt trần tổng 400 triệu",
+    ghi_de: { so_cccd: "001668101246" },
+  },
+  {
+    ten: "Lãi suất 25%",
+    mo_ta: "Vượt trần 20%/năm",
+    ghi_de: { so_cccd: "075047842393", int_rate: 25 },
+  },
+  {
+    ten: "Trả nợ 80% thu nhập",
+    mo_ta: "Vượt trần DSR 50%",
+    ghi_de: {
+      so_cccd: "075047842393",
+      annual_inc: 60_000_000,
+      installment: 4_000_000,
+    },
+  },
+  {
+    ten: "Tuổi 19 · 10+ năm KN",
+    mo_ta: "Mâu thuẫn tuổi và thâm niên",
+    ghi_de: {
+      so_cccd: "075047842393",
+      person_age: 19,
+      emp_length: "10+ years",
+    },
+  },
 ];
 
 const NHAN_QUYET_DINH: Record<string, string> = {
-  APPROVED: 'Duyệt tự động',
-  PENDING_REVIEW: 'Chờ thẩm định',
-  REJECTED: 'Từ chối',
+  APPROVED: "Duyệt tự động",
+  PENDING_REVIEW: "Chờ thẩm định",
+  REJECTED: "Từ chối",
 };
 
-const NHAN_MUC_DO: Record<YeuToGop['muc_do'], string> = {
-  manh: 'Mạnh',
-  vua: 'Vừa',
-  nhe: 'Nhẹ',
+const NHAN_MUC_DO: Record<YeuToGop["muc_do"], string> = {
+  manh: "Mạnh",
+  vua: "Vừa",
+  nhe: "Nhẹ",
 };
 
 const NHAN_5C: Record<string, string> = {
-  Character: 'Uy tín',
-  Capacity: 'Khả năng trả nợ',
-  Capital: 'Tài sản tích lũy',
+  Character: "Uy tín",
+  Capacity: "Khả năng trả nợ",
+  Capital: "Tài sản tích lũy",
 };
 
 const MUC_DICH = [
-  ['debt_consolidation', 'Đảo nợ'], ['home_improvement', 'Sửa nhà'], ['car', 'Mua xe'],
-  ['medical', 'Y tế'], ['education', 'Học tập'], ['small_business', 'Kinh doanh nhỏ'],
-  ['major_purchase', 'Mua sắm lớn'], ['moving', 'Chuyển nhà'], ['vacation', 'Du lịch'],
-  ['credit_card', 'Thẻ tín dụng'], ['other', 'Khác'],
+  ["debt_consolidation", "Đảo nợ"],
+  ["home_improvement", "Sửa nhà"],
+  ["car", "Mua xe"],
+  ["medical", "Y tế"],
+  ["education", "Học tập"],
+  ["small_business", "Kinh doanh nhỏ"],
+  ["major_purchase", "Mua sắm lớn"],
+  ["moving", "Chuyển nhà"],
+  ["vacation", "Du lịch"],
+  ["credit_card", "Thẻ tín dụng"],
+  ["other", "Khác"],
 ];
 
 const NHA_O = [
-  ['OWN', 'Sở hữu riêng'], ['MORTGAGE', 'Đang thế chấp'],
-  ['RENT', 'Thuê'], ['OTHER', 'Khác'],
+  ["OWN", "Sở hữu riêng"],
+  ["MORTGAGE", "Đang thế chấp"],
+  ["RENT", "Thuê"],
+  ["OTHER", "Khác"],
 ];
 
-const THAM_NIEN = ['< 1 year', '1 year', '2 years', '3 years', '5 years', '7 years', '10+ years'];
+const THAM_NIEN = [
+  "< 1 year",
+  "1 year",
+  "2 years",
+  "3 years",
+  "5 years",
+  "7 years",
+  "10+ years",
+];
 
-const tienVN = (n: number) => new Intl.NumberFormat('vi-VN').format(n);
+const tienVN = (n: number) => new Intl.NumberFormat("vi-VN").format(n);
 
 /** Thanh biểu diễn độ lớn đóng góp, chuẩn hóa theo yếu tố mạnh nhất của cả hai chiều. */
-function ThanhDongGop({ yeuTo, max, huong }: { yeuTo: YeuToAnhHuong; max: number; huong: 'bat-loi' | 'co-loi' }) {
-  const rong = max > 0 ? Math.round((Math.abs(yeuTo.muc_dong_gop) / max) * 100) : 0;
+function ThanhDongGop({
+  yeuTo,
+  max,
+  huong,
+}: {
+  yeuTo: YeuToAnhHuong;
+  max: number;
+  huong: "bat-loi" | "co-loi";
+}) {
+  const rong =
+    max > 0 ? Math.round((Math.abs(yeuTo.muc_dong_gop) / max) * 100) : 0;
   return (
     <li className="shap-item">
       <div className="shap-item-head">
         <span className="shap-item-label">
           {yeuTo.mo_ta}
-          {yeuTo.la_leakage && <span className="shap-leak-tag" title="Đặc trưng rò rỉ nhãn">LEAKAGE</span>}
+          {yeuTo.la_leakage}
         </span>
         <span className="shap-item-value">
-          {yeuTo.muc_dong_gop > 0 ? '+' : ''}{yeuTo.muc_dong_gop.toFixed(4)}
+          {yeuTo.muc_dong_gop > 0 ? "+" : ""}
+          {yeuTo.muc_dong_gop.toFixed(4)}
         </span>
       </div>
       <div className="shap-track">
-        <span className={`shap-bar shap-bar-${huong}`} style={{ width: `${rong}%` }} />
+        <span
+          className={`shap-bar shap-bar-${huong}`}
+          style={{ width: `${rong}%` }}
+        />
       </div>
     </li>
   );
@@ -121,7 +192,9 @@ function BanDeHieu({ dienGiai }: { dienGiai: DienGiaiNguoiDung }) {
         <div className="plain-block">
           <div className="plain-block-title">Vì sao</div>
           <ul className="plain-list plain-list-reason">
-            {dienGiai.ly_do_chinh.map((x) => <li key={x}>{x}</li>)}
+            {dienGiai.ly_do_chinh.map((x) => (
+              <li key={x}>{x}</li>
+            ))}
           </ul>
         </div>
       )}
@@ -130,7 +203,9 @@ function BanDeHieu({ dienGiai }: { dienGiai: DienGiaiNguoiDung }) {
         <div className="plain-block">
           <div className="plain-block-title">Bạn nên làm gì</div>
           <ol className="plain-list plain-list-advice">
-            {dienGiai.goi_y_cai_thien.map((x) => <li key={x}>{x}</li>)}
+            {dienGiai.goi_y_cai_thien.map((x) => (
+              <li key={x}>{x}</li>
+            ))}
           </ol>
         </div>
       )}
@@ -138,7 +213,15 @@ function BanDeHieu({ dienGiai }: { dienGiai: DienGiaiNguoiDung }) {
   );
 }
 
-function CotGop({ tieuDe, huong, yeuTo }: { tieuDe: string; huong: 'bat-loi' | 'co-loi'; yeuTo: YeuToGop[] }) {
+function CotGop({
+  tieuDe,
+  huong,
+  yeuTo,
+}: {
+  tieuDe: string;
+  huong: "bat-loi" | "co-loi";
+  yeuTo: YeuToGop[];
+}) {
   return (
     <div>
       <div className={`shap-col-title shap-col-${huong}`}>{tieuDe}</div>
@@ -146,7 +229,9 @@ function CotGop({ tieuDe, huong, yeuTo }: { tieuDe: string; huong: 'bat-loi' | '
         {yeuTo.map((y) => (
           <li key={y.ma_nhom} className="gop-item">
             <span className="gop-label">{y.mo_ta}</span>
-            <span className={`gop-badge gop-badge-${huong} gop-badge-${y.muc_do}`}>
+            <span
+              className={`gop-badge gop-badge-${huong} gop-badge-${y.muc_do}`}
+            >
               {NHAN_MUC_DO[y.muc_do]}
             </span>
           </li>
@@ -168,15 +253,25 @@ function BanGop({ tomTat }: { tomTat: TomTatYeuTo }) {
   return (
     <div className="scoring-card">
       <h2 className="scoring-card-title">
-        Yếu tố ảnh hưởng theo mô hình
+        Yếu tố ảnh hưởng theo mô hình AI
         <span className="scoring-card-sub">
-          Gộp theo dữ kiện trên hồ sơ, đã bỏ lãi suất. Mức ảnh hưởng so với yếu tố
-          mạnh nhất của chính hồ sơ này.
+          Tham khảo — cho biết mô hình chú ý điều gì ở hồ sơ này. Mức
+          Mạnh/Vừa/Nhẹ là so sánh <b>tương đối trong chính hồ sơ này</b>, không
+          phải thang chung. Đã gộp theo dữ kiện gốc và bỏ nhóm lãi suất. Căn cứ
+          để duyệt hay từ chối là vết luật 5C bên dưới.
         </span>
       </h2>
       <div className="shap-columns">
-        <CotGop tieuDe="Đẩy rủi ro lên" huong="bat-loi" yeuTo={tomTat.bat_loi} />
-        <CotGop tieuDe="Kéo rủi ro xuống" huong="co-loi" yeuTo={tomTat.co_loi} />
+        <CotGop
+          tieuDe="Đẩy rủi ro lên"
+          huong="bat-loi"
+          yeuTo={tomTat.bat_loi}
+        />
+        <CotGop
+          tieuDe="Kéo rủi ro xuống"
+          huong="co-loi"
+          yeuTo={tomTat.co_loi}
+        />
       </div>
     </div>
   );
@@ -198,17 +293,24 @@ function BangRuleTrace({ vet }: { vet: RuleTraceItem[] }) {
             <td>
               <div className="rule-desc">{t.mo_ta}</div>
               <div className="rule-meta">
-                <span className="rule-group">{NHAN_5C[t.nhom_5c] ?? t.nhom_5c}</span>
+                <span className="rule-group">
+                  {NHAN_5C[t.nhom_5c] ?? t.nhom_5c}
+                </span>
                 <code>{t.ma}</code>
               </div>
             </td>
             <td className="num">
-              <b>{t.diem}</b><span className="rule-max">/{t.toi_da}</span>
+              <b>{t.diem}</b>
+              <span className="rule-max">/{t.toi_da}</span>
             </td>
             <td>
-              {t.thieu_du_lieu
-                ? <span className="rule-missing">Thiếu dữ liệu · dùng điểm trung tính</span>
-                : <span className="rule-value">{String(t.gia_tri)}</span>}
+              {t.thieu_du_lieu ? (
+                <span className="rule-missing">
+                  Thiếu dữ liệu · dùng điểm trung tính
+                </span>
+              ) : (
+                <span className="rule-value">{String(t.gia_tri)}</span>
+              )}
             </td>
           </tr>
         ))}
@@ -223,13 +325,16 @@ export default function CreditScoringPage() {
   const [hienKyThuat, setHienKyThuat] = useState(false);
   const [explain, { data: kq, isLoading, error }] = useExplainCreditMutation();
 
-  function dat<K extends keyof CreditScoreRequest>(khoa: K, giaTri: CreditScoreRequest[K]) {
+  function dat<K extends keyof CreditScoreRequest>(
+    khoa: K,
+    giaTri: CreditScoreRequest[K],
+  ) {
     setForm((truoc) => ({ ...truoc, [khoa]: giaTri }));
   }
 
   /** Ô số để trống nghĩa là "không khai", phải gửi undefined chứ không phải 0. */
   function datSo(khoa: keyof CreditScoreRequest, raw: string) {
-    dat(khoa, (raw === '' ? undefined : Number(raw)) as never);
+    dat(khoa, (raw === "" ? undefined : Number(raw)) as never);
   }
 
   function chonKichBan(ghiDe: Partial<CreditScoreRequest>) {
@@ -241,7 +346,9 @@ export default function CreditScoringPage() {
   const g = kq?.giai_thich_mo_hinh;
   const maxDongGop = g
     ? Math.max(
-        ...[...g.yeu_to_bat_loi, ...g.yeu_to_co_loi].map((y) => Math.abs(y.muc_dong_gop)),
+        ...[...g.yeu_to_bat_loi, ...g.yeu_to_co_loi].map((y) =>
+          Math.abs(y.muc_dong_gop),
+        ),
         0,
       )
     : 0;
@@ -250,11 +357,14 @@ export default function CreditScoringPage() {
     <section className="scoring-page">
       <header className="scoring-header">
         <div>
-          <span className="scoring-eyebrow">Rule Engine D4 · Explainable AI C1.2</span>
+          <span className="scoring-eyebrow">
+            Rule Engine D4 · Explainable AI C1.2
+          </span>
           <h1>Chấm điểm &amp; giải thích quyết định</h1>
           <p>
-            Nhập hồ sơ giả định để xem mô hình chấm bao nhiêu và vì sao. Kết quả gồm hai nửa:
-            đóng góp TreeSHAP của mô hình và vết luật 5C của Rule Engine.
+            Nhập hồ sơ giả định để xem mô hình chấm bao nhiêu và vì sao. Kết quả
+            gồm hai nửa: đóng góp TreeSHAP của mô hình và vết luật 5C của Rule
+            Engine.
           </p>
         </div>
       </header>
@@ -285,81 +395,141 @@ export default function CreditScoringPage() {
           </label>
           <input
             className="scoring-input"
-            value={form.so_cccd ?? ''}
-            onChange={(e) => dat('so_cccd', e.target.value || undefined)}
+            value={form.so_cccd ?? ""}
+            onChange={(e) => dat("so_cccd", e.target.value || undefined)}
           />
 
           <div className="scoring-row">
             <div>
               <label className="scoring-label">Tuổi</label>
-              <input className="scoring-input" type="number" value={form.person_age ?? ''}
-                     onChange={(e) => datSo('person_age', e.target.value)} />
+              <input
+                className="scoring-input"
+                type="number"
+                value={form.person_age ?? ""}
+                onChange={(e) => datSo("person_age", e.target.value)}
+              />
             </div>
             <div>
               <label className="scoring-label">Thâm niên</label>
-              <select className="scoring-input" value={form.emp_length ?? ''}
-                      onChange={(e) => dat('emp_length', e.target.value || undefined)}>
-                {THAM_NIEN.map((t) => <option key={t} value={t}>{t}</option>)}
+              <select
+                className="scoring-input"
+                value={form.emp_length ?? ""}
+                onChange={(e) => dat("emp_length", e.target.value || undefined)}
+              >
+                {THAM_NIEN.map((t) => (
+                  <option key={t} value={t}>
+                    {t}
+                  </option>
+                ))}
               </select>
             </div>
           </div>
 
           <label className="scoring-label">Thu nhập năm (VNĐ)</label>
-          <input className="scoring-input" type="number" value={form.annual_inc}
-                 onChange={(e) => datSo('annual_inc', e.target.value)} />
+          <input
+            className="scoring-input"
+            type="number"
+            value={form.annual_inc}
+            onChange={(e) => datSo("annual_inc", e.target.value)}
+          />
 
           <label className="scoring-label">Số tiền vay (VNĐ)</label>
-          <input className="scoring-input" type="number" value={form.loan_amnt}
-                 onChange={(e) => datSo('loan_amnt', e.target.value)} />
+          <input
+            className="scoring-input"
+            type="number"
+            value={form.loan_amnt}
+            onChange={(e) => datSo("loan_amnt", e.target.value)}
+          />
 
           <div className="scoring-row">
             <div>
               <label className="scoring-label">Kỳ hạn (tháng)</label>
-              <input className="scoring-input" type="number" value={form.term_months ?? ''}
-                     onChange={(e) => datSo('term_months', e.target.value)} />
+              <input
+                className="scoring-input"
+                type="number"
+                value={form.term_months ?? ""}
+                onChange={(e) => datSo("term_months", e.target.value)}
+              />
             </div>
             <div>
               <label className="scoring-label">Lãi suất (%/năm)</label>
-              <input className="scoring-input" type="number" step="0.1" value={form.int_rate ?? ''}
-                     onChange={(e) => datSo('int_rate', e.target.value)} />
+              <input
+                className="scoring-input"
+                type="number"
+                step="0.1"
+                value={form.int_rate ?? ""}
+                onChange={(e) => datSo("int_rate", e.target.value)}
+              />
             </div>
           </div>
 
           <div className="scoring-row">
             <div>
               <label className="scoring-label">DTI (%)</label>
-              <input className="scoring-input" type="number" step="0.1" value={form.dti ?? ''}
-                     onChange={(e) => datSo('dti', e.target.value)} />
+              <input
+                className="scoring-input"
+                type="number"
+                step="0.1"
+                value={form.dti ?? ""}
+                onChange={(e) => datSo("dti", e.target.value)}
+              />
             </div>
             <div>
               <label className="scoring-label">Trả hàng tháng</label>
-              <input className="scoring-input" type="number" value={form.installment ?? ''}
-                     onChange={(e) => datSo('installment', e.target.value)} />
+              <input
+                className="scoring-input"
+                type="number"
+                value={form.installment ?? ""}
+                onChange={(e) => datSo("installment", e.target.value)}
+              />
             </div>
           </div>
 
           <label className="scoring-label">Tình trạng nhà ở</label>
-          <select className="scoring-input" value={form.home_ownership}
-                  onChange={(e) => dat('home_ownership', e.target.value)}>
-            {NHA_O.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+          <select
+            className="scoring-input"
+            value={form.home_ownership}
+            onChange={(e) => dat("home_ownership", e.target.value)}
+          >
+            {NHA_O.map(([v, l]) => (
+              <option key={v} value={v}>
+                {l}
+              </option>
+            ))}
           </select>
 
           <label className="scoring-label">Mục đích vay</label>
-          <select className="scoring-input" value={form.purpose}
-                  onChange={(e) => dat('purpose', e.target.value)}>
-            {MUC_DICH.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+          <select
+            className="scoring-input"
+            value={form.purpose}
+            onChange={(e) => dat("purpose", e.target.value)}
+          >
+            {MUC_DICH.map(([v, l]) => (
+              <option key={v} value={v}>
+                {l}
+              </option>
+            ))}
           </select>
 
           <label className="scoring-label">Xác minh thu nhập</label>
-          <select className="scoring-input" value={form.verification_status ?? ''}
-                  onChange={(e) => dat('verification_status', e.target.value || undefined)}>
+          <select
+            className="scoring-input"
+            value={form.verification_status ?? ""}
+            onChange={(e) =>
+              dat("verification_status", e.target.value || undefined)
+            }
+          >
             <option value="Verified">Đã xác minh</option>
             <option value="Source Verified">Xác minh nguồn</option>
             <option value="Not Verified">Chưa xác minh</option>
           </select>
 
-          <button className="scoring-submit" onClick={() => explain(form)} disabled={isLoading}>
-            {isLoading ? 'Đang chấm điểm…' : 'Chấm điểm & giải thích'}
+          <button
+            className="scoring-submit"
+            onClick={() => explain(form)}
+            disabled={isLoading}
+          >
+            {isLoading ? "Đang chấm điểm…" : "Chấm điểm & giải thích"}
           </button>
         </div>
 
@@ -367,9 +537,10 @@ export default function CreditScoringPage() {
         <div className="scoring-result">
           {error && (
             <div className="scoring-error">
-              Không gọi được finora-ai. Kiểm tra service đã chạy ở cổng 8000 chưa.
+              Không gọi được finora-ai. Kiểm tra service đã chạy ở cổng 8000
+              chưa.
               <div className="scoring-error-detail">
-                {'status' in error ? `HTTP ${error.status}` : 'Lỗi kết nối'}
+                {"status" in error ? `HTTP ${error.status}` : "Lỗi kết nối"}
               </div>
             </div>
           )}
@@ -389,7 +560,10 @@ export default function CreditScoringPage() {
                 </div>
                 <div className="scoring-kpi">
                   <div className="scoring-kpi-label">Điểm quy tắc 5C</div>
-                  <div className="scoring-kpi-value">{kq.risk_score}<span className="scoring-kpi-unit">/100</span></div>
+                  <div className="scoring-kpi-value">
+                    {kq.risk_score}
+                    <span className="scoring-kpi-unit">/100</span>
+                  </div>
                 </div>
                 <div className="scoring-kpi">
                   <div className="scoring-kpi-label">Điểm tổng hợp</div>
@@ -397,7 +571,11 @@ export default function CreditScoringPage() {
                 </div>
                 <div className="scoring-kpi">
                   <div className="scoring-kpi-label">Hạng tín dụng</div>
-                  <div className={`scoring-kpi-value scoring-grade grade-${kq.credit_grade}`}>{kq.credit_grade}</div>
+                  <div
+                    className={`scoring-kpi-value scoring-grade grade-${kq.credit_grade}`}
+                  >
+                    {kq.credit_grade}
+                  </div>
                 </div>
                 <div className="scoring-kpi">
                   <div className="scoring-kpi-label">Quyết định</div>
@@ -411,84 +589,120 @@ export default function CreditScoringPage() {
 
               <BanGop tomTat={g.tom_tat} />
 
-              <div className="scoring-mode">
-                <button
-                  type="button"
-                  className={`scoring-mode-btn${hienKyThuat ? ' is-on' : ''}`}
-                  onClick={() => setHienKyThuat((v) => !v)}
-                  aria-expanded={hienKyThuat}
-                >
-                  {hienKyThuat ? 'Ẩn chi tiết kỹ thuật' : 'Xem chi tiết kỹ thuật (SHAP, rule trace)'}
-                </button>
-                <span className="scoring-mode-hint">
-                  Dành cho thẩm định viên — số liệu trên thang log-odds.
-                </span>
-              </div>
-
-              {hienKyThuat && kq.rejection_reasons.length > 0 && (
+              {/* Vết luật 5C nằm NGOÀI khối kỹ thuật: đây là căn cứ thẩm định viên
+                  dùng để duyệt hay từ chối — tên luật theo khung 5C của ngành, có
+                  điểm và giá trị thật, không cần biết gì về ML để đọc. Bản gộp SHAP
+                  ở trên chỉ nói mô hình nghĩ gì, không thay thế được vết luật. */}
+              {kq.rejection_reasons.length > 0 && (
                 <div className="scoring-card scoring-knockout">
-                  <h2 className="scoring-card-title">Chốt chặn pháp lý bị vi phạm</h2>
+                  <h2 className="scoring-card-title">
+                    Chốt chặn pháp lý bị vi phạm
+                  </h2>
                   <ul className="knockout-list">
-                    {kq.rejection_reasons.map((m) => <li key={m}><code>{m}</code></li>)}
+                    {kq.rejection_reasons.map((m) => (
+                      <li key={m}>
+                        <code>{m}</code>
+                      </li>
+                    ))}
                   </ul>
                   <p className="knockout-note">
-                    Vi phạm chốt chặn cho kết quả từ chối bất kể điểm số. Hệ thống trả về tất cả
-                    vi phạm thay vì dừng ở lỗi đầu tiên, để người vay sửa một lần.
+                    Vi phạm chốt chặn cho kết quả từ chối bất kể điểm số. Hệ
+                    thống trả về tất cả vi phạm thay vì dừng ở lỗi đầu tiên, để
+                    người vay sửa một lần.
                   </p>
                 </div>
               )}
 
-              {hienKyThuat && g.canh_bao.length > 0 && (
-                <div className="scoring-warning">
-                  <b>Cảnh báo chất lượng giải thích.</b> {g.canh_bao.join(' ')}
-                </div>
-              )}
-
-              {hienKyThuat && (<div className="scoring-card">
+              <div className="scoring-card">
                 <h2 className="scoring-card-title">
-                  Giải thích của mô hình — TreeSHAP (bản thô)
-                  <span className="scoring-card-sub">
-                    Từng đặc trưng đúng như mô hình nhìn thấy, để đối chứng với bản gộp ở trên.
-                    Đóng góp trên thang log-odds; tổng mọi đóng góp cộng giá trị cơ sở
-                    ({g.gia_tri_co_so}) bằng đúng log-odds đầu ra.
-                  </span>
-                </h2>
-                <div className="shap-columns">
-                  <div>
-                    <div className="shap-col-title shap-col-bat-loi">Đẩy về phía rủi ro</div>
-                    <ul className="shap-list">
-                      {g.yeu_to_bat_loi.map((y) => (
-                        <ThanhDongGop key={y.dac_trung} yeuTo={y} max={maxDongGop} huong="bat-loi" />
-                      ))}
-                      {g.yeu_to_bat_loi.length === 0 && <li className="shap-none">Không có</li>}
-                    </ul>
-                  </div>
-                  <div>
-                    <div className="shap-col-title shap-col-co-loi">Kéo về phía an toàn</div>
-                    <ul className="shap-list">
-                      {g.yeu_to_co_loi.map((y) => (
-                        <ThanhDongGop key={y.dac_trung} yeuTo={y} max={maxDongGop} huong="co-loi" />
-                      ))}
-                      {g.yeu_to_co_loi.length === 0 && <li className="shap-none">Không có</li>}
-                    </ul>
-                  </div>
-                </div>
-              </div>)}
-
-              {hienKyThuat && (<div className="scoring-card">
-                <h2 className="scoring-card-title">
-                  Vết luật 5C — Rule Engine
+                  Vết luật 5C — căn cứ thẩm định
                   <span className="scoring-card-sub">
                     Mỗi điểm cộng đều truy ngược được về một luật có tên.
                   </span>
                 </h2>
                 <BangRuleTrace vet={kq.rule_trace} />
-              </div>)}
+              </div>
+
+              <div className="scoring-mode">
+                <button
+                  type="button"
+                  className={`scoring-mode-btn${hienKyThuat ? " is-on" : ""}`}
+                  onClick={() => setHienKyThuat((v) => !v)}
+                  aria-expanded={hienKyThuat}
+                >
+                  {hienKyThuat
+                    ? "Ẩn chi tiết kỹ thuật"
+                    : "Xem chi tiết kỹ thuật (SHAP từng đặc trưng)"}
+                </button>
+                <span className="scoring-mode-hint">
+                  Số liệu trên thang log-odds — dùng để đối chứng mô hình, không
+                  cần cho việc thẩm định thường ngày.
+                </span>
+              </div>
+
+              {hienKyThuat && g.canh_bao.length > 0 && (
+                <div className="scoring-warning">
+                  <b>Cảnh báo chất lượng giải thích.</b> {g.canh_bao.join(" ")}
+                </div>
+              )}
+
+              {hienKyThuat && (
+                <div className="scoring-card">
+                  <h2 className="scoring-card-title">
+                    Giải thích của mô hình — TreeSHAP (bản thô)
+                    <span className="scoring-card-sub">
+                      Từng đặc trưng đúng như mô hình nhìn thấy, để đối chứng
+                      với bản gộp ở trên. Đóng góp trên thang; tổng mọi đóng góp
+                      cộng giá trị cơ sở ({g.gia_tri_co_so}) bằng đúng đầu ra.
+                    </span>
+                  </h2>
+                  <div className="shap-columns">
+                    <div>
+                      <div className="shap-col-title shap-col-bat-loi">
+                        Đẩy về phía rủi ro
+                      </div>
+                      <ul className="shap-list">
+                        {g.yeu_to_bat_loi.map((y) => (
+                          <ThanhDongGop
+                            key={y.dac_trung}
+                            yeuTo={y}
+                            max={maxDongGop}
+                            huong="bat-loi"
+                          />
+                        ))}
+                        {g.yeu_to_bat_loi.length === 0 && (
+                          <li className="shap-none">Không có</li>
+                        )}
+                      </ul>
+                    </div>
+                    <div>
+                      <div className="shap-col-title shap-col-co-loi">
+                        Kéo về phía an toàn
+                      </div>
+                      <ul className="shap-list">
+                        {g.yeu_to_co_loi.map((y) => (
+                          <ThanhDongGop
+                            key={y.dac_trung}
+                            yeuTo={y}
+                            max={maxDongGop}
+                            huong="co-loi"
+                          />
+                        ))}
+                        {g.yeu_to_co_loi.length === 0 && (
+                          <li className="shap-none">Không có</li>
+                        )}
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               <p className="scoring-footnote">
-                Hạn mức đề xuất theo hạng · model {kq.model_version} ·
-                {' '}Trần 100 triệu/nền tảng theo Quyết định 2866/QĐ-NHNN
-                {form.loan_amnt ? ` · Khoản vay yêu cầu ${tienVN(form.loan_amnt)} đ` : ''}
+                Hạn mức đề xuất theo hạng · model {kq.model_version} · Trần 100
+                triệu/nền tảng theo Quyết định 2866/QĐ-NHNN
+                {form.loan_amnt
+                  ? ` · Khoản vay yêu cầu ${tienVN(form.loan_amnt)} đ`
+                  : ""}
               </p>
             </>
           )}
