@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useGetAiConfigQuery, useUpdateAiConfigMutation } from '../api/aiConfigApi';
 import { formatMoney } from '../formatters';
 import type { GradeConfig, ApprovalThresholds, ModelWeights, AiProductConfigUpdate } from '../types';
-import RuleEnginePanel from './RuleEnginePanel';
+import { RuleEnginePanel } from '@/features/rule-engine';
 import './LoanEvaluationPage.css';
 
 const GRADE_RISK_LABELS: Record<string, string> = {

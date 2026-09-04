@@ -27,7 +27,7 @@ import type {
  * đã có. Khi Gateway chuyển tiếp được body, chỉ cần đổi VITE_AI_API_URL sang
  * http://localhost:8080/api/v1/ai là cả ba slice đi qua Gateway, không phải sửa code.
  */
-const aiScoringApi = aiApi.injectEndpoints({
+const creditScoreApi = aiApi.injectEndpoints({
   endpoints: (builder) => ({
     scoreCredit: builder.mutation<CreditScoreResponse, CreditScoreRequest>({
       query: (body) => ({
@@ -46,4 +46,5 @@ const aiScoringApi = aiApi.injectEndpoints({
   }),
 });
 
-export const { useScoreCreditMutation, useExplainCreditMutation } = aiScoringApi;
+export const { useScoreCreditMutation, useExplainCreditMutation } = creditScoreApi;
+export { creditScoreApi };

@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import AdminLayout from '@/layouts/AdminLayout';
-import { LoanListPage, LoanApprovalPage, LoanEvaluationPage, CreditScoringPage } from '@/features/loan';
+import { LoanListPage, LoanApprovalPage, LoanEvaluationPage } from '@/features/loan';
+import { CreditScoringPage } from '@/features/credit-score';
 import { ProductListPage } from '@/features/product';
 import { UserListPage } from '@/features/user';
 

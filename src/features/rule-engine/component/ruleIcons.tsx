@@ -94,4 +94,3 @@ export function IconAlertCircle({ className }: IconProps) {
     </svg>
   );
 }
-

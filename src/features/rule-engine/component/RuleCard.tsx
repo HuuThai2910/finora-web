@@ -43,6 +43,7 @@ export default function RuleCard({
   const laPhanLoai = truong?.kieu === 'phan_loai';
   const tat = !luat.bat;
   const danhMuc = new Map(danhSachTruong.map(t => [t.ma, t]));
+
   // Tiền tố id để `label htmlFor` trỏ đúng ô của THẺ NÀY. Luật mới chưa có mã nên
   // lùi về chỉ số; hai luật không thể trùng cả mã lẫn vị trí trong cùng một lần render.
   const idThe = `luat-${luat.ma || `moi-${index}`}`;

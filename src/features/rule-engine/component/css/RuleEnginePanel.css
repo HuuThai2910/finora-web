@@ -584,14 +584,6 @@ select.rule-select {
   background: none;
   color: var(--text-secondary);
   cursor: pointer;
-  border-radius: 50%;
-  transition: color 0.15s ease, transform 0.15s ease;
-}
-
-.rule-tip-trigger:hover,
-.rule-tip-wrap:focus-within .rule-tip-trigger {
-  color: var(--brand);
-  transform: scale(1.1);
 }
 
 .rule-tip-icon {

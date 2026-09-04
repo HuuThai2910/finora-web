@@ -1,7 +1,7 @@
 import { aiApi } from '@/lib/api/aiApi';
 import type { AiRulesResponse, AiRulesUpdate } from '../types';
 
-const aiRulesApi = aiApi.injectEndpoints({
+const ruleEngineApi = aiApi.injectEndpoints({
   endpoints: (builder) => ({
     getAiRules: builder.query<AiRulesResponse, void>({
       query: () => '/config/rules',
@@ -19,4 +19,5 @@ const aiRulesApi = aiApi.injectEndpoints({
   }),
 });
 
-export const { useGetAiRulesQuery, useUpdateAiRulesMutation } = aiRulesApi;
+export const { useGetAiRulesQuery, useUpdateAiRulesMutation } = ruleEngineApi;
+export { ruleEngineApi };

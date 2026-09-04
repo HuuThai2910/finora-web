@@ -1,14 +1,20 @@
-import { useState } from "react";
-import { useExplainCreditMutation } from "../api/aiScoringApi";
 import type {
-  CreditScoreRequest,
   DienGiaiNguoiDung,
   RuleTraceItem,
   TomTatYeuTo,
   YeuToAnhHuong,
   YeuToGop,
 } from "../types";
-import "./CreditScoringPage.css";
+import {
+  KICH_BAN,
+  MUC_DICH,
+  NHA_O,
+  NHAN_MUC_DO,
+  NHAN_QUYET_DINH,
+  THAM_NIEN,
+} from "../constant";
+import { useCreditScoring } from "../hooks/useCreditScoring";
+import "./css/CreditScoringPage.css";
 
 /**
  * Màn hình chấm điểm tín dụng và giải thích quyết định (D4 + C1.2).
@@ -23,117 +29,6 @@ import "./CreditScoringPage.css";
  * định để xem mô hình phản ứng ra sao. Việc lưu kết quả chấm điểm thuộc
  * finora-loan (bảng credit_scoring_assessments).
  */
-
-/** Hồ sơ mẫu — cũng là giá trị khởi tạo của form. */
-const HO_SO_MAC_DINH: CreditScoreRequest = {
-  so_cccd: "075047842393",
-  person_age: 30,
-  emp_length: "5 years",
-  annual_inc: 300_000_000,
-  loan_amnt: 50_000_000,
-  home_ownership: "MORTGAGE",
-  purpose: "debt_consolidation",
-  verification_status: "Verified",
-  dti: 15.5,
-  installment: 4_500_000,
-  int_rate: 12,
-  term_months: 12,
-};
-
-/**
- * Kịch bản dựng sẵn, mỗi kịch bản kích hoạt một chốt chặn khác nhau.
- *
- * Ba CCCD đầu có thật trong dữ liệu của cic-service; hai chốt CIC (nợ xấu và trần
- * tổng dư nợ) chỉ kích hoạt được qua CCCD vì dữ liệu đó do CIC cấp, không nhận từ
- * người dùng tự khai.
- */
-const KICH_BAN: {
-  ten: string;
-  mo_ta: string;
-  ghi_de: Partial<CreditScoreRequest>;
-}[] = [
-  {
-    ten: "Hồ sơ sạch",
-    mo_ta: "Nợ nhóm 1, dư nợ thấp",
-    ghi_de: { so_cccd: "075047842393" },
-  },
-  {
-    ten: "Nợ xấu nhóm 5",
-    mo_ta: "Vi phạm chốt nợ xấu CIC",
-    ghi_de: { so_cccd: "089182000010" },
-  },
-  {
-    ten: "Dư nợ 1,3 tỷ",
-    mo_ta: "Vượt trần tổng 400 triệu",
-    ghi_de: { so_cccd: "001668101246" },
-  },
-  {
-    ten: "Lãi suất 25%",
-    mo_ta: "Vượt trần 20%/năm",
-    ghi_de: { so_cccd: "075047842393", int_rate: 25 },
-  },
-  {
-    ten: "Trả nợ 80% thu nhập",
-    mo_ta: "Vượt trần DSR 50%",
-    ghi_de: {
-      so_cccd: "075047842393",
-      annual_inc: 60_000_000,
-      installment: 4_000_000,
-    },
-  },
-  {
-    ten: "Tuổi 19 · 10+ năm KN",
-    mo_ta: "Mâu thuẫn tuổi và thâm niên",
-    ghi_de: {
-      so_cccd: "075047842393",
-      person_age: 19,
-      emp_length: "10+ years",
-    },
-  },
-];
-
-const NHAN_QUYET_DINH: Record<string, string> = {
-  APPROVED: "Duyệt tự động",
-  PENDING_REVIEW: "Chờ thẩm định",
-  REJECTED: "Từ chối",
-};
-
-const NHAN_MUC_DO: Record<YeuToGop["muc_do"], string> = {
-  manh: "Mạnh",
-  vua: "Vừa",
-  nhe: "Nhẹ",
-};
-
-const MUC_DICH = [
-  ["debt_consolidation", "Đảo nợ"],
-  ["home_improvement", "Sửa nhà"],
-  ["car", "Mua xe"],
-  ["medical", "Y tế"],
-  ["education", "Học tập"],
-  ["small_business", "Kinh doanh nhỏ"],
-  ["major_purchase", "Mua sắm lớn"],
-  ["moving", "Chuyển nhà"],
-  ["vacation", "Du lịch"],
-  ["credit_card", "Thẻ tín dụng"],
-  ["other", "Khác"],
-];
-
-const NHA_O = [
-  ["OWN", "Sở hữu riêng"],
-  ["MORTGAGE", "Đang thế chấp"],
-  ["RENT", "Thuê"],
-  ["OTHER", "Khác"],
-];
-
-const THAM_NIEN = [
-  "< 1 year",
-  "1 year",
-  "2 years",
-  "3 years",
-  "5 years",
-  "7 years",
-  "10+ years",
-];
 
 const tienVN = (n: number) => new Intl.NumberFormat("vi-VN").format(n);
 
@@ -154,7 +49,7 @@ function ThanhDongGop({
       <div className="shap-item-head">
         <span className="shap-item-label">
           {yeuTo.mo_ta}
-          {yeuTo.la_leakage}
+          {yeuTo.la_leakage && <span className="shap-leak-tag">Rò rỉ</span>}
         </span>
         <span className="shap-item-value">
           {yeuTo.muc_dong_gop > 0 ? "+" : ""}
@@ -315,38 +210,20 @@ function BangRuleTrace({ vet }: { vet: RuleTraceItem[] }) {
 }
 
 export default function CreditScoringPage() {
-  const [form, setForm] = useState<CreditScoreRequest>(HO_SO_MAC_DINH);
-  // Mặc định hiện bản người vay đọc được; số SHAP thô chỉ bật khi cần đối chứng.
-  const [hienKyThuat, setHienKyThuat] = useState(false);
-  const [explain, { data: kq, isLoading, error }] = useExplainCreditMutation();
-
-  function dat<K extends keyof CreditScoreRequest>(
-    khoa: K,
-    giaTri: CreditScoreRequest[K],
-  ) {
-    setForm((truoc) => ({ ...truoc, [khoa]: giaTri }));
-  }
-
-  /** Ô số để trống nghĩa là "không khai", phải gửi undefined chứ không phải 0. */
-  function datSo(khoa: keyof CreditScoreRequest, raw: string) {
-    dat(khoa, (raw === "" ? undefined : Number(raw)) as never);
-  }
-
-  function chonKichBan(ghiDe: Partial<CreditScoreRequest>) {
-    const hoSo = { ...HO_SO_MAC_DINH, ...ghiDe };
-    setForm(hoSo);
-    explain(hoSo);
-  }
-
-  const g = kq?.giai_thich_mo_hinh;
-  const maxDongGop = g
-    ? Math.max(
-        ...[...g.yeu_to_bat_loi, ...g.yeu_to_co_loi].map((y) =>
-          Math.abs(y.muc_dong_gop),
-        ),
-        0,
-      )
-    : 0;
+  const {
+    form,
+    hienKyThuat,
+    setHienKyThuat,
+    kq,
+    isLoading,
+    error,
+    dat,
+    datSo,
+    chonKichBan,
+    chamDiem,
+    g,
+    maxDongGop,
+  } = useCreditScoring();
 
   return (
     <section className="scoring-page">
@@ -521,7 +398,7 @@ export default function CreditScoringPage() {
 
           <button
             className="scoring-submit"
-            onClick={() => explain(form)}
+            onClick={chamDiem}
             disabled={isLoading}
           >
             {isLoading ? "Đang chấm điểm…" : "Chấm điểm & giải thích"}
