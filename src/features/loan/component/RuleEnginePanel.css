@@ -1,6 +1,20 @@
-/* Bảng cấu hình luật chấm điểm — dùng lại biến và class chung của policy page. */
+/* Bảng cấu hình luật chấm điểm — dùng lại biến và class chung của policy page.
+ *
+ * Thang khoảng cách 4px (4 / 8 / 12 / 16 / 20 / 24) và một thang bo góc thống
+ * nhất, để nhiều điều khiển cạnh nhau ở chế độ sửa vẫn có nhịp đều.
+ */
 
-.rule-panel { margin-top: 20px; }
+.rule-panel {
+  margin-top: 20px;
+  --rule-radius-sm: 6px;
+  --rule-radius-md: 8px;
+  --rule-control-h: 36px;
+  --rule-danger: #b91c1c;
+  --rule-danger-bg: #fef2f2;
+  --rule-danger-border: #fecaca;
+  /* Chevron của select, vẽ bằng mask nên đổi màu được theo trạng thái focus. */
+  --rule-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+}
 
 .rule-subtitle {
   margin: 6px 0 0;
@@ -18,16 +32,35 @@
   color: var(--text-secondary);
   font-size: 13px;
 }
-.rule-summary strong { color: var(--brand); }
+.rule-summary strong { color: var(--brand); font-variant-numeric: tabular-nums; }
 
+/* Lưới thẻ luật: auto-fit để 1 cột trên mobile, nhiều cột khi đủ rộng. Ở chế độ
+   sửa mỗi thẻ có thêm select và textarea nên cần bề ngang lớn hơn — biến
+   --rule-col-min do .rule-list-editing đổi, không phải viết lại cả grid. */
 .rule-list {
+  --rule-col-min: 320px;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(var(--rule-col-min), 1fr));
   gap: 1px;
   background: var(--border-color);
 }
+.rule-list-editing { --rule-col-min: 420px; }
 
+.rule-empty {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding: 24px 19px;
+  background: #fff;
+  color: var(--text-secondary);
+  font-size: 13px;
+  text-align: center;
+}
+
+/* `container-type: inline-size` cho phép các khối bên trong thẻ tự sắp lại theo
+   bề ngang CỦA THẺ (xem @container rule-card bên dưới), thay vì theo bề ngang
+   màn hình — thẻ nằm trong lưới auto-fit nên hai con số đó khác nhau. */
 .rule-item {
+  container: rule-card / inline-size;
   display: flex;
   flex-direction: column;
   gap: 14px;
@@ -35,22 +68,56 @@
   background: #fff;
 }
 
-/* Luật đã tắt vẫn đọc được nhưng lùi về sau về mặt thị giác. */
+/* Luật đã tắt vẫn đọc được nhưng lùi về sau về mặt thị giác. Không hạ opacity
+   phần đang sửa: người dùng vẫn phải nhìn rõ ô mình đang gõ. */
 .rule-item-off { background: #fafafa; }
 .rule-item-off .rule-table,
 .rule-item-off .rule-item-foot { opacity: .55; }
+.rule-item-off:has(.rule-fields) .rule-table,
+.rule-item-off:has(.rule-fields) .rule-item-foot { opacity: 1; }
 
 .rule-item-head {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
+  flex-wrap: wrap;
 }
+.rule-item-head-editing {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+}
+
+.rule-edit-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+}
+
+.rule-order-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: var(--brand);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .02em;
+  white-space: nowrap;
+}
+
 .rule-item-head h3 {
   margin: 0 0 6px;
   font-size: 14px;
   line-height: 1.4;
 }
+
+.rule-item-title { display: flex; flex-direction: column; gap: 6px; min-width: 0; flex: 1 1 260px; }
+.rule-item-head-editing .rule-item-title { width: 100%; flex: 1 1 auto; }
 
 .rule-tags { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
 
@@ -81,23 +148,17 @@
 }
 .rule-state-off { background: #f1f5f9; color: var(--text-secondary); }
 
-.rule-toggle {
-  display: flex;
-  flex-shrink: 0;
-  align-items: center;
-  gap: 6px;
-  color: var(--text-secondary);
-  font-size: 12px;
-  cursor: pointer;
-}
-.rule-toggle input { width: 15px; height: 15px; accent-color: var(--brand); cursor: pointer; }
+/* ── Bảng bậc điểm ────────────────────────────────────────────────────────── */
 
-.rule-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+/* table-layout: fixed để cột không tự nở theo nội dung — ô number có min-width
+   mặc định của trình duyệt, để auto thì bảng đẩy rộng hơn thẻ và tràn ngang. */
+.rule-table { width: 100%; table-layout: fixed; border-collapse: collapse; font-size: 13px; }
 .rule-table th,
 .rule-table td {
   padding: 7px 10px;
   text-align: left;
   border-bottom: 1px solid var(--border-color);
+  overflow-wrap: anywhere;
 }
 .rule-table th {
   background: #f2f6fd;
@@ -108,31 +169,573 @@
   text-transform: uppercase;
 }
 .rule-table tbody tr:last-child td { border-bottom: none; }
-.rule-table td:last-child { width: 90px; }
-.rule-table strong { color: var(--brand); }
 
-.rule-input { width: 100%; padding: 5px 8px; font-size: 13px; }
+/* Cột Điểm: cố định 90px và căn giữa để tiêu đề Điểm và các con số điểm luôn căn giữa đối xứng nhau */
+.rule-table th.rule-th-score,
+.rule-table td.rule-td-score,
+.rule-table th:nth-child(2),
+.rule-table td:nth-child(2) {
+  width: 90px;
+  text-align: center;
+}
+.rule-table strong { color: var(--brand); font-variant-numeric: tabular-nums; }
+.rule-table tfoot td { padding: 8px 10px; border-bottom: none; }
 
-.rule-item-foot {
-  display: grid;
-  grid-template-columns: auto 90px;
+.rule-unit { color: var(--text-secondary); font-weight: 500; text-transform: none; letter-spacing: 0; }
+/* Cột nút xoá bậc ở chế độ sửa */
+.rule-th-tool, .rule-td-tool { width: 44px; text-align: center; }
+
+/* ── Ô nhập chuẩn hóa: nét chữ thanh mảnh, font chuẩn, không bị thô cứng ── */
+
+.rule-panel input.policy-input,
+.rule-panel select.policy-input,
+.rule-panel textarea.policy-input {
+  border: 1px solid #cbd5e1;
+  border-radius: var(--rule-radius-sm);
+  font-family: 'Be Vietnam Pro', 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif !important;
+  font-size: 13px;
+  font-weight: 450;
+  line-height: 1.4;
+  color: #1e293b;
+  background: #fff;
+  transition: border-color .15s, box-shadow .15s, background-color .15s;
+}
+
+.rule-panel input.policy-input,
+.rule-panel select.policy-input {
+  height: var(--rule-control-h);
+}
+
+.rule-panel input.policy-input:focus,
+.rule-panel select.policy-input:focus,
+.rule-panel textarea.policy-input:focus {
+  outline: none;
+  border-color: var(--brand);
+  box-shadow: 0 0 0 3px rgba(29, 78, 216, 0.12);
+}
+
+.rule-panel .rule-input {
+  width: 100%;
+  min-width: 0;
+  height: 32px;
+  padding: 0 8px;
+  font-size: 12.5px;
+}
+.rule-panel .rule-input-num {
+  text-align: right;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: #1e293b;
+}
+
+.rule-panel .rule-input-text {
+  width: 100%;
+  min-width: 0;
+  height: var(--rule-control-h);
+  padding: 0 11px;
+  font-family: 'Be Vietnam Pro', 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif !important;
+  font-size: 13px !important;
+  font-weight: 500;
+  color: #1e293b;
+  letter-spacing: -0.01em;
+}
+
+/* Ô mã luật: font monospace thanh lịch, cỡ chữ 11.5px, nền slate nhẹ */
+.rule-panel .rule-input-code {
+  font-family: 'JetBrains Mono', 'Fira Code', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
+  font-size: 11.5px !important;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: #334155 !important;
+  background: #f8fafc;
+  text-transform: uppercase;
+}
+.rule-panel .rule-input-code:focus {
+  background: #ffffff;
+  /* Giữ nguyên màu chữ, không đổi màu khi click vào ô nhập */
+  color: #334155 !important;
+}
+
+.rule-nguong-edit { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.rule-nguong-edit .rule-input { flex: 1 1 72px; min-width: 64px; }
+
+.rule-nguong-col {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.rule-panel input.rule-input-duplicate {
+  border-color: var(--rule-danger) !important;
+  background-color: var(--rule-danger-bg) !important;
+  color: var(--rule-danger) !important;
+}
+
+.rule-nguong-error {
+  display: inline-flex;
   align-items: center;
-  gap: 8px 12px;
-  padding-top: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--rule-danger);
+  line-height: 1.3;
+}
+
+.rule-vo-cuc {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--text-secondary);
+  font-size: 12.5px;
+  font-style: italic;
+}
+.rule-vo-cuc-icon { width: 16px; height: 16px; flex-shrink: 0; }
+
+.rule-vo-cuc-wrap,
+.rule-vo-cuc-view {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.rule-vo-cuc-note {
+  font-size: 11px;
+  color: var(--text-secondary);
+  font-style: italic;
+  font-weight: 400;
+  line-height: 1.35;
+}
+
+/* ── Nút phụ ──────────────────────────────────────────────────────────────── */
+
+.rule-link-btn {
+  padding: 4px 8px;
+  border: 1px solid transparent;
+  border-radius: var(--rule-radius-sm);
+  background: none;
+  color: var(--brand);
+  font-family: inherit;
+  font-size: 11.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color .15s, border-color .15s;
+}
+.rule-link-btn:hover { background: #eff6ff; border-color: #dbeafe; }
+.rule-link-btn:focus-visible { outline: 2px solid var(--brand); outline-offset: 1px; }
+
+.rule-add-bac-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border: 1px dashed var(--border-color);
+  border-radius: var(--rule-radius-sm);
+  background: #fff;
+  color: var(--brand);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color .15s, border-color .15s;
+}
+.rule-add-bac-btn:hover { background: #eff6ff; border-color: var(--brand); }
+.rule-add-bac-btn:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+.rule-add-bac-btn svg { width: 14px; height: 14px; }
+
+/* Nút icon 36x36: nhỏ hơn 44px chuẩn chạm, chấp nhận được vì đây là màn quản trị
+   dùng chuột; vẫn giữ vùng bấm vuông vắn thay vì bám sát icon 16px. */
+.rule-tool-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--rule-control-h);
+  height: var(--rule-control-h);
+  padding: 0;
+  border: 1px solid var(--border-color);
+  border-radius: var(--rule-radius-sm);
+  background: #fff;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background-color .15s, border-color .15s, color .15s;
+}
+.rule-tool-btn svg { width: 16px; height: 16px; }
+.rule-tool-btn:hover:not(:disabled) { background: #f1f5f9; color: var(--text-primary); }
+.rule-tool-btn:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+.rule-tool-btn:disabled { opacity: .4; cursor: not-allowed; }
+
+.rule-tool-danger:hover:not(:disabled) {
+  background: var(--rule-danger-bg);
+  border-color: var(--rule-danger-border);
+  color: var(--rule-danger);
+}
+
+.rule-delete-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: var(--rule-control-h);
+  padding: 0 11px;
+  border: 1px solid var(--rule-danger-border);
+  border-radius: var(--rule-radius-sm);
+  background: var(--rule-danger-bg);
+  color: var(--rule-danger);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color .15s;
+}
+.rule-delete-btn svg { width: 15px; height: 15px; }
+.rule-delete-btn:hover { background: #fee2e2; }
+.rule-delete-btn:focus-visible { outline: 2px solid var(--rule-danger); outline-offset: 2px; }
+
+.rule-item-tools {
+  display: flex;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+/* ── Công tắc bật/tắt luật ────────────────────────────────────────────────── */
+
+.rule-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  user-select: none;
+}
+.rule-switch input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+.rule-switch-track {
+  position: relative;
+  width: 34px;
+  height: 20px;
+  flex-shrink: 0;
+  border-radius: 999px;
+  background: #cbd5e1;
+  transition: background-color .2s;
+}
+.rule-switch-track::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(15, 27, 48, .25);
+  transition: transform .2s;
+}
+.rule-switch input:checked + .rule-switch-track { background: #059669; }
+.rule-switch input:checked + .rule-switch-track::after { transform: translateX(14px); }
+.rule-switch input:focus-visible + .rule-switch-track { outline: 2px solid var(--brand); outline-offset: 2px; }
+.rule-switch-label { color: var(--text-secondary); font-size: 12px; font-weight: 600; }
+
+/* ── Khối trường ở chế độ sửa ─────────────────────────────────────────────── */
+
+.rule-field { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.rule-field-label {
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .03em;
+  text-transform: uppercase;
+}
+
+/* Tên luật và mã luật: mã ngắn hơn nên chỉ chiếm phần nhỏ khi đủ chỗ. */
+.rule-name-fields { display: grid; grid-template-columns: 1fr; gap: 10px; width: 100%; }
+@container rule-card (min-width: 340px) {
+  .rule-name-fields { grid-template-columns: minmax(0, 1.4fr) minmax(150px, 1fr); }
+}
+
+/* Mặc định xếp dọc (cột rất hẹp); giãn thành hàng ngay khi thẻ đủ ~330px.
+   Dùng container query thay vì media query vì thẻ nằm trong lưới auto-fit —
+   bề ngang thẻ phụ thuộc số cột, không phụ thuộc bề ngang màn hình.
+   Trọng số là ô số hai ký tự nên luôn giữ cột cố định 84px thay vì chia đều:
+   để nó co giãn thì ô nhập dài bằng cả thẻ mà chỉ chứa "1". */
+.rule-fields { display: grid; grid-template-columns: 1fr; gap: 12px; }
+@container rule-card (min-width: 330px) {
+  /* Có cả chọn trường + chiều đánh giá + trọng số (luật số). */
+  .rule-fields { grid-template-columns: minmax(0, 1fr) 84px; align-items: end; }
+  .rule-fields > .rule-field:first-child { grid-column: 1 / -1; }
+}
+@container rule-card (min-width: 600px) {
+  /* Khi thẻ đủ rộng (>=600px), dàn cả 3 ô trên một hàng. Chiều đánh giá cố định 170px vừa vặn 2 tuỳ chọn, dành trọn không gian co giãn cho tên trường dữ liệu. */
+  .rule-fields { grid-template-columns: minmax(0, 1fr) 170px 84px; }
+  .rule-fields > .rule-field:first-child { grid-column: auto; }
+}
+/* Luật phân loại chỉ có 2 trường (chọn trường + trọng số) — không cần cột thứ ba. */
+.rule-fields:has(> .rule-field-sm:nth-child(2)) { grid-template-columns: minmax(0, 1fr) 84px; }
+.rule-fields:has(> .rule-field-sm:nth-child(2)) > .rule-field:first-child { grid-column: auto; }
+
+.rule-field-sm { min-width: 0; }
+.rule-field-sm .rule-input { width: 100%; text-align: right; }
+
+/* Select tự vẽ chevron: mũi tên mặc định của trình duyệt khác nhau giữa các nền
+   tảng và không theo được màu thương hiệu, nên ẩn đi và vẽ lại bằng SVG nền.
+   Dùng độ ưu tiên cao (.rule-select-wrap .rule-select) để không bị .policy-input
+   từ LoanEvaluationPage.css ghi đè padding-right gây đè chữ lên icon mũi tên. */
+.rule-select-wrap { position: relative; display: block; }
+.rule-select-wrap .rule-select,
+select.rule-select {
+  width: 100%;
+  min-width: 0;
+  height: var(--rule-control-h);
+  padding: 0 36px 0 10px !important;
+  font-size: 13px;
+  line-height: var(--rule-control-h);
+  background: #fff;
+  appearance: none;
+  -webkit-appearance: none;
+  cursor: pointer;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
+}
+.rule-select-wrap::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: 11px;
+  width: 14px;
+  height: 14px;
+  transform: translateY(-50%);
+  pointer-events: none;
+  background-color: var(--text-secondary);
+  -webkit-mask: var(--rule-chevron) center / contain no-repeat;
+  mask: var(--rule-chevron) center / contain no-repeat;
+}
+.rule-select-wrap:focus-within::after { background-color: var(--brand); }
+.rule-select optgroup { color: var(--text-secondary); font-size: 11px; font-style: normal; }
+.rule-select option { color: var(--text-primary); font-size: 13px; }
+
+/* ── Chân thẻ: điểm khi thiếu và mẫu gợi ý ────────────────────────────────── */
+
+/* Xếp dọc, KHÔNG dùng grid hai cột: textarea gợi ý cần trọn chiều ngang. Bản
+   trước đặt nó vào cột số 90px nên ô nhập bị bóp lại thành một vệt hẹp. */
+.rule-item-foot {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 10px 0 10px;
   border-top: 1px solid var(--border-color);
   font-size: 13px;
 }
-.rule-item-foot > span { color: var(--text-secondary); }
-.rule-item-foot strong { color: var(--brand); text-align: center; }
+
+.rule-foot-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.rule-foot-row .rule-foot-label { flex: 1 1 auto; min-width: 0; }
+.rule-foot-row .rule-input { width: 70px; flex: 0 0 auto; }
+.rule-foot-value {
+  width: 70px;
+  text-align: center;
+  color: var(--brand);
+  font-variant-numeric: tabular-nums;
+  flex: 0 0 auto;
+}
+
+/* Khi đang sửa luật có cột nút xoá bậc (44px), ô nhập điểm thiếu dữ liệu lùi 44px để thẳng hàng cột Điểm */
+.rule-item:has(.rule-th-tool) .rule-foot-row .rule-input {
+  margin-right: 44px;
+}
+
+.rule-foot-block { display: flex; flex-direction: column; gap: 5px; }
+.rule-foot-label-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.rule-foot-label {
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .03em;
+  text-transform: uppercase;
+}
+
+/* ── Tooltip giải thích biến {moc}: đơn giản, thanh lịch, không màu mè ── */
+.rule-tip-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.rule-tip-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  border-radius: 50%;
+  transition: color 0.15s ease, transform 0.15s ease;
+}
+
+.rule-tip-trigger:hover,
+.rule-tip-wrap:focus-within .rule-tip-trigger {
+  color: var(--brand);
+  transform: scale(1.1);
+}
+
+.rule-tip-icon {
+  width: 15px;
+  height: 15px;
+}
+
+/* Tooltip popover: kiểu dark slate tối giản, sắc nét */
+.rule-tip-popover {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: -8px;
+  width: 280px;
+  max-width: calc(100vw - 40px);
+  padding: 8px 12px;
+  background: #1e293b;
+  color: #f1f5f9;
+  border-radius: 6px;
+  font-size: 12px;
+  line-height: 1.5;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.25);
+  z-index: 100;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translateY(4px);
+  transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s;
+}
+
+/* Mũi tên trỏ xuống */
+.rule-tip-popover::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 12px;
+  border-width: 5px 5px 0 5px;
+  border-style: solid;
+  border-color: #1e293b transparent transparent transparent;
+}
+
+.rule-tip-wrap:hover .rule-tip-popover,
+.rule-tip-wrap:focus-within .rule-tip-popover {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
+.rule-tip-popover p {
+  margin: 0;
+}
+.rule-tip-popover p + p {
+  margin-top: 5px;
+  color: #94a3b8;
+}
+.rule-tip-popover strong {
+  color: #fff;
+}
+.rule-tip-popover code {
+  font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace;
+  background: rgba(255, 255, 255, 0.15);
+  color: #38bdf8;
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-size: 11px;
+}
+
+.rule-panel .rule-textarea {
+  width: 100%;
+  min-height: 72px;
+  padding: 8px 11px;
+  font-family: 'Be Vietnam Pro', 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif !important;
+  font-size: 13px !important;
+  font-weight: 450;
+  line-height: 1.55;
+  color: #1e293b;
+  border: 1px solid #cbd5e1;
+  border-radius: var(--rule-radius-sm);
+  background: #fff;
+  resize: vertical;
+}
+
+.rule-panel .rule-textarea::placeholder,
+.rule-panel .rule-input-text::placeholder {
+  font-family: 'Be Vietnam Pro', 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  color: #94a3b8;
+  font-size: 13px;
+  font-weight: 400;
+}
+
+.rule-goi-y {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-style: italic;
+  line-height: 1.5;
+}
 
 .rule-hint {
-  grid-column: 1 / -1;
   margin: 0;
   color: var(--text-secondary);
   font-size: 11px;
   line-height: 1.5;
 }
+.rule-hint-inline { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.rule-hint code {
+  padding: 1px 4px;
+  border-radius: 4px;
+  background: #f1f5f9;
+  font-size: 11px;
+}
+.rule-counter { flex-shrink: 0; font-variant-numeric: tabular-nums; }
+
+/* ── Nút thêm luật ────────────────────────────────────────────────────────── */
+
+.rule-add-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 160px;
+  padding: 24px 19px;
+  border: 2px dashed var(--border-color);
+  background: #fff;
+  color: var(--brand);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color .15s, border-color .15s;
+}
+.rule-add-btn:hover { background: #eff6ff; border-color: var(--brand); }
+.rule-add-btn:focus-visible { outline: 2px solid var(--brand); outline-offset: -4px; }
+.rule-add-icon { width: 22px; height: 22px; }
+.rule-add-btn small { color: var(--text-secondary); font-size: 11.5px; font-weight: 500; }
 
 @media (max-width: 640px) {
-  .rule-list { grid-template-columns: 1fr; }
+  .rule-list, .rule-list-editing { --rule-col-min: 100%; }
+  .rule-item { padding: 15px 14px; }
+  .rule-item-tools { width: 100%; justify-content: flex-start; }
+}
+
+/* Người dùng bật giảm chuyển động thì bỏ mọi transition trang trí. */
+@media (prefers-reduced-motion: reduce) {
+  .rule-panel *, .rule-panel *::after { transition: none !important; }
 }

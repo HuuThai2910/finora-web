@@ -15,7 +15,7 @@ import "./CreditScoringPage.css";
  *
  * Gọi thẳng `POST /api/v1/ai/credit/explain` của finora-ai. Endpoint này tự chấm
  * lại hồ sơ rồi trả về cả hai nửa của quyết định: giải thích TreeSHAP cho phần
- * mô hình, và rule trace 5C cho phần quy tắc. Dùng một lời gọi thay vì gọi riêng
+ * mô hình, và rule trace cho phần quy tắc. Dùng một lời gọi thay vì gọi riêng
  * /score rồi /explain, vì gọi hai lần có thể cho hai kết quả khác nhau nếu cấu
  * hình Rule Engine bị sửa xen giữa.
  *
@@ -102,12 +102,6 @@ const NHAN_MUC_DO: Record<YeuToGop["muc_do"], string> = {
   manh: "Mạnh",
   vua: "Vừa",
   nhe: "Nhẹ",
-};
-
-const NHAN_5C: Record<string, string> = {
-  Character: "Uy tín",
-  Capacity: "Khả năng trả nợ",
-  Capital: "Tài sản tích lũy",
 };
 
 const MUC_DICH = [
@@ -258,7 +252,7 @@ function BanGop({ tomTat }: { tomTat: TomTatYeuTo }) {
           Tham khảo — cho biết mô hình chú ý điều gì ở hồ sơ này. Mức
           Mạnh/Vừa/Nhẹ là so sánh <b>tương đối trong chính hồ sơ này</b>, không
           phải thang chung. Đã gộp theo dữ kiện gốc và bỏ nhóm lãi suất. Căn cứ
-          để duyệt hay từ chối là vết luật 5C bên dưới.
+          để duyệt hay từ chối là vết luật bên dưới.
         </span>
       </h2>
       <div className="shap-columns">
@@ -282,7 +276,7 @@ function BangRuleTrace({ vet }: { vet: RuleTraceItem[] }) {
     <table className="scoring-table">
       <thead>
         <tr>
-          <th>Luật 5C</th>
+          <th>Luật</th>
           <th className="num">Điểm</th>
           <th>Giá trị đọc được</th>
         </tr>
@@ -293,10 +287,11 @@ function BangRuleTrace({ vet }: { vet: RuleTraceItem[] }) {
             <td>
               <div className="rule-desc">{t.mo_ta}</div>
               <div className="rule-meta">
-                <span className="rule-group">
-                  {NHAN_5C[t.nhom_5c] ?? t.nhom_5c}
-                </span>
+                <span className="rule-group">{t.truong}</span>
                 <code>{t.ma}</code>
+                {t.trong_so !== 1 && (
+                  <span className="rule-weight">×{t.trong_so}</span>
+                )}
               </div>
             </td>
             <td className="num">
@@ -363,7 +358,7 @@ export default function CreditScoringPage() {
           <h1>Chấm điểm &amp; giải thích quyết định</h1>
           <p>
             Nhập hồ sơ giả định để xem mô hình chấm bao nhiêu và vì sao. Kết quả
-            gồm hai nửa: đóng góp TreeSHAP của mô hình và vết luật 5C của Rule
+            gồm hai nửa: đóng góp TreeSHAP của mô hình và vết luật của Rule
             Engine.
           </p>
         </div>
@@ -559,7 +554,7 @@ export default function CreditScoringPage() {
                   <div className="scoring-kpi-value">{kq.pd_probability}</div>
                 </div>
                 <div className="scoring-kpi">
-                  <div className="scoring-kpi-label">Điểm quy tắc 5C</div>
+                  <div className="scoring-kpi-label">Điểm quy tắc</div>
                   <div className="scoring-kpi-value">
                     {kq.risk_score}
                     <span className="scoring-kpi-unit">/100</span>
@@ -589,9 +584,9 @@ export default function CreditScoringPage() {
 
               <BanGop tomTat={g.tom_tat} />
 
-              {/* Vết luật 5C nằm NGOÀI khối kỹ thuật: đây là căn cứ thẩm định viên
-                  dùng để duyệt hay từ chối — tên luật theo khung 5C của ngành, có
-                  điểm và giá trị thật, không cần biết gì về ML để đọc. Bản gộp SHAP
+              {/* Vết luật nằm NGOÀI khối kỹ thuật: đây là căn cứ thẩm định viên
+                  dùng để duyệt hay từ chối — mỗi luật do admin cấu hình, có trường
+                  đã đọc, điểm và giá trị thật, không cần biết gì về ML để đọc. Bản gộp SHAP
                   ở trên chỉ nói mô hình nghĩ gì, không thay thế được vết luật. */}
               {kq.rejection_reasons.length > 0 && (
                 <div className="scoring-card scoring-knockout">
@@ -615,7 +610,7 @@ export default function CreditScoringPage() {
 
               <div className="scoring-card">
                 <h2 className="scoring-card-title">
-                  Vết luật 5C — căn cứ thẩm định
+                  Vết luật — căn cứ thẩm định
                   <span className="scoring-card-sub">
                     Mỗi điểm cộng đều truy ngược được về một luật có tên.
                   </span>

@@ -1,127 +1,56 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useGetAiRulesQuery, useUpdateAiRulesMutation } from '../api/aiRulesApi';
-import type { AiRule, AiRuleUpdate, RuleBac } from '../types';
+import type { AiRule } from '../types';
+import RuleCard from './RuleCard';
+import { kiemTra, luatMoi, saoChep, sinhMa } from './ruleEngineForm';
+import { IconPlus } from './ruleIcons';
 import './RuleEnginePanel.css';
 
 /**
- * Bảng cấu hình các luật chấm điểm của Rule Engine (D4).
+ * Bảng cấu hình bộ luật chấm điểm của Rule Engine (D4).
+ *
+ * Luật là dữ liệu: admin thêm, sửa, xoá, sắp xếp, bật/tắt luật tuỳ ý. Mỗi luật
+ * đọc MỘT trường trong danh mục backend công bố, quy đổi ra điểm theo bậc ngưỡng
+ * (trường số) hoặc bảng tra (trường phân loại), và có trọng số riêng.
  *
  * Tách khỏi LoanEvaluationPage vì đây là nhóm cấu hình khác hẳn: trang kia chỉnh
  * cách quy đổi điểm ra hạng, panel này chỉnh cách tính ra chính điểm đó.
  *
- * Backend đã chặn cấu hình vô nghĩa (bậc không đơn điệu, ngưỡng sai chiều, tắt
- * hết luật) và trả 422 kèm lý do. UI kiểm lại những lỗi đó ngay tại chỗ để người
- * dùng thấy sai ngay khi gõ, thay vì phải bấm Lưu mới biết.
+ * State: bản nháp `form` là local state — chỉ tồn tại trong phiên sửa, không
+ * cần đi xuyên route. Server state (bộ luật đã lưu, danh mục trường) nằm ở
+ * RTK Query; lưu xong invalidate tag để mọi màn đọc cấu hình tải lại.
+ *
+ * Backend chặn cấu hình vô nghĩa và trả 422 kèm lý do; UI kiểm lại cùng bộ ràng
+ * buộc (`ruleEngineForm.kiemTra`) để người dùng thấy sai ngay khi gõ. Lưu là
+ * thay TOÀN BỘ danh sách, nguyên tử.
  */
-
-const NHOM_5C_LABEL: Record<string, string> = {
-  Character: 'Uy tín',
-  Capacity: 'Khả năng trả nợ',
-  Capital: 'Tài sản tích lũy',
-};
-
-const NHA_O_LABEL: Record<string, string> = {
-  OWN: 'Sở hữu riêng',
-  MORTGAGE: 'Đang thế chấp',
-  RENT: 'Thuê',
-  OTHER: 'Khác',
-};
-
-/** Ngưỡng cuối cùng biểu diễn "mọi giá trị còn lại" — không hiển thị dạng số. */
-function laNguongVoCuc(nguong: number, moc: number) {
-  return nguong >= moc;
-}
-
-function dinhDangNguong(nguong: number, moc: number, nghichDao: boolean) {
-  if (laNguongVoCuc(nguong, moc)) return 'còn lại';
-  return `${nghichDao ? '≤' : '≥'} ${nguong}`;
-}
-
-type FormRules = Record<string, AiRuleUpdate>;
-
-function dungForm(rules: AiRule[]): FormRules {
-  const form: FormRules = {};
-  for (const r of rules) {
-    form[r.ma] = {
-      bat: r.bat,
-      diem_khi_thieu: r.diem_khi_thieu,
-      ...(r.bac ? { bac: r.bac.map(b => [...b] as RuleBac) } : {}),
-      ...(r.bang_diem ? { bang_diem: { ...r.bang_diem } } : {}),
-    };
-  }
-  return form;
-}
-
-/** Kiểm tra tại chỗ, cùng bộ luật với backend. Trả về thông báo lỗi hoặc ''. */
-function kiemTra(rules: AiRule[], form: FormRules, diemToiDa: number): string {
-  if (!Object.values(form).some(r => r.bat)) {
-    return 'Phải bật ít nhất một luật, nếu không hệ thống không còn cơ sở chấm điểm.';
-  }
-
-  for (const luat of rules) {
-    const f = form[luat.ma];
-    const ten = luat.mo_ta;
-
-    if (f.diem_khi_thieu < 0 || f.diem_khi_thieu > diemToiDa) {
-      return `${ten}: điểm khi thiếu dữ liệu phải trong khoảng 0–${diemToiDa}.`;
-    }
-
-    if (luat.la_bang_diem) {
-      const diem = Object.values(f.bang_diem ?? {});
-      if (diem.some(d => d < 0 || d > diemToiDa)) {
-        return `${ten}: điểm phải trong khoảng 0–${diemToiDa}.`;
-      }
-      if (Math.max(...diem) !== diemToiDa) {
-        return `${ten}: loại tốt nhất phải đạt đúng ${diemToiDa} điểm để các luật cân nhau.`;
-      }
-      continue;
-    }
-
-    const bac = f.bac ?? [];
-    const diem = bac.map(b => b[1]);
-    if (diem.some(d => d < 0 || d > diemToiDa)) {
-      return `${ten}: điểm mỗi bậc phải trong khoảng 0–${diemToiDa}.`;
-    }
-    if (Math.max(...diem) !== diemToiDa) {
-      return `${ten}: bậc tốt nhất phải đạt đúng ${diemToiDa} điểm để các luật cân nhau.`;
-    }
-    for (let i = 1; i < diem.length; i++) {
-      if (diem[i] > diem[i - 1]) {
-        return `${ten}: điểm phải giảm dần — bậc đầu là bậc tốt nhất.`;
-      }
-    }
-    const nguong = bac.map(b => b[0]);
-    for (let i = 1; i < nguong.length; i++) {
-      const sai = luat.nghich_dao ? nguong[i] < nguong[i - 1] : nguong[i] > nguong[i - 1];
-      if (sai) {
-        return `${ten}: ngưỡng phải ${luat.nghich_dao ? 'tăng' : 'giảm'} dần theo thứ tự bậc.`;
-      }
-    }
-  }
-  return '';
-}
-
 export default function RuleEnginePanel() {
   const { data, isLoading, error } = useGetAiRulesQuery();
   const [updateRules, { isLoading: saving }] = useUpdateAiRulesMutation();
 
   const [editing, setEditing] = useState(false);
-  const [form, setForm] = useState<FormRules>({});
+  const [form, setForm] = useState<AiRule[]>([]);
+  // Chỉ số các luật vừa thêm trong phiên sửa này: mã còn tự sinh theo mô tả cho
+  // tới khi admin sửa tay. Luật đã lưu thì mã cố định — nó nằm trong rule_trace
+  // của các quyết định lịch sử.
+  const [maTuSinh, setMaTuSinh] = useState<Set<number>>(new Set());
   const [formError, setFormError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
 
   useEffect(() => {
-    if (data) setForm(dungForm(data.rules));
+    if (data) setForm(saoChep(data.rules));
   }, [data]);
 
   const startEditing = useCallback(() => {
-    if (data) setForm(dungForm(data.rules));
+    if (data) setForm(saoChep(data.rules));
+    setMaTuSinh(new Set());
     setFormError('');
     setEditing(true);
   }, [data]);
 
   const cancelEditing = useCallback(() => {
-    if (data) setForm(dungForm(data.rules));
+    if (data) setForm(saoChep(data.rules));
+    setMaTuSinh(new Set());
     setFormError('');
     setEditing(false);
   }, [data]);
@@ -135,11 +64,13 @@ export default function RuleEnginePanel() {
     );
   }
 
-  const { rules, diem_toi_da_moi_luat: diemToiDa, nguong_vo_cuc: mocVoCuc } = data;
-  const soLuatBat = Object.values(form).filter(r => r.bat).length;
+  const { truong: danhSachTruong, diem_toi_da_moi_luat: diemToiDa, nguong_vo_cuc: mocVoCuc } = data;
+  const danhMuc = new Map(danhSachTruong.map(t => [t.ma, t]));
+  const luatBat = form.filter(r => r.bat);
+  const tongTrongSo = luatBat.reduce((s, r) => s + r.trong_so, 0);
 
   async function handleSave() {
-    const loi = kiemTra(rules, form, diemToiDa);
+    const loi = kiemTra(form, danhMuc, diemToiDa);
     if (loi) {
       setFormError(loi);
       return;
@@ -148,49 +79,82 @@ export default function RuleEnginePanel() {
     try {
       await updateRules({ rules: form }).unwrap();
       setEditing(false);
-      setSuccessMsg('Cập nhật luật chấm điểm thành công.');
+      setMaTuSinh(new Set());
+      setSuccessMsg('Cập nhật bộ luật chấm điểm thành công.');
       setTimeout(() => setSuccessMsg(''), 4000);
     } catch (err: unknown) {
       const detail =
         err && typeof err === 'object' && 'data' in err
-          ? (err as { data?: { detail?: string } }).data?.detail
+          ? (err as { data?: { detail?: unknown } }).data?.detail
           : undefined;
-      setFormError(detail ?? 'Lưu cấu hình luật thất bại.');
+      setFormError(typeof detail === 'string' ? detail : 'Lưu cấu hình luật thất bại.');
     }
   }
 
-  function suaBac(ma: string, i: number, cot: 0 | 1, giaTri: string) {
-    setForm(prev => {
-      const bac = (prev[ma].bac ?? []).map(b => [...b] as RuleBac);
-      bac[i][cot] = Number(giaTri);
-      return { ...prev, [ma]: { ...prev[ma], bac } };
+  function sua(i: number, thayDoi: Partial<AiRule>) {
+    setForm(prev => prev.map((r, j) => (j === i ? { ...r, ...thayDoi } : r)));
+  }
+
+  function suaMoTa(i: number, moTa: string) {
+    const thayDoi: Partial<AiRule> = { mo_ta: moTa };
+    if (maTuSinh.has(i)) thayDoi.ma = sinhMa(moTa);
+    sua(i, thayDoi);
+  }
+
+  function suaMa(i: number, ma: string) {
+    setMaTuSinh(prev => {
+      const s = new Set(prev);
+      s.delete(i);
+      return s;
+    });
+    sua(i, { ma: ma.toUpperCase() });
+  }
+
+  function themLuat() {
+    const truongDau = danhSachTruong[0];
+    if (!truongDau) return;
+    setMaTuSinh(prev => new Set(prev).add(form.length));
+    setForm(prev => [...prev, luatMoi(truongDau, mocVoCuc)]);
+  }
+
+  function xoaLuat(i: number) {
+    setForm(prev => prev.filter((_, j) => j !== i));
+    // Dồn chỉ số các luật phía sau lên một bậc để cờ "mã tự sinh" không lệch thẻ.
+    setMaTuSinh(prev => {
+      const s = new Set<number>();
+      for (const j of prev) {
+        if (j < i) s.add(j);
+        else if (j > i) s.add(j - 1);
+      }
+      return s;
     });
   }
 
-  function suaBangDiem(ma: string, khoa: string, giaTri: string) {
-    setForm(prev => ({
-      ...prev,
-      [ma]: { ...prev[ma], bang_diem: { ...prev[ma].bang_diem, [khoa]: Number(giaTri) } },
-    }));
-  }
-
-  function toggleLuat(ma: string) {
-    setForm(prev => ({ ...prev, [ma]: { ...prev[ma], bat: !prev[ma].bat } }));
-  }
-
-  function suaDiemThieu(ma: string, giaTri: string) {
-    setForm(prev => ({ ...prev, [ma]: { ...prev[ma], diem_khi_thieu: Number(giaTri) } }));
+  function diChuyen(i: number, huong: -1 | 1) {
+    const j = i + huong;
+    if (j < 0 || j >= form.length) return;
+    setForm(prev => {
+      const next = [...prev];
+      [next[i], next[j]] = [next[j], next[i]];
+      return next;
+    });
+    setMaTuSinh(prev => {
+      const s = new Set<number>();
+      for (const k of prev) s.add(k === i ? j : k === j ? i : k);
+      return s;
+    });
   }
 
   return (
     <article className="policy-panel rule-panel">
       <div className="policy-panel-heading">
         <div>
-          <span className="policy-eyebrow">Rule engine 5C</span>
-          <h2>Luật chấm điểm rủi ro</h2>
+          <span className="policy-eyebrow">Rule engine</span>
+          <h2>Bộ luật chấm điểm rủi ro</h2>
           <p className="rule-subtitle">
-            Mỗi luật tối đa {diemToiDa} điểm. Điểm được chuẩn hóa về thang 100 theo
-            số luật đang bật, nên tắt một luật không làm lệch thang điểm.
+            Mỗi luật đọc một trường của hồ sơ và cho tối đa {diemToiDa} điểm. Điểm tổng được
+            chuẩn hóa về thang 100 theo trọng số các luật đang bật, nên thêm, bớt hay tắt
+            luật không làm lệch thang điểm.
           </p>
         </div>
         {!editing ? (
@@ -199,142 +163,54 @@ export default function RuleEnginePanel() {
           <div className="policy-action-group">
             <button className="policy-cancel-btn" onClick={cancelEditing} disabled={saving}>Hủy</button>
             <button className="policy-save-btn" onClick={handleSave} disabled={saving}>
-              {saving ? 'Đang lưu…' : 'Lưu luật'}
+              {saving ? 'Đang lưu…' : 'Lưu bộ luật'}
             </button>
           </div>
         )}
       </div>
 
-      {successMsg && <div className="policy-success">{successMsg}</div>}
-      {formError && <div className="policy-form-error">{formError}</div>}
+      {successMsg && <div className="policy-success" role="status">{successMsg}</div>}
+      {formError && <div className="policy-form-error" role="alert">{formError}</div>}
 
       <p className="rule-summary">
-        Đang bật <strong>{soLuatBat}/{rules.length}</strong> luật
-        {soLuatBat < rules.length && ' — điểm đã được chuẩn hóa lại về thang 100'}
+        Đang bật <strong>{luatBat.length}/{form.length}</strong> luật
+        {luatBat.length > 0 && (
+          <> · tổng trọng số <strong>{Number(tongTrongSo.toFixed(2))}</strong></>
+        )}
       </p>
 
-      <div className="rule-list">
-        {rules.map(luat => {
-          const f = form[luat.ma];
-          if (!f) return null;
-          const tat = !f.bat;
-          return (
-            <section key={luat.ma} className={`rule-item${tat ? ' rule-item-off' : ''}`}>
-              <header className="rule-item-head">
-                <div>
-                  <h3>{luat.mo_ta}</h3>
-                  <span className="rule-tags">
-                    <span className="rule-tag">{NHOM_5C_LABEL[luat.nhom_5c] ?? luat.nhom_5c}</span>
-                    <code className="rule-code">{luat.ma}</code>
-                    {luat.nghich_dao && <span className="rule-tag rule-tag-muted">càng thấp càng tốt</span>}
-                  </span>
-                </div>
-                {editing ? (
-                  <label className="rule-toggle">
-                    <input type="checkbox" checked={f.bat} onChange={() => toggleLuat(luat.ma)} />
-                    <span>{f.bat ? 'Đang bật' : 'Đã tắt'}</span>
-                  </label>
-                ) : (
-                  <span className={`rule-state${tat ? ' rule-state-off' : ''}`}>
-                    {tat ? 'Đã tắt' : 'Đang bật'}
-                  </span>
-                )}
-              </header>
+      <div className={`rule-list${editing ? ' rule-list-editing' : ''}`}>
+        {form.length === 0 && !editing && (
+          <p className="rule-empty">Chưa có luật nào. Bấm “Chỉnh sửa luật” để thêm.</p>
+        )}
+        {form.map((luat, i) => (
+          <RuleCard
+            // Khi sửa, thẻ mới có mã rỗng và mã có thể trùng tạm thời — dùng chỉ số làm key.
+            key={editing ? i : luat.ma}
+            luat={luat}
+            index={i}
+            total={form.length}
+            editing={editing}
+            truong={danhMuc.get(luat.truong)}
+            danhSachTruong={danhSachTruong}
+            diemToiDa={diemToiDa}
+            mocVoCuc={mocVoCuc}
+            tyTrong={luat.bat && tongTrongSo > 0 ? Math.round((luat.trong_so / tongTrongSo) * 100) : 0}
+            onChange={thayDoi => sua(i, thayDoi)}
+            onMoTa={moTa => suaMoTa(i, moTa)}
+            onMa={ma => suaMa(i, ma)}
+            onXoa={() => xoaLuat(i)}
+            onDiChuyen={huong => diChuyen(i, huong)}
+          />
+        ))}
 
-              {luat.la_bang_diem ? (
-                <table className="rule-table">
-                  <thead>
-                    <tr><th>Tình trạng</th><th>Điểm</th></tr>
-                  </thead>
-                  <tbody>
-                    {Object.entries(f.bang_diem ?? {}).map(([khoa, diem]) => (
-                      <tr key={khoa}>
-                        <td>{NHA_O_LABEL[khoa] ?? khoa}</td>
-                        <td>
-                          {editing ? (
-                            <input
-                              type="number"
-                              className="policy-input rule-input"
-                              min="0"
-                              max={diemToiDa}
-                              value={diem}
-                              onChange={e => suaBangDiem(luat.ma, khoa, e.target.value)}
-                            />
-                          ) : (
-                            <strong>{diem}</strong>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              ) : (
-                <table className="rule-table">
-                  <thead>
-                    <tr><th>Ngưỡng</th><th>Điểm</th></tr>
-                  </thead>
-                  <tbody>
-                    {(f.bac ?? []).map(([nguong, diem], i) => {
-                      const voCuc = laNguongVoCuc(nguong, mocVoCuc);
-                      return (
-                        <tr key={i}>
-                          <td>
-                            {editing && !voCuc ? (
-                              <input
-                                type="number"
-                                className="policy-input rule-input"
-                                step="any"
-                                value={nguong}
-                                onChange={e => suaBac(luat.ma, i, 0, e.target.value)}
-                              />
-                            ) : (
-                              dinhDangNguong(nguong, mocVoCuc, luat.nghich_dao)
-                            )}
-                          </td>
-                          <td>
-                            {editing ? (
-                              <input
-                                type="number"
-                                className="policy-input rule-input"
-                                min="0"
-                                max={diemToiDa}
-                                value={diem}
-                                onChange={e => suaBac(luat.ma, i, 1, e.target.value)}
-                              />
-                            ) : (
-                              <strong>{diem}</strong>
-                            )}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              )}
-
-              <footer className="rule-item-foot">
-                <span>Điểm khi thiếu dữ liệu</span>
-                {editing ? (
-                  <input
-                    type="number"
-                    className="policy-input rule-input"
-                    min="0"
-                    max={diemToiDa}
-                    value={f.diem_khi_thieu}
-                    onChange={e => suaDiemThieu(luat.ma, e.target.value)}
-                  />
-                ) : (
-                  <strong>{f.diem_khi_thieu}</strong>
-                )}
-                <p className="rule-hint">
-                  Dùng khi hồ sơ không có dữ liệu cho luật này. Cố ý đặt ở mức trung tính
-                  thay vì điểm sàn: không tra được thông tin là sự cố hệ thống, không phải
-                  bằng chứng người vay rủi ro.
-                </p>
-              </footer>
-            </section>
-          );
-        })}
+        {editing && (
+          <button type="button" className="rule-add-btn" onClick={themLuat}>
+            <IconPlus className="rule-add-icon" />
+            <span>Thêm luật</span>
+            <small>Chọn trường dữ liệu và đặt bậc điểm</small>
+          </button>
+        )}
       </div>
     </article>
   );
