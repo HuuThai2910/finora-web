@@ -81,7 +81,12 @@ export default function LoanListPage() {
                   <td>{application.borrowerId}</td>
                   <td>
                     <strong>{formatMoney(application.requestedAmount)}</strong>
-                    <span className="review-muted">{application.requestedTermMonths} tháng · {application.annualInterestRate}%/năm</span>
+                    <span className="review-muted">
+                      {application.requestedTermMonths} tháng · {application.annualInterestRate}%
+                      {application.finalAnnualInterestRate != null
+                        ? ` → ${application.finalAnnualInterestRate}%/năm`
+                        : '/năm'}
+                    </span>
                   </td>
                   <td>
                     <strong>{application.assessment?.evaluationScore ?? '—'}</strong>

@@ -32,6 +32,12 @@ export function formatPercent(value: number | null | undefined, fraction = false
   return `${new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 2 }).format(percentage)}%`;
 }
 
+export function formatPercentagePoints(value: number | null | undefined): string {
+  if (value == null) return '—';
+  const sign = value > 0 ? '+' : '';
+  return `${sign}${new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 4 }).format(value)} điểm phần trăm`;
+}
+
 const LABELS: Record<string, string> = {
   ANNUITY: 'Trả góp đều hằng kỳ',
   EQUAL_PRINCIPAL: 'Gốc đều, lãi giảm dần',
@@ -72,6 +78,11 @@ const LABELS: Record<string, string> = {
   ADMIN: 'Quản trị viên',
   SYSTEM: 'Hệ thống',
   PENDING_REVIEW: 'Cần chuyên viên thẩm định',
+  AI_POLICY: 'Quyết định tự động theo chính sách',
+  AUTO_APPROVE: 'Đủ điều kiện duyệt tự động',
+  AUTO_REJECT: 'Không đủ điều kiện theo chính sách',
+  APPROVE: 'Đề xuất duyệt',
+  REJECT: 'Đề xuất từ chối',
 };
 
 /** Chuyển enum backend sang câu tiếng Việt; vẫn giữ fallback để UI không vỡ khi backend thêm giá trị. */

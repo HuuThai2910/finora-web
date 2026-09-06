@@ -9,13 +9,16 @@ interface ProductForm {
   maxAmount: string;
   minTermMonths: string;
   maxTermMonths: string;
+  minAnnualInterestRate: string;
   annualInterestRate: string;
+  maxAnnualInterestRate: string;
   repaymentMethod: RepaymentMethod;
 }
 
 const EMPTY_FORM: ProductForm = {
   code: '', name: '', description: '', minAmount: '', maxAmount: '',
-  minTermMonths: '', maxTermMonths: '', annualInterestRate: '', repaymentMethod: 'ANNUITY',
+  minTermMonths: '', maxTermMonths: '', minAnnualInterestRate: '', annualInterestRate: '',
+  maxAnnualInterestRate: '', repaymentMethod: 'ANNUITY',
 };
 
 interface Props {
@@ -27,7 +30,8 @@ interface Props {
 
 function validate(form: ProductForm): string | null {
   if (!form.code || !form.name || !form.minAmount || !form.maxAmount
-    || !form.minTermMonths || !form.maxTermMonths || !form.annualInterestRate) {
+    || !form.minTermMonths || !form.maxTermMonths || !form.minAnnualInterestRate
+    || !form.annualInterestRate || !form.maxAnnualInterestRate) {
     return 'Vui lòng điền đầy đủ các trường bắt buộc.';
   }
   if (!/^[A-Za-z][A-Za-z0-9_]{2,49}$/.test(form.code)) {
@@ -35,6 +39,14 @@ function validate(form: ProductForm): string | null {
   }
   if (Number(form.minAmount) > Number(form.maxAmount)) return 'Hạn mức tối thiểu không được lớn hơn tối đa.';
   if (Number(form.minTermMonths) > Number(form.maxTermMonths)) return 'Kỳ hạn tối thiểu không được lớn hơn tối đa.';
+  if (Number(form.maxTermMonths) > 24) return 'Kỳ hạn tối đa của FINORA hiện không vượt quá 24 tháng.';
+  const minRate = Number(form.minAnnualInterestRate);
+  const baseRate = Number(form.annualInterestRate);
+  const maxRate = Number(form.maxAnnualInterestRate);
+  if (!(minRate > 0 && minRate <= baseRate && baseRate <= maxRate)) {
+    return 'Lãi suất phải theo thứ tự: tối thiểu ≤ cơ sở ≤ tối đa.';
+  }
+  if (maxRate > 20) return 'Lãi suất tối đa không được vượt quá 20%/năm.';
   return null;
 }
 
@@ -54,7 +66,9 @@ export function CreateProductModal({ saving, serverError, onClose, onCreate }: P
       maxAmount: Number(form.maxAmount),
       minTermMonths: Number(form.minTermMonths),
       maxTermMonths: Number(form.maxTermMonths),
+      minAnnualInterestRate: Number(form.minAnnualInterestRate),
       annualInterestRate: Number(form.annualInterestRate),
+      maxAnnualInterestRate: Number(form.maxAnnualInterestRate),
       repaymentMethod: form.repaymentMethod,
     });
   }
@@ -98,9 +112,20 @@ export function CreateProductModal({ saving, serverError, onClose, onCreate }: P
             <div className="prod-field"><label>Kỳ hạn tối thiểu (tháng) *</label><input type="number" value={form.minTermMonths} onChange={e => update('minTermMonths', e.target.value)} /></div>
             <div className="prod-field"><label>Kỳ hạn tối đa (tháng) *</label><input type="number" value={form.maxTermMonths} onChange={e => update('maxTermMonths', e.target.value)} /></div>
           </div>
-          <div className="prod-field">
-            <label>Lãi suất năm (%) *</label>
-            <input type="number" step="0.0001" value={form.annualInterestRate} onChange={e => update('annualInterestRate', e.target.value)} />
+          <div className="prod-field-row three">
+            <div className="prod-field">
+              <label>Lãi suất tối thiểu (%) *</label>
+              <input type="number" min="0.0001" max="20" step="0.0001" value={form.minAnnualInterestRate} onChange={e => update('minAnnualInterestRate', e.target.value)} />
+            </div>
+            <div className="prod-field">
+              <label>Lãi suất cơ sở (%) *</label>
+              <input type="number" min="0.0001" max="20" step="0.0001" value={form.annualInterestRate} onChange={e => update('annualInterestRate', e.target.value)} />
+              <span className="field-hint">Dùng tính lịch ban đầu trước thẩm định.</span>
+            </div>
+            <div className="prod-field">
+              <label>Lãi suất tối đa (%) *</label>
+              <input type="number" min="0.0001" max="20" step="0.0001" value={form.maxAnnualInterestRate} onChange={e => update('maxAnnualInterestRate', e.target.value)} />
+            </div>
           </div>
           {(validationError || serverError) && <div className="prod-field-error">{validationError || serverError}</div>}
         </div>
@@ -112,4 +137,3 @@ export function CreateProductModal({ saving, serverError, onClose, onCreate }: P
     </div>
   );
 }
-

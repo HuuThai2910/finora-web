@@ -18,7 +18,9 @@ export interface LoanProduct {
   maxAmount: number;
   minTermMonths: number;
   maxTermMonths: number;
+  minAnnualInterestRate: number;
   annualInterestRate: number;
+  maxAnnualInterestRate: number;
   repaymentMethod: RepaymentMethod;
   status: LoanProductStatus;
   coreSyncStatus: CoreSyncStatus;
@@ -39,7 +41,9 @@ export interface CreateLoanProductRequest {
   maxAmount: number;
   minTermMonths: number;
   maxTermMonths: number;
+  minAnnualInterestRate: number;
   annualInterestRate: number;
+  maxAnnualInterestRate: number;
   repaymentMethod: RepaymentMethod;
 }
 
@@ -49,4 +53,3 @@ export interface CoreProductSyncResponse {
   commandStatus: 'PENDING' | 'PROCESSING' | 'RETRY_PENDING' | 'SUCCEEDED' | 'FAILED';
   errorCode: string | null;
 }
-

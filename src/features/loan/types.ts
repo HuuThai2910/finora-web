@@ -4,6 +4,7 @@ export type LoanApplicationStatus =
   | 'SUBMITTED' | 'ELIGIBILITY_PENDING' | 'SCORING' | 'SCORING_RETRY_PENDING'
   | 'PENDING_REVIEW' | 'APPROVED' | 'REJECTED' | 'WITHDRAWN';
 export type CreditAssessmentStatus = 'PENDING' | 'PROCESSING' | 'RETRY_PENDING' | 'SUCCEEDED' | 'FAILED';
+export type LoanDecisionSource = 'AI_POLICY' | 'ADMIN';
 
 export interface ApplicantFinancialInformation {
   declaredMonthlyIncome: number;
@@ -96,6 +97,10 @@ export interface AdminLoanReviewSummary {
   requestedAmount: number;
   requestedTermMonths: number;
   annualInterestRate: number;
+  finalAnnualInterestRate: number | null;
+  pricingCreditGrade: string | null;
+  pricingAdjustmentPercentagePoints: number | null;
+  decisionSource: LoanDecisionSource | null;
   repaymentMethod: RepaymentMethod;
   status: LoanApplicationStatus;
   assessment: AssessmentEvidence | null;
@@ -106,8 +111,11 @@ export interface AdminLoanReviewSummary {
 export interface AdminLoanReviewDetail extends AdminLoanReviewSummary {
   purposeCode: string;
   purposeDetail: string | null;
+  pricingPolicyVersion: string | null;
   financialInformation: ApplicantFinancialInformation;
   schedule: ScheduleCalculationSnapshot;
+  initialSchedule: ScheduleCalculationSnapshot;
+  finalSchedule: ScheduleCalculationSnapshot | null;
   eligibility: EligibilityEvidence | null;
   creditProfile: CreditProfileEvidence | null;
   recentHistory: LoanApplicationHistoryItem[];

@@ -6,7 +6,7 @@ approved_by: Thai
 approved_at: 2026-08-09
 backend_scope: LN-003, LN-004, LN-005, LN-006, LN-007, LN-008
 ui_reference: ../../finora-platform/docs/ui/bản-đẹp.html
-ui_reference_sha256: 790FCE4FDEC49AF672FA56F6EB9FD7E314E2A1A3B850BC71A833B0E19FE6F224
+ui_reference_sha256: 4F8AC308B4614AADD3A756B18FC13DF66BB43015DAE77B940ED540376203743F
 ---
 
 # WEB-LOAN-001 — Tích hợp quản trị Loan end-to-end
@@ -20,10 +20,10 @@ Tạo sản phẩm vay
 → hệ thống web tự yêu cầu đồng bộ cấu hình sang Fineract
 → admin kích hoạt sản phẩm
 → borrower nộp hồ sơ từ mobile
-→ admin thấy hồ sơ chờ thẩm định
-→ xem dữ liệu người vay, lịch trả dự kiến và kết quả AI
-→ duyệt hoặc từ chối
-→ nếu duyệt, backend tạo Contract chờ borrower ký
+→ Loan áp chính sách theo điểm và tính lại lãi suất/lịch trả cuối
+→ hồ sơ đủ ngưỡng được AI policy tự duyệt; hồ sơ vùng xem xét vào hàng đợi admin
+→ admin so sánh điều khoản lúc nộp với điều khoản sau đánh giá rồi duyệt hoặc từ chối
+→ nếu được duyệt, backend tạo Contract chờ borrower đọc và ký
 ```
 
 Admin không phải bấm “Đồng bộ Fineract” sau mỗi lần tạo thành công. Web tự gọi bước đồng bộ và chỉ hiện nút **Thử đồng bộ lại** khi thất bại. Kích hoạt vẫn là quyết định riêng vì nó làm sản phẩm xuất hiện cho borrower.
@@ -45,9 +45,11 @@ Backend quyết định field, status, quyền và chuyển trạng thái. HTML 
 
 - Chuẩn hóa HTTP client và lỗi Loan Service.
 - Quản lý server state bằng Redux Toolkit + RTK Query; không tạo Redux slice cho dữ liệu server.
-- Tạo/sửa/xem Product; tự sync sau create; retry sync; activate/deactivate/archive.
+- Tạo/sửa/xem Product với khung lãi suất `min/base/max`; tự sync sau create; retry sync; activate/deactivate/archive.
 - Danh sách tất cả hồ sơ hoặc lọc theo trạng thái, phân trang và giữ filter trên URL.
 - Trang review chi tiết gồm thông tin khai báo, eligibility, credit profile, schedule và assessment.
+- Khối so sánh luôn nhìn thấy giữa điều khoản lúc nộp và sau thẩm định: base/final rate,
+  kỳ trả đầu, tổng lãi và tổng phải trả; không bắt admin đổi tab để ghép thông tin.
 - Danh sách/chi tiết assessment; retry có polling giới hạn.
 - Approve/reject có version, assessment evidence, idempotency và phản hồi Contract.
 - Loading/empty/error/success, version conflict và dependency unavailable.
@@ -120,11 +122,13 @@ Không rollback/xóa Product local khi Fineract lỗi. Không tự tăng version
    - schedule từ Fineract;
    - assessment AI và trạng thái xử lý;
    - lịch sử chuyển trạng thái gần nhất.
-5. Nếu assessment `FAILED/RETRY_PENDING`, admin được retry đúng điều kiện; response `202 ACCEPTED` chỉ là đã nhận yêu cầu, không phải kết quả mới.
-6. Poll `resultPath`/assessment detail khi trạng thái còn `PENDING/PROCESSING/RETRY_PENDING`, dừng ở `SUCCEEDED/FAILED` hoặc hết thời hạn.
-7. Chỉ cho approve khi evidence hợp lệ và status Application đúng; gửi `applicationVersion`, `assessmentId`, `POLICY_APPROVED` và expiry tùy chọn.
-8. Reject yêu cầu reason code phù hợp, detail khi cần và cùng idempotency rule.
-9. Sau quyết định, invalidate danh sách/detail; nếu approve, hiển thị contract number, document hash, expiry và trạng thái `PENDING_SIGNATURE`.
+5. Trước các tab chi tiết, hiển thị cạnh nhau điều khoản lúc nộp và điều khoản sau thẩm định.
+   `requestedAmount` và `requestedTermMonths` giữ nguyên; chỉ lãi suất và schedule đổi theo backend.
+6. Nếu assessment `FAILED/RETRY_PENDING`, admin được retry đúng điều kiện; response `202 ACCEPTED` chỉ là đã nhận yêu cầu, không phải kết quả mới.
+7. Poll `resultPath`/assessment detail khi trạng thái còn `PENDING/PROCESSING/RETRY_PENDING`, dừng ở `SUCCEEDED/FAILED` hoặc hết thời hạn.
+8. Chỉ cho approve khi evidence hợp lệ và status Application đúng; gửi `applicationVersion`, `assessmentId`, `POLICY_APPROVED` và expiry tùy chọn.
+9. Reject yêu cầu reason code phù hợp, detail khi cần và cùng idempotency rule.
+10. Sau quyết định, invalidate danh sách/detail; nếu approve, hiển thị contract number, document hash, expiry và trạng thái `PENDING_SIGNATURE`.
 
 ## 7. API contract sử dụng
 
@@ -239,11 +243,13 @@ src/
 
 - [ ] `bản-đẹp.html` được dùng cho visual nhưng không còn luồng web gọi thẳng AI/Fineract.
 - [ ] Product create tự sync; chỉ lỗi mới yêu cầu admin retry thủ công.
+- [ ] Product nhập và hiển thị đủ `min <= base <= max <= 20%/năm`.
 - [ ] Product action luôn dùng version backend mới nhất.
 - [ ] Admin list được cả Product chưa active qua API admin phân trang.
 - [ ] Danh sách tất cả/lọc trạng thái, detail và assessment dùng API thật và có pagination.
 - [ ] Retry response 202 hiển thị là “đã tiếp nhận”, sau đó polling kết quả cuối.
 - [ ] Approve tạo đúng một Contract; reject không tạo Contract.
+- [ ] Admin nhìn thấy so sánh base/final rate và hai schedule mà không phải chuyển tab.
 - [ ] Không hiển thị disbursement/overdue hoặc thao tác sửa AI policy như chức năng thật khi backend chưa có.
 - [ ] File tuân thủ ngưỡng trách nhiệm; logic khó có comment tiếng Việt.
 - [ ] Type-check, test, build và checklist frontend đều đạt.
@@ -290,3 +296,26 @@ Cập nhật lịch trả và chính sách AI ngày 2026-08-09:
 
 Còn phải hoàn thiện trước khi đổi `READY_FOR_REVIEW`: Product edit/detail riêng, polling assessment có giới hạn,
 component test và kiểm thử UI end-to-end với Loan/Fineract/AI đang chạy.
+
+## 16. Đồng bộ định giá rủi ro ngày 2026-09-05
+
+- Product form và bảng quản trị dùng đủ `minAnnualInterestRate`, base `annualInterestRate` và
+  `maxAnnualInterestRate`; client kiểm tra đúng thứ tự và trần 20% trước khi gửi.
+- Trang thẩm định có khối so sánh luôn hiển thị giữa lịch ban đầu và lịch sau đánh giá;
+  Product principal/term không tự thay đổi vì backend không có contract đó.
+- Hồ sơ AI auto-approved vẫn đọc được nguồn quyết định và điều khoản cuối nhưng không hiện lại
+  form duyệt thủ công; hồ sơ `PENDING_REVIEW` mới cho admin duyệt hoặc từ chối.
+- Hash visual reference được cập nhật theo file hiện có; thay đổi này không sửa design token toàn cục.
+- Căn cứ nghiệp vụ/pháp lý của trần lãi suất và nghĩa vụ công khai được đối chiếu tại
+  [`LEGAL-COMPLIANCE.md`](../../finora-platform/docs/LEGAL-COMPLIANCE.md); web chỉ trình bày dữ liệu Loan đã chốt,
+  không tự tính hoặc tự sửa quy tắc pháp lý.
+
+## 17. Bằng chứng kiểm tra tương thích ngày 2026-09-05
+
+- `npm.cmd run build`: đạt; TypeScript và Vite tạo production bundle thành công.
+- Luồng API thật đã xác nhận Product có khung 8%–12,5%–20%; hồ sơ hạng C được Loan áp
+  `finalAnnualInterestRate=13%`, tăng `0,5` điểm phần trăm và tính lại đủ 24 kỳ qua Fineract.
+- Admin duyệt bằng đúng application version/assessment hiện hành; backend tạo đúng một Contract
+  `CLICK_WRAP_TEXT_V2` với lãi suất cuối, tổng nghĩa vụ và đủ 24 kỳ.
+- Chưa đánh dấu kiểm thử UI trực quan đạt vì môi trường automation hiện tại không cung cấp browser.
+  Cần mở `/loans/LA-939518AC4CE245BDAB58` khi chạy local để đối chiếu khối so sánh trên viewport thật.

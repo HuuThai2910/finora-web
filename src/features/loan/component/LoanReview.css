@@ -25,6 +25,26 @@
 .review-state, .review-notice { padding: 18px; border-radius: 14px; background: #fff; border: 1px solid var(--border-color); }
 .review-state.error { color: var(--danger); background: #fff5f5; }
 .review-notice { color: #065f46; background: #ecfdf5; border-color: #a7f3d0; }
+.review-pricing-comparison { display: grid; gap: 18px; border-top: 4px solid var(--brand); }
+.review-pricing-comparison.higher { border-top-color: #d97706; }
+.review-pricing-comparison.lower { border-top-color: #059669; }
+.review-pricing-comparison.pending { border-top-color: #94a3b8; }
+.review-pricing-comparison h2 { margin-top: 2px; font-size: 18px; }
+.review-pricing-comparison p { margin: 6px 0 0; color: var(--text-secondary); font-size: 13px; line-height: 1.55; }
+.review-pricing-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; }
+.review-pricing-badges { display: flex; gap: 7px; flex-wrap: wrap; justify-content: flex-end; }
+.review-pricing-badges span { padding: 5px 9px; border-radius: 999px; color: #1e40af; background: #dbeafe; font-size: 11px; font-weight: 700; }
+.review-pricing-columns { display: grid; grid-template-columns: minmax(0, 1fr) 28px minmax(0, 1fr); align-items: stretch; gap: 10px; }
+.review-pricing-column { padding: 16px; border: 1px solid var(--border-color); border-radius: 13px; background: #f8fafc; }
+.review-pricing-column.emphasized { border-color: #93c5fd; background: #eff6ff; }
+.review-pricing-column-title { display: block; color: var(--text-secondary); font-size: 11px; font-weight: 700; }
+.review-pricing-rate { display: block; margin: 6px 0 14px; color: var(--brand); font-size: 23px; }
+.review-pricing-column dl { display: grid; gap: 8px; margin: 0; }
+.review-pricing-column dl > div { display: flex; justify-content: space-between; gap: 14px; }
+.review-pricing-column dt { color: var(--text-secondary); font-size: 12px; }
+.review-pricing-column dd { margin: 0; font-size: 12px; font-weight: 700; text-align: right; }
+.review-pricing-arrow { display: grid; place-items: center; color: var(--brand); font-size: 20px; font-weight: 800; }
+.review-pricing-note { padding-top: 12px; border-top: 1px dashed var(--border-color); }
 .review-pagination { display: flex; justify-content: space-between; align-items: center; color: var(--text-secondary); font-size: 12px; }
 .review-pagination div, .review-actions { display: flex; gap: 10px; }
 .review-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
@@ -75,4 +95,8 @@
   .review-actions { flex-direction: column-reverse; }
   .review-actions .review-button { width: 100%; }
   .review-schedule-heading { align-items: flex-start; flex-direction: column; gap: 5px; }
+  .review-pricing-heading { flex-direction: column; }
+  .review-pricing-badges { justify-content: flex-start; }
+  .review-pricing-columns { grid-template-columns: 1fr; }
+  .review-pricing-arrow { transform: rotate(90deg); min-height: 24px; }
 }

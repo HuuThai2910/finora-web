@@ -352,6 +352,8 @@
   gap: 12px;
 }
 
+.prod-field-row.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+
 .prod-field .field-hint {
   font-size: 11px;
   color: var(--text-secondary);
@@ -362,6 +364,11 @@
   font-size: 11px;
   color: #e11d2e;
   margin-top: 3px;
+}
+
+@media (max-width: 760px) {
+  .prod-field-row,
+  .prod-field-row.three { grid-template-columns: 1fr; }
 }
 
 /* ── Loading / Empty ─────────────────────────────────────────── */

@@ -9,6 +9,7 @@ import {
   formatMonths,
   formatPercent,
 } from '../formatters';
+import LoanPricingComparison from './LoanPricingComparison';
 
 type ReviewTab = 'overview' | 'assessment' | 'schedule' | 'history';
 
@@ -55,7 +56,7 @@ function OverviewTab({ application }: { application: AdminLoanReviewDetail }) {
           <DataItem label="Người vay" value={application.borrowerId} />
           <DataItem label="Số tiền đề nghị" value={formatMoney(application.requestedAmount)} />
           <DataItem label="Kỳ hạn" value={`${application.requestedTermMonths} tháng`} />
-          <DataItem label="Lãi suất cố định" value={`${formatPercent(application.annualInterestRate)}/năm`} />
+          <DataItem label="Lãi suất cơ sở lúc nộp" value={`${formatPercent(application.annualInterestRate)}/năm`} />
           <DataItem label="Mục đích vay" value={formatBusinessLabel(application.purposeCode)} hint={application.purposeDetail ?? undefined} />
           <DataItem label="Phương thức trả" value={formatBusinessLabel(application.repaymentMethod)} />
         </DataList>
@@ -156,17 +157,20 @@ function AssessmentTab({ application, action }: { application: AdminLoanReviewDe
 }
 
 function ScheduleTab({ application }: { application: AdminLoanReviewDetail }) {
-  const schedule = application.schedule;
+  const schedule = application.finalSchedule ?? application.initialSchedule;
+  const isFinalSchedule = application.finalSchedule != null;
   return (
     <article className="review-card">
       <div className="review-card-heading">
         <div>
           <span className="review-eyebrow">Do hệ thống lõi tính toán</span>
-          <h2>Lịch trả nợ dự kiến</h2>
+          <h2>{isFinalSchedule ? 'Lịch trả theo điều khoản sau thẩm định' : 'Lịch trả nợ dự kiến lúc nộp'}</h2>
         </div>
       </div>
       <p className="review-explanation">
-        Đây là lịch dự kiến tại thời điểm nộp hồ sơ. Lịch chính thức chỉ được chốt theo ngày giải ngân thực tế.
+        {isFinalSchedule
+          ? 'Lịch này được tính lại theo lãi suất sau đánh giá và là cơ sở lập hợp đồng. Lịch chính thức có thể dịch theo ngày giải ngân thực tế.'
+          : 'Đây là lịch dự kiến tại thời điểm nộp hồ sơ. Lịch chính thức chỉ được chốt theo ngày giải ngân thực tế.'}
       </p>
       <DataList>
         <DataItem label="Ngày giải ngân dự kiến" value={formatDate(schedule.expectedDisbursementDate)} />
@@ -260,6 +264,7 @@ export default function LoanReviewContent({ application, assessmentAction, decis
   const [activeTab, setActiveTab] = useState<ReviewTab>('overview');
   return (
     <>
+      <LoanPricingComparison application={application} />
       <div className="review-detail-tabs" role="tablist" aria-label="Nội dung hồ sơ vay">
         {TABS.map((tab) => (
           <button
