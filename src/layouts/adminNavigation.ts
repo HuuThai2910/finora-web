@@ -46,8 +46,8 @@ export const ADMIN_NAV_SECTIONS: AdminNavigationSection[] = [
   {
     label: 'NGƯỜI DÙNG',
     items: [
-      { to: '/customers/kyc', label: 'Khách hàng — eKYC', icon: 'identity', isAvailable: false },
-      { to: '/users', label: 'Người dùng & Phân quyền', icon: 'users', isAvailable: false },
+      { to: '/customers/kyc', label: 'Khách hàng — eKYC', icon: 'identity', isAvailable: true },
+      { to: '/users', label: 'Người dùng & Phân quyền', icon: 'users', isAvailable: true },
     ],
   },
   {
@@ -69,5 +69,9 @@ export function getAdminPageTitle(pathname: string): string {
   if (pathname === '/products') return 'Sản phẩm vay';
   if (pathname === '/loans/evaluation') return 'Chính sách đánh giá AI';
   if (pathname === '/loans/scoring') return 'Chấm điểm & Giải thích AI';
+  if (pathname === '/users') return 'Người dùng & Phân quyền';
+  if (/^\/customers\/kyc\/[^/]+$/.test(pathname)) return 'Chi tiết hồ sơ khách hàng';
+  if (pathname === '/customers/kyc') return 'Khách hàng — eKYC';
   return 'Tổng quan';
 }
+

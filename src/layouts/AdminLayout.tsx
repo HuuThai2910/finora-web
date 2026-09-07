@@ -1,13 +1,10 @@
-import { NavLink, Outlet, useLocation } from 'react-router-dom';
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
+import type { AppDispatch, RootState } from '@/app/store';
+import { logoutUser } from '@/features/auth';
 import { ADMIN_NAV_SECTIONS, getAdminPageTitle, type AdminNavigationItem } from './adminNavigation';
 import { SidebarIcon } from './SidebarIcon';
 import './AdminLayout.css';
-
-const SYSTEM_STATUS = [
-  { label: 'Hyperledger Fabric · đồng bộ' },
-  { label: 'Apache Fineract · hoạt động' },
-  { label: 'Dịch vụ đánh giá · sẵn sàng' },
-];
 
 function NavigationLabel({ item }: { item: AdminNavigationItem }) {
   return (
@@ -21,8 +18,17 @@ function NavigationLabel({ item }: { item: AdminNavigationItem }) {
 
 export default function AdminLayout() {
   const location = useLocation();
+  const navigate = useNavigate();
+  const dispatch = useDispatch<AppDispatch>();
+  const { profile, user } = useSelector((state: RootState) => state.auth);
+
   const pageTitle = getAdminPageTitle(location.pathname);
   const selectedStatus = new URLSearchParams(location.search).get('status');
+
+  const handleLogout = async () => {
+    await dispatch(logoutUser());
+    navigate('/login', { replace: true });
+  };
 
   const isNavigationItemActive = (item: AdminNavigationItem, routerActive: boolean) => {
     if (item.to === '/loans?status=PENDING_REVIEW') {
@@ -30,6 +36,9 @@ export default function AdminLayout() {
     }
     if (item.to === '/loans') {
       return routerActive && selectedStatus !== 'PENDING_REVIEW';
+    }
+    if (item.to === '/customers/kyc') {
+      return location.pathname.startsWith('/customers/kyc');
     }
     return routerActive;
   };
@@ -53,14 +62,34 @@ export default function AdminLayout() {
 
         <div className="sidebar-user">
           <div className="sidebar-user-avatar">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <circle cx="12" cy="8" r="4" />
-              <path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1" />
-            </svg>
+            {profile?.fullName ? (
+              <span style={{ fontWeight: 700, fontSize: 16, color: '#22d3ee' }}>
+                {profile.fullName.charAt(0).toUpperCase()}
+              </span>
+            ) : (
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <circle cx="12" cy="8" r="4" />
+                <path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1" />
+              </svg>
+            )}
           </div>
           <div className="sidebar-user-info">
-            <h3>P2P Admin</h3>
-            <p>Quản trị viên hệ thống FINORA</p>
+            <h3 style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 160 }}>
+              {profile?.fullName || user?.fullName || 'Quản trị viên'}
+            </h3>
+            <p style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span style={{
+                background: 'rgba(34, 211, 238, 0.15)',
+                color: '#22d3ee',
+                padding: '1px 6px',
+                borderRadius: 4,
+                fontSize: 11,
+                fontWeight: 600
+              }}>
+                {profile?.role || 'ADMIN'}
+              </span>
+              <span>Hệ thống FINORA</span>
+            </p>
           </div>
         </div>
 
@@ -94,19 +123,7 @@ export default function AdminLayout() {
           ))}
         </nav>
 
-        <div className="sidebar-footer">
-          <div className="sidebar-status-card">
-            <div className="sidebar-status-label">Trạng thái hệ thống</div>
-            {SYSTEM_STATUS.map((status) => (
-              <div className="sidebar-status-item" key={status.label}>
-                <span className="sidebar-status-dot" />
-                {status.label}
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <button type="button" className="sidebar-logout">
+        <button type="button" className="sidebar-logout" onClick={handleLogout}>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
             <polyline points="16 17 21 12 16 7" />
@@ -140,7 +157,7 @@ export default function AdminLayout() {
                 <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
               </svg>
             </button>
-            <button type="button" className="header-logout-btn">
+            <button type="button" className="header-logout-btn" onClick={handleLogout}>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <path d="M18.36 6.64A9 9 0 1 1 5.64 6.64" />
                 <line x1="12" y1="2" x2="12" y2="12" />
