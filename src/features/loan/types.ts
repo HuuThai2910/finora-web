@@ -1,3 +1,9 @@
+import type {
+  DienGiaiNguoiDung,
+  GiaiThichMoHinh,
+  RuleTraceItem,
+} from '@/features/credit-score/types';
+
 import type { PageResponse, RepaymentMethod } from '@/features/product/types';
 
 export type LoanApplicationStatus =
@@ -106,6 +112,9 @@ export interface AdminLoanReviewSummary {
   assessment: AssessmentEvidence | null;
   version: number;
   submittedAt: string;
+  /** ID quản trị viên đã ra quyết định; null khi hồ sơ chưa được duyệt hoặc từ chối. */
+  adminDecidedBy: string | null;
+  adminDecidedAt: string | null;
 }
 
 export interface AdminLoanReviewDetail extends AdminLoanReviewSummary {
@@ -119,6 +128,23 @@ export interface AdminLoanReviewDetail extends AdminLoanReviewSummary {
   eligibility: EligibilityEvidence | null;
   creditProfile: CreditProfileEvidence | null;
   recentHistory: LoanApplicationHistoryItem[];
+}
+
+/**
+ * Phần giải thích của lần chấm điểm đã dùng để quyết định hồ sơ.
+ *
+ * Loan Service trả lại đúng bản AI sinh ra lúc chấm (`response_snapshot_json`),
+ * không chấm lại — nên đây là bằng chứng cho quyết định đã ra, kể cả khi mô hình
+ * hoặc bộ luật sau đó đã đổi.
+ */
+export interface AdminAssessmentExplanation {
+  assessmentId: number;
+  actualModelVersion: string | null;
+  decisionPolicyVersion: string | null;
+  scoredAt: string | null;
+  borrowerExplanation: DienGiaiNguoiDung | null;
+  modelExplanation: GiaiThichMoHinh | null;
+  ruleTrace: RuleTraceItem[] | null;
 }
 
 export interface CreditAssessmentSummary {

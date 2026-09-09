@@ -4,6 +4,7 @@ import { toUiApiError } from '@/lib/api/errors';
 import { useGetAdminApplicationsQuery } from '../api/loanReviewApi';
 import { APPLICATION_STATUS_LABELS, formatDateTime, formatMoney } from '../formatters';
 import type { LoanApplicationStatus } from '../types';
+import { useActorNames } from '../hooks/useActorNames';
 import './LoanReview.css';
 
 type ApplicationFilter = 'ALL' | Extract<LoanApplicationStatus, 'PENDING_REVIEW' | 'APPROVED' | 'REJECTED'>;
@@ -29,6 +30,12 @@ export default function LoanListPage() {
     page,
     size: 20,
   });
+
+  // Hồ sơ trong một trang thường do vài quản trị viên xử lý, nên tra tên theo lô
+  // rồi tra cứu tại chỗ khi vẽ bảng.
+  const { displayName } = useActorNames(
+    (data?.data ?? []).flatMap((item) => [item.borrowerId, item.adminDecidedBy]),
+  );
 
   return (
     <section className="review-page">
@@ -68,7 +75,7 @@ export default function LoanListPage() {
           <table className="review-table">
             <thead>
               <tr>
-                <th>Hồ sơ</th><th>Người vay</th><th>Khoản vay</th><th>AI</th><th>Nộp lúc</th><th />
+                <th>Hồ sơ</th><th>Người vay</th><th>Khoản vay</th><th>AI</th><th>Nộp lúc</th><th>Người duyệt</th><th />
               </tr>
             </thead>
             <tbody>
@@ -78,7 +85,7 @@ export default function LoanListPage() {
                     <strong>{application.applicationNumber}</strong>
                     <span className="review-muted">{APPLICATION_STATUS_LABELS[application.status]}</span>
                   </td>
-                  <td>{application.borrowerId}</td>
+                  <td>{displayName(application.borrowerId)}</td>
                   <td>
                     <strong>{formatMoney(application.requestedAmount)}</strong>
                     <span className="review-muted">
@@ -93,6 +100,18 @@ export default function LoanListPage() {
                     <span className="review-muted">Hạng {application.assessment?.creditGrade ?? '—'}</span>
                   </td>
                   <td>{formatDateTime(application.submittedAt)}</td>
+                  <td>
+                    {application.adminDecidedBy ? (
+                      <>
+                        <strong>{displayName(application.adminDecidedBy)}</strong>
+                        {application.adminDecidedAt ? (
+                          <span className="review-muted">{formatDateTime(application.adminDecidedAt)}</span>
+                        ) : null}
+                      </>
+                    ) : (
+                      <span className="review-muted">Chưa duyệt</span>
+                    )}
+                  </td>
                   <td>
                     <Link className="review-link" to={`/loans/${application.applicationNumber}/review`}>
                       {application.status === 'PENDING_REVIEW' ? 'Thẩm định' : 'Xem chi tiết'}
