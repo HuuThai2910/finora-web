@@ -1,5 +1,6 @@
 import { loanApi } from '@/lib/api/loanApi';
 import type {
+  AdminAssessmentExplanation,
   AdminDecisionResponse,
   AdminLoanReviewDetail,
   AdminLoanReviewPage,
@@ -29,6 +30,18 @@ const loanReviewApi = loanApi.injectEndpoints({
       query: (applicationNumber) => `/admin/loan-applications/${applicationNumber}/review`,
       providesTags: (_result, _error, applicationNumber) => [
         { type: 'AdminApplication', id: applicationNumber },
+      ],
+    }),
+    /**
+     * Giải thích của lần chấm điểm đã dùng để quyết định hồ sơ.
+     *
+     * Tách khỏi `getReviewDetail` vì payload lớn (SHAP từng đặc trưng + vết mọi
+     * luật) mà chỉ cần khi admin mở phần phân tích, không phải mỗi lần mở hồ sơ.
+     */
+    getAssessmentExplanation: builder.query<AdminAssessmentExplanation, string>({
+      query: (applicationNumber) => `/admin/loan-applications/${applicationNumber}/explanation`,
+      providesTags: (_result, _error, applicationNumber) => [
+        { type: 'CreditAssessment', id: `${applicationNumber}-EXPLANATION` },
       ],
     }),
     getAssessments: builder.query<AssessmentPage, { applicationNumber: string; page?: number; size?: number }>({
@@ -107,6 +120,8 @@ export const {
   useGetAdminApplicationsQuery,
   useGetReviewDetailQuery,
   useGetAssessmentsQuery,
+  // Lazy: chỉ tải khi admin mở phần phân tích, không phải mỗi lần mở hồ sơ.
+  useLazyGetAssessmentExplanationQuery,
   useLazyGetAssessmentDetailQuery,
   useRetryScoringMutation,
   useApproveApplicationMutation,

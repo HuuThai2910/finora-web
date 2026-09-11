@@ -10,6 +10,8 @@ import {
   formatPercent,
 } from '../formatters';
 import LoanPricingComparison from './LoanPricingComparison';
+import LoanAiAnalysis from './LoanAiAnalysis';
+import { useActorNames } from '../hooks/useActorNames';
 
 type ReviewTab = 'overview' | 'assessment' | 'schedule' | 'history';
 
@@ -42,6 +44,7 @@ function DataItem({ label, value, hint }: { label: string; value: React.ReactNod
 
 function OverviewTab({ application }: { application: AdminLoanReviewDetail }) {
   const financial = application.financialInformation;
+  const { displayName } = useActorNames([application.borrowerId, application.adminDecidedBy]);
   return (
     <div className="review-grid">
       <article className="review-card">
@@ -53,12 +56,19 @@ function OverviewTab({ application }: { application: AdminLoanReviewDetail }) {
           <span className="review-status-pill">{APPLICATION_STATUS_LABELS[application.status]}</span>
         </div>
         <DataList>
-          <DataItem label="Người vay" value={application.borrowerId} />
+          <DataItem label="Người vay" value={displayName(application.borrowerId)} />
           <DataItem label="Số tiền đề nghị" value={formatMoney(application.requestedAmount)} />
           <DataItem label="Kỳ hạn" value={`${application.requestedTermMonths} tháng`} />
           <DataItem label="Lãi suất cơ sở lúc nộp" value={`${formatPercent(application.annualInterestRate)}/năm`} />
           <DataItem label="Mục đích vay" value={formatBusinessLabel(application.purposeCode)} hint={application.purposeDetail ?? undefined} />
           <DataItem label="Phương thức trả" value={formatBusinessLabel(application.repaymentMethod)} />
+          {application.adminDecidedBy ? (
+            <DataItem
+              label="Người duyệt hồ sơ"
+              value={displayName(application.adminDecidedBy)}
+              hint={application.adminDecidedAt ? formatDateTime(application.adminDecidedAt) : undefined}
+            />
+          ) : null}
         </DataList>
       </article>
 
@@ -118,6 +128,10 @@ function AssessmentTab({ application, action }: { application: AdminLoanReviewDe
           </>
         ) : <p className="review-empty-inline">Hồ sơ chưa có kết quả đánh giá tự động.</p>}
       </article>
+
+      {/* Chỉ có gì để phân tích khi hồ sơ đã được chấm; chưa chấm thì nút mở ra
+          cũng chỉ báo trống. */}
+      {assessment ? <LoanAiAnalysis applicationNumber={application.applicationNumber} /> : null}
 
       <div className="review-grid">
         <article className="review-card">
@@ -233,6 +247,12 @@ function ScheduleTab({ application }: { application: AdminLoanReviewDetail }) {
 }
 
 function HistoryTab({ application }: { application: AdminLoanReviewDetail }) {
+  // Chỉ tra tên quản trị viên: người vay và tiến trình tự động không nằm trong
+  // danh bạ quản trị nên gọi sang cũng không có kết quả.
+  const { displayName } = useActorNames(
+    application.recentHistory.filter((item) => item.actorType === 'ADMIN').map((item) => item.actorId),
+  );
+
   return (
     <article className="review-card">
       <div className="review-card-heading">
@@ -249,7 +269,10 @@ function HistoryTab({ application }: { application: AdminLoanReviewDetail }) {
                 <strong>{APPLICATION_STATUS_LABELS[item.toStatus]}</strong>
                 <p>{item.fromStatus ? `Chuyển từ ${APPLICATION_STATUS_LABELS[item.fromStatus]}` : 'Hồ sơ được khởi tạo'}</p>
                 {item.reasonDetail ? <p>{item.reasonDetail}</p> : null}
-                <span>{formatDateTime(item.createdAt)} · {formatBusinessLabel(item.actorType)}</span>
+                <span>
+                  {formatDateTime(item.createdAt)} · {formatBusinessLabel(item.actorType)}
+                  {item.actorType === 'ADMIN' ? ` · ${displayName(item.actorId)}` : null}
+                </span>
               </div>
             </li>
           ))}

@@ -215,45 +215,10 @@
 }
 
 /* Status footer */
-.sidebar-footer {
-  padding: 10px;
-  border-top: 1px solid var(--sidebar-divider);
-}
 
-.sidebar-status-card {
-  background: var(--sidebar-card-bg);
-  border: 1px solid var(--sidebar-card-border);
-  border-radius: 13px;
-  padding: 11px 12px;
-  margin-bottom: 9px;
-}
 
-.sidebar-status-label {
-  font-size: 10px;
-  font-weight: 800;
-  color: #7e8bab;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  margin-bottom: 7px;
-}
 
-.sidebar-status-item {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  font-size: 11px;
-  color: #c5cee4;
-  padding: 2px 0;
-}
 
-.sidebar-status-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--sidebar-status-green);
-  flex-shrink: 0;
-  box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.16);
-}
 
 /* Logout — coral dashed border */
 .sidebar-logout {

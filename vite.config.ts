@@ -12,6 +12,18 @@ export default defineConfig({
   server: {
     port: 5173,
     proxy: {
+      '/api/v1/auth': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+      },
+      '/api/v1/admin/users': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+      },
+      '/api/v1/users': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+      },
       '/api/v1/loan': {
         target: 'http://localhost:8081',
         changeOrigin: true,
