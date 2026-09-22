@@ -23,6 +23,7 @@ export default function AdminLayout() {
   const { profile, user } = useSelector((state: RootState) => state.auth);
 
   const pageTitle = getAdminPageTitle(location.pathname);
+  const displayName = profile?.fullName || user?.fullName || 'Quản trị viên';
   const selectedStatus = new URLSearchParams(location.search).get('status');
 
   const handleLogout = async () => {
@@ -57,39 +58,6 @@ export default function AdminLayout() {
           <div className="sidebar-logo-text">
             <h1>FINORA</h1>
             <span>P2P LENDING</span>
-          </div>
-        </div>
-
-        <div className="sidebar-user">
-          <div className="sidebar-user-avatar">
-            {profile?.fullName ? (
-              <span style={{ fontWeight: 700, fontSize: 16, color: '#22d3ee' }}>
-                {profile.fullName.charAt(0).toUpperCase()}
-              </span>
-            ) : (
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <circle cx="12" cy="8" r="4" />
-                <path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1" />
-              </svg>
-            )}
-          </div>
-          <div className="sidebar-user-info">
-            <h3 style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 160 }}>
-              {profile?.fullName || user?.fullName || 'Quản trị viên'}
-            </h3>
-            <p style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span style={{
-                background: 'rgba(34, 211, 238, 0.15)',
-                color: '#22d3ee',
-                padding: '1px 6px',
-                borderRadius: 4,
-                fontSize: 11,
-                fontWeight: 600
-              }}>
-                {profile?.role || 'ADMIN'}
-              </span>
-              <span>Hệ thống FINORA</span>
-            </p>
           </div>
         </div>
 
@@ -140,30 +108,31 @@ export default function AdminLayout() {
             <div className="header-path">FINORA / Quản trị / {pageTitle}</div>
           </div>
           <div className="header-actions">
-            <div className="header-badge">
+            {/* Trạng thái hệ thống gộp thành một chip mờ: thông tin nền, không tranh chú ý với nội dung trang. */}
+            <div className="header-status" title="Đang đồng bộ với Hyperledger Fabric">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
                 <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
               </svg>
-              Fabric block #48210
+              <span>Fabric #48210</span>
+              <span className="header-live-dot" aria-label="Đang trực tuyến" />
             </div>
-            <div className="header-live">
-              <span className="header-live-dot" />
-              LIVE
-            </div>
-            <span className="header-divider" />
             <button type="button" className="header-icon-btn" aria-label="Chế độ tối">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
               </svg>
             </button>
-            <button type="button" className="header-logout-btn" onClick={handleLogout}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <path d="M18.36 6.64A9 9 0 1 1 5.64 6.64" />
-                <line x1="12" y1="2" x2="12" y2="12" />
-              </svg>
-              Đăng xuất
-            </button>
+            <span className="header-divider" />
+            {/* Ai đang thao tác. Đăng xuất nằm ở đáy sidebar, không lặp lại ở đây. */}
+            <div className="header-user" title={displayName}>
+              <div className="header-user-avatar" aria-hidden="true">
+                {displayName.charAt(0).toUpperCase()}
+              </div>
+              <div className="header-user-info">
+                <span className="header-user-name">{displayName}</span>
+                <span className="header-user-role">{profile?.role || 'ADMIN'}</span>
+              </div>
+            </div>
           </div>
         </header>
 

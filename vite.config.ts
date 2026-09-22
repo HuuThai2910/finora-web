@@ -36,6 +36,14 @@ export default defineConfig({
         target: 'http://localhost:8000',
         changeOrigin: true,
       },
+      '/api/v1/market': {
+        target: 'http://localhost:8084',
+        changeOrigin: true,
+      },
+      '/api/v1/investments': {
+        target: 'http://localhost:8084',
+        changeOrigin: true,
+      },
     },
   },
 });

@@ -1,0 +1,1243 @@
+/* Gọi vốn & Notes — dùng lại design token chung của admin web (Sapphire & Cyan). */
+
+.inv-page {
+  display: grid;
+  gap: 16px;
+}
+
+/* ── Header ──────────────────────────────────────────────────── */
+.inv-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.inv-title {
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  color: var(--text-primary);
+}
+
+.inv-lead {
+  max-width: 62ch;
+  margin-top: 4px;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--text-secondary);
+}
+
+.inv-lead strong {
+  color: var(--text-primary);
+}
+
+.inv-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* Tham số đang áp dụng, đọc lướt được ngay cạnh nút mở form. */
+.inv-settings-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px dashed var(--border-color);
+  background: var(--card-bg);
+  font-size: 12px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+/* Dấu chấm ngăn cách giữa các mẩu thông tin cùng dòng. */
+.inv-dot {
+  display: inline-block;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.45;
+  margin: 0 6px;
+  vertical-align: middle;
+}
+
+/* ── Dải chặng ───────────────────────────────────────────────── */
+.inv-pipeline {
+  display: grid;
+  gap: 8px;
+}
+
+.inv-stage-cards {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.inv-stage-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 14px 16px 13px;
+  text-align: left;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+  transition: transform 180ms var(--ease), box-shadow 180ms var(--ease), border-color 180ms var(--ease);
+}
+
+/* Vạch nhấn trên đầu thẻ, cùng ngôn ngữ với thẻ KPI của mockup. */
+.inv-stage-card::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 3px;
+  background: var(--border-color);
+  transition: background 180ms var(--ease);
+}
+
+/* Mũi tên nối các thẻ: thẻ sau chỉ về thẻ trước. */
+.inv-stage-card + .inv-stage-card::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: -6px;
+  width: 10px;
+  height: 10px;
+  border-top: 2px solid var(--border-color);
+  border-right: 2px solid var(--border-color);
+  transform: translateY(-50%) rotate(45deg);
+  background: var(--content-bg);
+}
+
+.inv-stage-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow);
+}
+
+.inv-stage-card:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+
+.inv-stage-card.is-active {
+  border-color: var(--brand);
+  box-shadow: 0 0 0 1px var(--brand), var(--shadow-sm);
+}
+
+.inv-stage-card.is-active::before {
+  background: linear-gradient(90deg, var(--brand), var(--cyan));
+}
+
+.inv-stage-card.needs-action::before {
+  background: #d97706;
+}
+
+.inv-stage-card.needs-action.is-active::before {
+  background: linear-gradient(90deg, #d97706, var(--brand));
+}
+
+.inv-stage-label {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.inv-stage-count {
+  font-size: 26px;
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: -0.025em;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+}
+
+.inv-stage-hint {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.inv-stage-card.needs-action .inv-stage-hint {
+  color: #b45309;
+  font-weight: 700;
+}
+
+.inv-archive {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  padding-left: 2px;
+}
+
+.inv-archive-label {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-right: 4px;
+}
+
+.inv-archive-chip {
+  padding: 5px 11px;
+  border-radius: 999px;
+  border: 1px solid var(--border-color);
+  background: var(--card-bg);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.inv-archive-chip:hover {
+  color: var(--text-primary);
+}
+
+.inv-archive-chip.is-active {
+  color: #fff;
+  background: var(--text-secondary);
+  border-color: var(--text-secondary);
+}
+
+.inv-archive-chip:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+
+/* ── Thanh lọc ───────────────────────────────────────────────── */
+.inv-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: 12px 16px;
+}
+
+/* Tên riêng, KHÔNG dùng .inv-field: lớp đó đã thuộc về form trong modal và hai bộ quy
+   tắc sẽ đè lên nhau (thanh lọc cần flex-basis, modal thì không). */
+.inv-filter-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1 1 170px;
+  min-width: 150px;
+}
+
+.inv-field-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.inv-input {
+  width: 100%;
+  height: 36px;
+  padding: 0 10px;
+  font-size: 13px;
+  font-family: inherit;
+  color: var(--text-primary);
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+}
+
+.inv-input:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 1px;
+}
+
+.inv-filter-actions {
+  display: flex;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.inv-filter-actions .inv-btn {
+  height: 36px;
+}
+
+/* ── Bảng ────────────────────────────────────────────────────── */
+.inv-table-wrap {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  overflow-x: auto;
+}
+
+.inv-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  table-layout: fixed;
+}
+
+/* Tổng đúng 100% và toàn phần trăm: trộn một cột px vào bảng `table-layout: fixed`
+   làm bảng dôi quá khung và phải cuộn ngang. Cột thao tác chỉ chứa một icon 34px. */
+.inv-col-loan { width: 35%; }
+.inv-col-terms { width: 13%; }
+.inv-col-progress { width: 31%; }
+.inv-col-status { width: 14%; }
+.inv-col-actions { width: 7%; }
+
+.inv-col-actions {
+  white-space: nowrap;
+  text-align: right;
+  padding-right: 10px;
+}
+
+/* ── Menu thao tác ───────────────────────────────────────────── */
+.inv-menu {
+  position: relative;
+  display: inline-block;
+}
+
+.inv-menu-trigger {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background 150ms var(--ease), color 150ms var(--ease);
+}
+
+.inv-menu-trigger:hover:not(:disabled),
+.inv-menu-trigger[aria-expanded='true'] {
+  background: rgba(29, 78, 216, 0.08);
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+.inv-menu-trigger:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 1px;
+}
+
+.inv-menu-trigger:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+
+.inv-menu-busy {
+  font-size: 16px;
+  line-height: 1;
+}
+
+/* `fixed` chứ không phải `absolute`: khung bảng có overflow sẽ cắt mất menu.
+   Toạ độ do component tính từ vị trí nút và gắn bằng inline style. */
+.inv-menu-list {
+  position: fixed;
+  z-index: 60;
+  min-width: 260px;
+  padding: 4px;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow);
+  text-align: left;
+  animation: inv-modal-in 160ms var(--ease);
+}
+
+.inv-menu-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  padding: 8px 10px;
+  border: none;
+  border-radius: calc(var(--radius-md) - 4px);
+  background: none;
+  color: var(--text-primary);
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.inv-menu-item:hover:not(:disabled),
+.inv-menu-item:focus-visible {
+  background: rgba(29, 78, 216, 0.08);
+  outline: none;
+}
+
+/* Bước chưa tới lượt: vẫn hiện để thấy đủ luồng, nhưng mờ và không bấm được. */
+.inv-menu-item:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.inv-menu-item-label {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.inv-menu-item-hint {
+  font-size: 11.5px;
+  color: var(--text-secondary);
+  white-space: normal;
+  line-height: 1.4;
+}
+
+/* Tên khoản vay là nút thật (tới được bằng bàn phím) nhưng trông như tiêu đề dòng. */
+.inv-row-link {
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  font-weight: 700;
+  color: var(--text-primary);
+  text-align: left;
+  cursor: pointer;
+}
+
+.inv-row-link:hover {
+  color: var(--brand);
+}
+
+.inv-row-link:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.inv-row:hover {
+  background: rgba(29, 78, 216, 0.035);
+}
+
+.inv-table thead th {
+  text-align: left;
+  padding: 11px 14px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  background: #f2f6fd;
+  border-bottom: 1px solid var(--border-color);
+  white-space: nowrap;
+}
+
+/* Canh giữa theo chiều dọc: dòng cao 2–3 dòng chữ, pill và nút nằm giữa mới cân. */
+.inv-table tbody td {
+  padding: 13px 14px;
+  border-bottom: 1px solid var(--border-color);
+  color: var(--text-primary);
+  vertical-align: middle;
+  word-break: break-word;
+}
+
+.inv-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.inv-table tbody tr.is-muted td {
+  color: var(--text-secondary);
+}
+
+.inv-name {
+  font-weight: 700;
+}
+
+.inv-desc {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-top: 3px;
+}
+
+.inv-grade {
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.inv-muted {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.inv-num-strong {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+}
+
+.inv-progress-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.inv-progress-pct {
+  font-size: 14px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+}
+
+/* Chú thích thời gian dưới thanh tiến độ (bảng) hoặc cạnh hạn gọi vốn (modal):
+   đổi màu theo độ gấp nhưng chữ luôn nói rõ, không chỉ dựa màu. */
+.inv-foot {
+  margin-top: 6px;
+}
+
+.inv-next.is-warning,
+.inv-foot.is-warning {
+  color: #b45309;
+  font-weight: 600;
+}
+
+.inv-next.is-expired,
+.inv-foot.is-expired {
+  color: var(--danger);
+  font-weight: 600;
+}
+
+.inv-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Đang tải lại: giữ nguyên bảng, chỉ mờ đi để không nháy sang trạng thái trống. */
+.inv-refreshing {
+  opacity: 0.55;
+  transition: opacity 150ms ease-out;
+  pointer-events: none;
+}
+
+/* Skeleton: cùng chiều cao dòng với bảng thật. */
+.inv-skeleton {
+  padding: 6px 0;
+}
+
+.inv-skeleton-row {
+  display: flex;
+  gap: 14px;
+  padding: 16px 14px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.inv-skeleton-row:last-child {
+  border-bottom: none;
+}
+
+.inv-skeleton-block {
+  height: 14px;
+  border-radius: 6px;
+  background: linear-gradient(90deg, #e9eef8 25%, #f4f7fc 50%, #e9eef8 75%);
+  background-size: 200% 100%;
+  animation: inv-shimmer 1.3s ease-in-out infinite;
+}
+
+.inv-skeleton-block.w-40 { flex: 0 0 40%; }
+.inv-skeleton-block.w-26 { flex: 0 0 26%; }
+.inv-skeleton-block.w-12 { flex: 0 0 12%; }
+
+@keyframes inv-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .inv-skeleton-block { animation: none; }
+  .inv-stage-card, .inv-bar-fill { transition: none; }
+  .inv-stage-card:hover { transform: none; }
+}
+
+/* ── Thanh tiến độ ───────────────────────────────────────────── */
+.inv-bar {
+  height: 8px;
+  border-radius: 999px;
+  background: #dde5f3;
+  overflow: hidden;
+}
+
+.inv-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--brand), var(--cyan));
+  transition: width 240ms var(--ease);
+}
+
+/* Đủ vốn dùng màu success, đang gọi dùng màu brand: trạng thái đọc được ngay từ thanh
+   tiến độ mà không phải liếc sang cột trạng thái. Nhãn chữ vẫn giữ, không chỉ dựa màu. */
+.inv-bar-fill.is-funded {
+  background: var(--success);
+}
+
+/* ── Nhãn trạng thái ─────────────────────────────────────────── */
+.inv-status {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* Chờ duyệt: màu cảnh báo vì đây là việc đang tồn đọng chờ quản trị xử lý. */
+.inv-status.is-draft { background: #fef3c7; color: #92400e; border-color: #f3d98f; }
+.inv-status.is-open { background: #dbeafe; color: #1e40af; border-color: #bcd3fb; }
+.inv-status.is-funded { background: #d1fae5; color: #065f46; border-color: #a7e3c8; }
+.inv-status.is-closed { background: #e6ebf4; color: #3a4560; border-color: #d2dbeb; }
+.inv-status.is-cancelled { background: #fde3e5; color: #a11221; border-color: #f4c2c7; }
+
+/* ── Nút ─────────────────────────────────────────────────────── */
+.inv-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.inv-btn {
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+  background: var(--card-bg);
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 14px;
+  cursor: pointer;
+  transition: filter 150ms var(--ease), box-shadow 150ms var(--ease);
+}
+
+.inv-btn.sm {
+  padding: 6px 10px;
+  font-size: 12px;
+}
+
+.inv-btn:hover:not(:disabled) {
+  filter: brightness(0.97);
+}
+
+.inv-btn:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+
+.inv-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.inv-btn-brand {
+  background: linear-gradient(180deg, var(--brand), var(--brand-600));
+  border-color: var(--brand-600);
+  color: #fff;
+  box-shadow: 0 1px 2px rgba(15, 27, 48, 0.12), 0 4px 10px rgba(29, 78, 216, 0.22);
+}
+
+.inv-btn-brand:hover:not(:disabled) {
+  filter: brightness(1.06);
+}
+
+.inv-btn-ghost {
+  background: transparent;
+}
+
+.inv-link {
+  background: none;
+  border: none;
+  color: var(--brand);
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+}
+
+/* ── Thông báo ───────────────────────────────────────────────── */
+.inv-empty,
+.inv-notice,
+.inv-error {
+  padding: 14px 16px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-color);
+  font-size: 13px;
+  background: var(--card-bg);
+  color: var(--text-secondary);
+}
+
+.inv-notice {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  border-color: #a7e3c8;
+  background: #ecfdf5;
+  color: #065f46;
+}
+
+.inv-notice-close {
+  flex: none;
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  font-size: 18px;
+  line-height: 1;
+  color: inherit;
+  opacity: 0.7;
+}
+
+.inv-notice-close:hover {
+  opacity: 1;
+  background: rgba(5, 150, 105, 0.12);
+}
+
+.inv-error {
+  border-color: rgba(225, 29, 46, 0.35);
+  background: #fff5f5;
+  color: var(--danger);
+}
+
+/* Lỗi thao tác ở đầu trang có nút đóng như thông báo thành công. */
+.inv-error-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.inv-error-row .inv-notice-close:hover {
+  background: rgba(225, 29, 46, 0.12);
+}
+
+.inv-pager {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* ── Modal ───────────────────────────────────────────────────── */
+.inv-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 50;
+}
+
+.inv-modal {
+  display: grid;
+  gap: 14px;
+  background: var(--card-bg);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow);
+  padding: 22px 24px;
+  width: min(560px, 100%);
+  max-height: 92vh;
+  overflow-y: auto;
+  animation: inv-modal-in 200ms var(--ease);
+}
+
+@keyframes inv-modal-in {
+  from { opacity: 0; transform: translateY(8px) scale(0.985); }
+  to { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .inv-modal { animation: none; }
+}
+
+.inv-modal.is-wide {
+  width: min(860px, 100%);
+}
+
+.inv-eyebrow {
+  display: block;
+  color: var(--brand);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.inv-modal-title {
+  font-size: 19px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+  margin-top: 2px;
+}
+
+.inv-modal-note {
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+
+.inv-detail-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.inv-detail-head .inv-status {
+  flex: none;
+  margin-top: 4px;
+}
+
+/* ── Stepper ─────────────────────────────────────────────────── */
+.inv-stepper {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  gap: 6px;
+  padding: 14px 6px 10px;
+  border-top: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.inv-step {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  text-align: center;
+}
+
+/* Đường nối giữa các bước. */
+.inv-step + .inv-step::before {
+  content: '';
+  position: absolute;
+  top: 15px;
+  right: calc(50% + 18px);
+  left: calc(-50% + 18px);
+  height: 2px;
+  background: var(--border-color);
+}
+
+.inv-step.is-done + .inv-step::before,
+.inv-step.is-done + .inv-step.is-done::before {
+  background: var(--success);
+}
+
+.inv-step-dot {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 2px solid var(--border-color);
+  background: var(--card-bg);
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--text-secondary);
+}
+
+.inv-step.is-done .inv-step-dot {
+  background: var(--success);
+  border-color: var(--success);
+  color: #fff;
+}
+
+.inv-step.is-current .inv-step-dot {
+  border-color: var(--brand);
+  color: var(--brand);
+  box-shadow: 0 0 0 4px rgba(29, 78, 216, 0.14);
+}
+
+.inv-step.is-terminal .inv-step-dot {
+  background: var(--danger);
+  border-color: var(--danger);
+  color: #fff;
+}
+
+.inv-step-text {
+  display: grid;
+  gap: 2px;
+}
+
+.inv-step-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.inv-step.is-todo .inv-step-label {
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.inv-step.is-current .inv-step-label {
+  color: var(--brand);
+}
+
+.inv-step-hint {
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--text-secondary);
+}
+
+.inv-step.is-todo .inv-step-hint {
+  opacity: 0.7;
+}
+
+/* ── Chi tiết ────────────────────────────────────────────────── */
+.inv-detail-cards {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.inv-detail-card {
+  display: grid;
+  gap: 10px;
+  align-content: start;
+  padding: 14px 16px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  background: #f8fafd;
+}
+
+.inv-detail-heading {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.inv-progress-big {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.inv-progress-big strong {
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  color: var(--brand);
+}
+
+.inv-progress-big span {
+  font-size: 12px;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.inv-kv {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 16px;
+}
+
+.inv-kv-3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  padding: 12px 14px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: #f8fafd;
+}
+
+.inv-kv dt {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-bottom: 2px;
+}
+
+.inv-kv dd {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.inv-table-compact {
+  table-layout: auto;
+  min-width: 620px;
+}
+
+.inv-table-compact th.inv-num {
+  text-align: right;
+}
+
+.inv-num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.inv-col-index {
+  width: 36px;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.inv-investor-id {
+  font-family: ui-monospace, 'Cascadia Code', 'Consolas', monospace;
+  font-size: 11.5px;
+}
+
+/* Dòng Note mở rộng dưới một nhà đầu tư. */
+.inv-notes-row td {
+  background: #f8fafd;
+  padding: 8px 14px 12px 50px;
+}
+
+.inv-notes {
+  display: grid;
+  gap: 6px;
+}
+
+.inv-note {
+  display: grid;
+  grid-template-columns: minmax(160px, 1.4fr) repeat(3, minmax(0, 1fr)) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: var(--card-bg);
+  font-size: 12.5px;
+}
+
+.inv-note-number {
+  font-family: ui-monospace, 'Cascadia Code', 'Consolas', monospace;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.inv-note-cell {
+  display: grid;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+}
+
+.inv-note-label {
+  font-size: 10.5px;
+  color: var(--text-secondary);
+}
+
+.inv-notes-state {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.inv-notes-state.is-error {
+  color: var(--danger);
+}
+
+/* ── Form trong modal ────────────────────────────────────────── */
+.inv-form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.inv-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.inv-field input,
+.inv-field select {
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 9px 11px;
+  font-size: 13px;
+  font-family: inherit;
+  font-weight: 500;
+  color: var(--text-primary);
+  background: var(--card-bg);
+}
+
+.inv-field input:focus-visible,
+.inv-field select:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 1px;
+}
+
+.inv-field-block {
+  display: grid;
+  gap: 8px;
+}
+
+.inv-field-help {
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.inv-field-error {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--danger);
+}
+
+.inv-chips {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.inv-chip {
+  padding: 5px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border-color);
+  background: var(--card-bg);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.inv-chip.is-active {
+  color: #fff;
+  background: var(--brand);
+  border-color: var(--brand);
+}
+
+.inv-chip:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+
+.inv-hint {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+
+.inv-hint.is-warning {
+  color: #b45309;
+  font-weight: 600;
+}
+
+.inv-settings-meta {
+  font-size: 11.5px;
+  color: var(--text-secondary);
+}
+
+.inv-maintenance {
+  display: grid;
+  gap: 8px;
+  padding-top: 14px;
+  border-top: 1px dashed var(--border-color);
+}
+
+.inv-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.inv-modal-actions-split {
+  justify-content: space-between;
+  flex-wrap: wrap;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-color);
+}
+
+.inv-next-hint {
+  flex: 1 1 260px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+
+/* ── Responsive ──────────────────────────────────────────────── */
+@media (max-width: 1100px) {
+  .inv-stage-cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .inv-stage-card + .inv-stage-card::after {
+    display: none;
+  }
+}
+
+@media (max-width: 900px) {
+  .inv-table {
+    table-layout: auto;
+    min-width: 720px;
+  }
+
+  .inv-detail-cards {
+    grid-template-columns: 1fr;
+  }
+
+  .inv-stepper {
+    grid-auto-flow: row;
+    grid-auto-columns: auto;
+    gap: 10px;
+  }
+
+  .inv-step {
+    grid-template-columns: 30px 1fr;
+    justify-items: start;
+    text-align: left;
+    gap: 10px;
+  }
+
+  .inv-step + .inv-step::before {
+    display: none;
+  }
+}
+
+@media (max-width: 600px) {
+  .inv-header {
+    flex-direction: column;
+  }
+
+  .inv-stage-cards {
+    grid-template-columns: 1fr;
+  }
+
+  .inv-modal {
+    padding: 18px 16px;
+  }
+
+  .inv-kv,
+  .inv-kv-3 {
+    grid-template-columns: 1fr;
+  }
+
+  .inv-note {
+    grid-template-columns: 1fr 1fr;
+  }
+}

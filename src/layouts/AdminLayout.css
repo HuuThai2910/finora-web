@@ -61,47 +61,6 @@
 }
 
 /* User card — glass effect */
-.sidebar-user {
-  margin: 0 12px 6px;
-  padding: 12px;
-  background: var(--sidebar-card-bg);
-  border: 1px solid var(--sidebar-card-border);
-  border-radius: 14px;
-  display: flex;
-  align-items: center;
-  gap: 11px;
-}
-
-.sidebar-user-avatar {
-  width: 38px;
-  height: 38px;
-  background: linear-gradient(145deg, var(--brand), var(--cyan));
-  border-radius: 11px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.sidebar-user-avatar svg {
-  width: 19px;
-  height: 19px;
-  color: #fff;
-}
-
-.sidebar-user-info h3 {
-  font-size: 14px;
-  font-weight: 600;
-  color: #fff;
-}
-
-.sidebar-user-info p {
-  font-size: 11px;
-  color: #7e8bab;
-  margin-top: 2px;
-  line-height: 1.45;
-}
-
 /* Navigation */
 .sidebar-nav {
   flex: 1;
@@ -285,34 +244,25 @@
   gap: 9px;
 }
 
-.header-badge {
+/* Chip trạng thái hệ thống: mờ, một màu, chỉ chấm xanh là điểm nhấn sống. */
+.header-status {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 5px 11px;
+  gap: 7px;
+  padding: 6px 11px;
   border-radius: 99px;
-  font-size: 11px;
-  font-weight: 700;
-  color: #155e75;
-  background: #cffafe;
+  border: 1px solid var(--border-color);
+  background: #f6f8fd;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
 }
 
-.header-badge svg {
-  width: 12px;
-  height: 12px;
-}
-
-.header-live {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 5px 11px;
-  border-radius: 99px;
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--success);
-  background: #d1fae5;
-  border: none;
+.header-status svg {
+  width: 13px;
+  height: 13px;
+  color: var(--cyan);
 }
 
 .header-live-dot {
@@ -353,27 +303,57 @@
   height: 17px;
 }
 
-.header-logout-btn {
+/* Thẻ người dùng: không đóng khung để không thành khối thứ ba cạnh chip và nút; avatar
+   là điểm nhấn duy nhất, tên và vai trò xếp hai dòng gọn. */
+.header-user {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
-  background: var(--danger);
+  gap: 9px;
+  max-width: 240px;
+}
+
+.header-user-avatar {
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  background: linear-gradient(145deg, var(--brand), var(--cyan));
   color: #fff;
-  border-radius: 11px;
-  padding: 8px 15px;
+  font-size: 14px;
+  font-weight: 800;
+  box-shadow: 0 3px 8px rgba(29, 78, 216, 0.28);
+}
+
+.header-user-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.2;
+}
+
+.header-user-name {
   font-size: 13px;
   font-weight: 700;
-  transition: filter 0.15s var(--ease), box-shadow 0.15s var(--ease);
-  box-shadow: 0 2px 8px rgba(225, 29, 46, 0.25);
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.header-logout-btn:hover {
-  filter: brightness(1.07);
+.header-user-role {
+  margin-top: 2px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--brand);
 }
 
-.header-logout-btn svg {
-  width: 15px;
-  height: 15px;
+@media (max-width: 900px) {
+  .header-status { display: none; }
+  .header-user { max-width: 160px; }
 }
 
 /* ── Main area ───────────────────────────────────────────────── */
@@ -424,8 +404,7 @@
 /* ── Focus rings — WCAG ──────────────────────────────────────── */
 .sidebar-item:focus-visible,
 .sidebar-logout:focus-visible,
-.header-icon-btn:focus-visible,
-.header-logout-btn:focus-visible {
+.header-icon-btn:focus-visible {
   outline: 2px solid var(--brand);
   outline-offset: 2px;
 }

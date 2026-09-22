@@ -1,3 +1,10 @@
+import {
+  EMPTY,
+  formatCurrency,
+  formatDate,
+  formatDateTime,
+  formatPercent as formatPercentBase,
+} from '@/utils';
 import type { LoanApplicationStatus } from './types';
 
 export const APPLICATION_STATUS_LABELS: Record<LoanApplicationStatus, string> = {
@@ -11,30 +18,26 @@ export const APPLICATION_STATUS_LABELS: Record<LoanApplicationStatus, string> = 
   WITHDRAWN: 'Đã rút',
 };
 
-export function formatMoney(value: number | null | undefined): string {
-  if (value == null) return '—';
-  return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value);
-}
+/** Màn hình khoản vay hiển thị tiền kèm ký hiệu ₫ vì số đứng một mình, không có cột đơn vị. */
+export const formatMoney = formatCurrency;
 
-export function formatDateTime(value: string | null | undefined): string {
-  if (!value) return '—';
-  return new Intl.DateTimeFormat('vi-VN', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(value));
-}
+export { formatDate, formatDateTime };
 
-export function formatDate(value: string | null | undefined): string {
-  if (!value) return '—';
-  return new Intl.DateTimeFormat('vi-VN', { dateStyle: 'short' }).format(new Date(value));
-}
-
+/**
+ * Phần trăm, nhận thêm cờ cho giá trị đang ở dạng tỷ lệ.
+ *
+ * Giữ cờ ở đây thay vì đẩy lên `@/utils`: chỉ màn hình khoản vay trộn hai đơn vị trong
+ * cùng một trang, các feature khác luôn biết chắc mình đang cầm đơn vị nào.
+ */
 export function formatPercent(value: number | null | undefined, fraction = false): string {
-  if (value == null) return '—';
-  const percentage = fraction ? value * 100 : value;
-  return `${new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 2 }).format(percentage)}%`;
+  if (value == null) return EMPTY;
+  return formatPercentBase(fraction ? value * 100 : value);
 }
 
 export function formatPercentagePoints(value: number | null | undefined): string {
   if (value == null) return '—';
   const sign = value > 0 ? '+' : '';
+  // 4 chữ số thập phân, khác mặc định của formatNumber, nên giữ bản riêng.
   return `${sign}${new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 4 }).format(value)} điểm phần trăm`;
 }
 
