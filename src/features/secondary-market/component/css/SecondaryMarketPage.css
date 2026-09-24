@@ -1,0 +1,49 @@
+/*
+ * Chợ thứ cấp Notes.
+ *
+ * Dùng lại toàn bộ design system `inv-*` của trang Gọi vốn (bảng, thẻ chặng, nút, trạng thái):
+ * hai trang cùng thuộc cụm đầu tư nên phải nhìn như một. Chỉ ba class riêng ở đây cho những gì
+ * trang Gọi vốn không có.
+ */
+
+/* Dải tab trạng thái. Cùng bố cục với `.inv-stage-cards` nhưng bốn cột thay vì bốn chặng có
+   thứ tự, nên không dùng chung class để sau này đổi một bên không kéo bên kia. */
+.sm-tabs {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+@media (max-width: 900px) {
+  .sm-tabs {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Câu nhắc về ranh giới nghiệp vụ: người vay không liên quan tới chuyển nhượng. */
+.sm-note {
+  padding: 12px 16px;
+  margin-bottom: 18px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-color);
+  border-left: 3px solid var(--primary-color);
+  background: var(--card-bg);
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+/*
+ * Cảnh báo nợ xấu ngay trong ô bảng.
+ *
+ * Có ký hiệu và chữ, không chỉ màu: bán Note nợ xấu là hợp lệ nhưng người đọc phải nhận ra được
+ * kể cả khi không phân biệt được màu sắc.
+ */
+.sm-warning-inline {
+  margin-top: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--danger);
+  line-height: 1.4;
+}

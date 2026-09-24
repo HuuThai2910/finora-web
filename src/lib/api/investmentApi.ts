@@ -16,6 +16,15 @@ export const investmentApi = createApi({
   }),
   // `CommitmentNotes` tách riêng: phát hành Note không đổi listing nhưng phải làm mới
   // danh sách Note của từng phần vốn. `FundingSettings` chỉ có một bản ghi.
-  tagTypes: ['MarketListing', 'MarketListingList', 'FundingProgress', 'CommitmentNotes', 'FundingSettings'],
+  // `SecondaryListings` cho bảng tin chợ thứ cấp: tách riêng vì tin đăng bán đổi độc lập với
+  // tiến độ gọi vốn — bán một Note không làm đổi khoản vay nào trên sàn sơ cấp.
+  tagTypes: [
+    'MarketListing',
+    'MarketListingList',
+    'FundingProgress',
+    'CommitmentNotes',
+    'FundingSettings',
+    'SecondaryListings',
+  ],
   endpoints: () => ({}),
 });
