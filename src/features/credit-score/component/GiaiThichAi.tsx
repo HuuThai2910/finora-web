@@ -6,6 +6,7 @@ import type {
   YeuToGop,
 } from "../types";
 import { NHAN_MUC_DO } from "../constant";
+import { formatNumber } from '@/utils';
 
 /**
  * Các khối trình bày kết quả giải thích của AI, dùng chung cho hai nơi:
@@ -16,7 +17,8 @@ import { NHAN_MUC_DO } from "../constant";
  * nhau cho cùng một dữ liệu — cùng ngưỡng, cùng nhãn, cùng cách vẽ độ lớn.
  */
 
-export const tienVN = (n: number) => new Intl.NumberFormat("vi-VN").format(n);
+/** Giữ tên cũ vì nhiều màn hình đang import; thân hàm dùng chung với toàn project. */
+export const tienVN = (n: number) => formatNumber(n);
 
 /** Thanh biểu diễn độ lớn đóng góp, chuẩn hóa theo yếu tố mạnh nhất của cả hai chiều. */
 export function ThanhDongGop({

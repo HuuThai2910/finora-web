@@ -24,6 +24,8 @@ export const ADMIN_NAV_SECTIONS: AdminNavigationSection[] = [
   {
     label: 'ĐẦU TƯ & GIAO DỊCH',
     items: [
+      { to: '/investments/funding', label: 'Gọi vốn & Notes', icon: 'chart', isAvailable: true },
+      { to: '/investments/secondary', label: 'Chợ thứ cấp Notes', icon: 'file', isAvailable: true },
       { to: '/investments/market', label: 'Bảng khớp lệnh', icon: 'chart', isAvailable: false },
       { to: '/investments/orders', label: 'Lệnh đầu tư', icon: 'file', isAvailable: false },
     ],
@@ -69,6 +71,8 @@ export function getAdminPageTitle(pathname: string): string {
   if (pathname === '/products') return 'Sản phẩm vay';
   if (pathname === '/loans/evaluation') return 'Chính sách đánh giá AI';
   if (pathname === '/loans/scoring') return 'Chấm điểm & Giải thích AI';
+  if (pathname === '/investments/funding') return 'Gọi vốn & Notes';
+  if (pathname === '/investments/secondary') return 'Chợ thứ cấp Notes';
   if (pathname === '/users') return 'Người dùng & Phân quyền';
   if (/^\/customers\/kyc\/[^/]+$/.test(pathname)) return 'Chi tiết hồ sơ khách hàng';
   if (pathname === '/customers/kyc') return 'Khách hàng — eKYC';

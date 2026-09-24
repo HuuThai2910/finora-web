@@ -1,4 +1,5 @@
 import type { LoanProduct } from '../types';
+import { formatNumber as formatMoney } from '@/utils';
 
 type ProductAction = 'activate' | 'deactivate' | 'archive' | 'core-sync';
 
@@ -9,10 +10,6 @@ const SYNC_LABELS: Record<string, string> = {
   NOT_SYNCED: 'Chưa đồng bộ', PENDING: 'Đang đồng bộ', PROCESSING: 'Đang xử lý',
   RETRY_PENDING: 'Chờ thử lại', SYNCED: 'Đã đồng bộ', FAILED: 'Lỗi đồng bộ',
 };
-
-function formatMoney(value: number) {
-  return new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 0 }).format(value);
-}
 
 interface Props {
   products: LoanProduct[];

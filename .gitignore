@@ -1,7 +1,12 @@
 # Dependencies
 node_modules/
 
-# Build and test output (web `dist` đang được repository theo dõi để bàn giao bản demo)
+# Build and test output
+#
+# `dist` là kết quả sinh ra từ `src`, nên không theo dõi trong git: mỗi lần build, Vite đặt tên
+# file theo hash nội dung, làm bộ file cũ bị xoá và bộ mới xuất hiện — diff không đọc được và
+# mọi lần chạy kiểm tra đều tạo thay đổi giả. Cần bản demo thì chạy `npm run build`.
+dist/
 coverage/
 
 # Local environment (keep the template)

@@ -9,6 +9,8 @@ import { CreditScoringPage } from '@/features/credit-score';
 import { ProductListPage } from '@/features/product';
 import { UserListPage } from '@/features/user';
 import { CustomerKycPage, CustomerDetailPage } from '@/features/kyc';
+import { FundingPage } from '@/features/investment';
+import { SecondaryMarketPage } from '@/features/secondary-market';
 
 export default function App() {
   const dispatch = useDispatch<AppDispatch>();
@@ -46,6 +48,8 @@ export default function App() {
           <Route path="disbursement" element={<Navigate to="/loans" replace />} />
           <Route path="loans/evaluation" element={<LoanEvaluationPage />} />
           <Route path="loans/scoring" element={<CreditScoringPage />} />
+          <Route path="investments/funding" element={<FundingPage />} />
+          <Route path="investments/secondary" element={<SecondaryMarketPage />} />
           <Route path="products" element={<ProductListPage />} />
           <Route path="products/config" element={<Navigate to="/products" replace />} />
           <Route path="users" element={<UserListPage />} />
