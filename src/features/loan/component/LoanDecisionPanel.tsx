@@ -26,8 +26,8 @@ export default function LoanDecisionPanel({ enabled, approveLoading, rejectLoadi
         <p className="review-explanation">Cần đợi kết quả đánh giá hoàn tất trước khi duyệt hoặc từ chối hồ sơ.</p>
       ) : (
         <p className="review-explanation">
-          Khi duyệt, hợp đồng sẽ dùng đúng lãi suất và lịch trả sau thẩm định hiển thị phía trên;
-          màn này không thay đổi số tiền, kỳ hạn hoặc mức lãi.
+          Khi duyệt, hệ thống dùng đúng lãi suất và lịch trả sau thẩm định hiển thị phía trên.
+          Điều khoản không bất lợi sẽ tự tiếp tục theo chấp thuận lúc nộp; điều khoản bất lợi phải chờ người vay xác nhận rồi mới tạo hợp đồng.
         </p>
       )}
       <div className="review-form-row">
@@ -51,7 +51,7 @@ export default function LoanDecisionPanel({ enabled, approveLoading, rejectLoadi
           {rejectLoading ? 'Đang từ chối...' : 'Từ chối'}
         </button>
         <button className="review-button primary" disabled={!enabled || busy} onClick={onApprove}>
-          {approveLoading ? 'Đang duyệt...' : 'Duyệt điều khoản và tạo hợp đồng'}
+          {approveLoading ? 'Đang duyệt...' : 'Phê duyệt điều khoản cuối'}
         </button>
       </div>
     </article>

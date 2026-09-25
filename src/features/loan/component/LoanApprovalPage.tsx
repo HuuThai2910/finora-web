@@ -35,7 +35,9 @@ export default function LoanApprovalPage() {
         assessmentId: data.assessment.assessmentId,
         idempotencyKey: decisionKey.current,
       }).unwrap();
-      setNotice(`Đã duyệt hồ sơ và tạo hợp đồng ${result.contractNumber ?? ''}.`);
+      setNotice(result.contractNumber
+        ? `Đã duyệt hồ sơ và tạo hợp đồng ${result.contractNumber}.`
+        : 'Đã duyệt hồ sơ. Điều khoản bất lợi hơn nên hệ thống đang chờ người vay xác nhận trước khi tạo hợp đồng.');
       decisionKey.current = createIdempotencyKey('admin-decision');
     } catch (requestError) {
       setNotice(toUiApiError(requestError).message);

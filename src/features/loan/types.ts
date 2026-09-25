@@ -11,6 +11,7 @@ export type LoanApplicationStatus =
   | 'PENDING_REVIEW' | 'APPROVED' | 'REJECTED' | 'WITHDRAWN';
 export type CreditAssessmentStatus = 'PENDING' | 'PROCESSING' | 'RETRY_PENDING' | 'SUCCEEDED' | 'FAILED';
 export type LoanDecisionSource = 'AI_POLICY' | 'ADMIN';
+export type TermsConfirmationStatus = 'AUTO_AUTHORIZED' | 'PENDING' | 'ACCEPTED' | 'DECLINED' | 'EXPIRED';
 
 export interface ApplicantFinancialInformation {
   declaredMonthlyIncome: number;
@@ -109,6 +110,7 @@ export interface AdminLoanReviewSummary {
   decisionSource: LoanDecisionSource | null;
   repaymentMethod: RepaymentMethod;
   status: LoanApplicationStatus;
+  termsConfirmationStatus: TermsConfirmationStatus | null;
   assessment: AssessmentEvidence | null;
   version: number;
   submittedAt: string;
@@ -128,6 +130,8 @@ export interface AdminLoanReviewDetail extends AdminLoanReviewSummary {
   eligibility: EligibilityEvidence | null;
   creditProfile: CreditProfileEvidence | null;
   recentHistory: LoanApplicationHistoryItem[];
+  termsVersion: string | null;
+  termsExpiresAt: string | null;
 }
 
 /**
@@ -180,6 +184,12 @@ export interface AdminDecisionResponse {
   applicationStatus: LoanApplicationStatus;
   applicationVersion: number;
   decisionReasonCode: string;
+  decisionPolicyVersion: string;
+  adminDecidedBy: string | null;
+  adminDecidedAt: string | null;
+  termsConfirmationStatus: TermsConfirmationStatus | null;
+  termsVersion: string | null;
+  termsExpiresAt: string | null;
   contractNumber: string | null;
   contractStatus: string | null;
   contractVersion: number | null;

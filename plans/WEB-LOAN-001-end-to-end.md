@@ -23,7 +23,7 @@ Tạo sản phẩm vay
 → Loan áp chính sách theo điểm và tính lại lãi suất/lịch trả cuối
 → hồ sơ đủ ngưỡng được AI policy tự duyệt; hồ sơ vùng xem xét vào hàng đợi admin
 → admin so sánh điều khoản lúc nộp với điều khoản sau đánh giá rồi duyệt hoặc từ chối
-→ nếu được duyệt, backend tạo Contract chờ borrower đọc và ký
+→ nếu được duyệt, backend áp terms gate; chỉ tạo Contract ngay khi điều khoản không bất lợi, còn bất lợi thì chờ borrower xác nhận
 ```
 
 Admin không phải bấm “Đồng bộ Fineract” sau mỗi lần tạo thành công. Web tự gọi bước đồng bộ và chỉ hiện nút **Thử đồng bộ lại** khi thất bại. Kích hoạt vẫn là quyết định riêng vì nó làm sản phẩm xuất hiện cho borrower.
@@ -51,7 +51,7 @@ Backend quyết định field, status, quyền và chuyển trạng thái. HTML 
 - Khối so sánh luôn nhìn thấy giữa điều khoản lúc nộp và sau thẩm định: base/final rate,
   kỳ trả đầu, tổng lãi và tổng phải trả; không bắt admin đổi tab để ghép thông tin.
 - Danh sách/chi tiết assessment; retry có polling giới hạn.
-- Approve/reject có version, assessment evidence, idempotency và phản hồi Contract.
+- Approve/reject có version, assessment evidence, idempotency và phản hồi cả terms confirmation/Contract (Contract có thể null khi chờ borrower).
 - Loading/empty/error/success, version conflict và dependency unavailable.
 - Refactor theo `components/hooks/api/types/mappers/pages/schemas` khi chạm vào feature.
 
@@ -146,7 +146,7 @@ Không rollback/xóa Product local khi Fineract lỗi. Không tự tăng version
 | GET | `/api/v1/admin/loan-applications/{number}/assessments` | Lịch sử assessment | PageResponse, không coi phần tử đầu luôn mới nhất |
 | GET | `/api/v1/admin/loan-applications/{number}/assessments/{id}` | Assessment detail | Dùng polling sau retry |
 | POST | `/api/v1/admin/loan-applications/{number}/scoring-retry` | Yêu cầu retry | Idempotency-Key + assessment version; response 202 |
-| POST | `/api/v1/admin/loan-applications/{number}/approve` | Duyệt và tạo Contract | Idempotency-Key + application version + assessment ID |
+| POST | `/api/v1/admin/loan-applications/{number}/approve` | Duyệt và chuẩn bị điều khoản cuối | Idempotency-Key + application version + assessment ID; Contract nullable khi terms `PENDING` |
 | POST | `/api/v1/admin/loan-applications/{number}/reject` | Từ chối | Idempotency-Key + version + reason |
 
 ## 8. State, cache và hiệu năng

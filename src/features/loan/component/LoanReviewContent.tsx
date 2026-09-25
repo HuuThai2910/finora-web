@@ -122,7 +122,6 @@ function AssessmentTab({ application, action }: { application: AdminLoanReviewDe
             <DataList>
               <DataItem label="Xác suất rủi ro dự kiến" value={formatPercent(assessment.pdProbability, true)} />
               <DataItem label="Điểm đánh giá" value={assessment.evaluationScore ?? '—'} />
-              <DataItem label="Hạn mức AI gợi ý" value={formatMoney(assessment.suggestedLimit)} />
               <DataItem label="Lý do cảnh báo" value={assessment.rejectionReason || 'Không ghi nhận cảnh báo riêng'} />
             </DataList>
           </>

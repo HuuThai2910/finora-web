@@ -117,6 +117,20 @@ export default function LoanPricingComparison({ application }: Props) {
         {formatPercentagePoints(application.pricingAdjustmentPercentagePoints)}
         {application.pricingPolicyVersion ? ` theo ${application.pricingPolicyVersion}` : ''}.
       </p>
+      {application.termsConfirmationStatus ? (
+        <p className="review-pricing-note">
+          <strong>Phản hồi điều khoản: </strong>
+          {application.termsConfirmationStatus === 'AUTO_AUTHORIZED'
+            ? 'Tự tiếp tục vì điều khoản cuối không bất lợi hơn và người vay đã chấp thuận cơ chế này lúc nộp hồ sơ.'
+            : application.termsConfirmationStatus === 'PENDING'
+              ? `Đang chờ người vay xác nhận trước khi tạo hợp đồng${application.termsExpiresAt ? `, hạn ${new Date(application.termsExpiresAt).toLocaleString('vi-VN')}` : ''}.`
+              : application.termsConfirmationStatus === 'ACCEPTED'
+                ? 'Người vay đã chấp nhận điều khoản cuối; hợp đồng đã được tạo.'
+                : application.termsConfirmationStatus === 'DECLINED'
+                  ? 'Người vay đã từ chối điều khoản cuối; không tạo hợp đồng.'
+                  : 'Đã hết hạn phản hồi; không tạo hợp đồng.'}
+        </p>
+      ) : null}
     </article>
   );
 }
