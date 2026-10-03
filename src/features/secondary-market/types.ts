@@ -1,48 +1,87 @@
 /**
- * Contract chợ thứ cấp Notes của Investment Service.
+ * Contract chợ Notes — sổ lệnh Ask/Bid của Investment Service (INV-E2).
  *
- * Tiền và lãi suất trả về dạng **chuỗi** decimal để không mất chính xác khi qua JSON; chỉ
- * đổi sang number ở lớp hiển thị.
+ * Tiền, giá và lãi suất trả về dạng **chuỗi** decimal để không mất chính xác khi qua JSON; chỉ đổi
+ * sang number ở lớp hiển thị. Giá là % dư nợ gốc còn lại, một chữ số thập phân (`"97.5"`). Lãi suất
+ * năm đã ở dạng phần trăm (`"15.0000"` = 15%/năm, theo hợp đồng sự kiện Loan → Investment).
  */
 
-export type NoteListingStatus = 'OPEN' | 'SOLD' | 'CANCELLED';
+export type OrderSide = 'BID' | 'ASK';
+export type SettlementStatus = 'PENDING' | 'SETTLED' | 'FAILED';
 
-/**
- * Một tin đăng bán Note.
- *
- * Trường `defaulted` và `defaultedReason` là bắt buộc phải hiện rõ: bán Note đang nợ xấu được
- * phép, nhưng người mua phải biết trước khi xác nhận (plan INV-E1 mục 8.2).
- */
-export interface NoteListing {
-  listingReference: string;
-  noteNumber: string;
+/** `OrderBookSummaryResponse` — một dòng trong danh sách sổ. */
+export interface OrderBookSummary {
+  listingId: number;
   loanId: number;
-  sellerId: string;
-
-  askingPrice: string;
-  outstandingPrincipal: string;
-  defaultedReason: string | null;
-  defaulted: boolean;
-
+  creditGrade: string | null;
   annualInterestRate: string;
   termMonths: number;
-  creditGrade: string | null;
+  noteDenomination: string;
+  defaulted: boolean;
+  bestBidPercent: string | null;
+  bestAskPercent: string | null;
+  lastTradePercent: string | null;
+  lastTradeAt: string | null;
+}
 
-  /** Phí dự kiến nếu bán ở giá đang treo. */
-  estimatedFee: string;
-  /** Tiền người bán dự kiến nhận sau phí. */
-  estimatedProceeds: string;
+export interface PriceLevel {
+  pricePercent: string;
+  quantity: number;
+  orderCount: number;
+}
 
-  status: NoteListingStatus;
+export interface TradeTick {
+  pricePercent: string;
+  quantity: number;
+  aggressorSide: OrderSide;
+  executedAt: string;
+}
 
-  /** Bốn trường dưới chỉ có giá trị khi tin đã bán. */
-  buyerId: string | null;
-  soldPrice: string | null;
-  platformFee: string | null;
-  sellerProceeds: string | null;
-  soldAt: string | null;
+/** `OrderBookSnapshotResponse` — ảnh chụp công khai của một sổ, không có ai đặt lệnh nào. */
+export interface OrderBookSnapshot extends Omit<OrderBookSummary, 'bestBidPercent' | 'bestAskPercent'> {
+  sequence: number;
+  referenceOutstanding: string | null;
+  defaultWarning: string | null;
+  bestBidPercent: string | null;
+  bestAskPercent: string | null;
+  bids: PriceLevel[];
+  asks: PriceLevel[];
+  recentTrades: TradeTick[];
+}
 
-  createdAt: string;
+/** `AdminTradeResponse` — một lần khớp kèm hai bên và trạng thái thanh toán. */
+export interface AdminTrade {
+  tradeReference: string;
+  listingId: number;
+  loanId: number | null;
+  buyerId: string;
+  sellerId: string;
+  aggressorSide: OrderSide;
+  pricePercent: string;
+  quantity: number;
+  amount: string;
+  platformFee: string;
+  sellerProceeds: string;
+  defaulted: boolean;
+  settlementStatus: SettlementStatus;
+  settlementAttempts: number;
+  lastSettlementError: string | null;
+  executedAt: string;
+  settledAt: string | null;
+}
+
+/** `OrderBookAdminSummaryResponse` — số liệu trên toàn bộ dữ liệu, không phải trang đang xem. */
+export interface OrderBookAdminSummary {
+  settledCount: number;
+  settledAmount: string;
+  feeCollected: string;
+  pendingCount: number;
+  pendingAmount: string;
+  failedCount: number;
+  openBidOrders: number;
+  openBidNotes: number;
+  openAskOrders: number;
+  openAskNotes: number;
 }
 
 /** Phân trang chuẩn của backend FINORA. */

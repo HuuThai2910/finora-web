@@ -1,49 +1,261 @@
 /*
- * Chợ thứ cấp Notes.
+ * Chợ thứ cấp Notes — sổ lệnh Ask/Bid.
  *
- * Dùng lại toàn bộ design system `inv-*` của trang Gọi vốn (bảng, thẻ chặng, nút, trạng thái):
- * hai trang cùng thuộc cụm đầu tư nên phải nhìn như một. Chỉ ba class riêng ở đây cho những gì
- * trang Gọi vốn không có.
+ * Dùng lại design system `inv-*` của trang Gọi vốn (bảng, nút, trạng thái, hộp thoại): hai trang
+ * cùng thuộc cụm đầu tư nên phải nhìn như một. Ở đây chỉ có phần trang Gọi vốn không có: dải số
+ * liệu, bộ chọn chế độ xem, màu hai phía mua/bán và thang giá.
  */
 
-/* Dải tab trạng thái. Cùng bố cục với `.inv-stage-cards` nhưng bốn cột thay vì bốn chặng có
-   thứ tự, nên không dùng chung class để sau này đổi một bên không kéo bên kia. */
-.sm-tabs {
+/* Màu hai phía theo thói quen sàn chứng khoán Việt Nam: mua xanh lá, bán đỏ. Luôn đi kèm chữ
+   "Mua"/"Bán" — không dùng màu làm tín hiệu duy nhất. Cả hai đạt ≥ 5:1 trên nền trắng. */
+.sm-bid,
+.inv-table tbody td.sm-bid { color: #0a7d4f; font-weight: 700; }
+.sm-ask,
+.inv-table tbody td.sm-ask { color: #c2263a; font-weight: 700; }
+
+/* Hai bảng của trang canh trái mọi cột, cả cột số, cho tiêu đề và dữ liệu cùng một mép (`.inv-num`
+   mặc định canh phải nhưng tiêu đề `.inv-table thead th` lại canh trái nên bị lệch). Số vẫn
+   dùng chữ số đều bề ngang để các giá trong cùng cột thẳng hàng. */
+.sm-table thead th.inv-num,
+.sm-table tbody td.inv-num { text-align: left; }
+.inv-table tbody td.sm-none,
+.inv-table tbody td.sm-none .inv-num-strong { color: var(--text-secondary); font-weight: 400; }
+
+/* ── Dải bốn số liệu trong một thẻ ─────────────────────────────── */
+.sm-summary {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 12px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   margin-bottom: 18px;
-}
-
-@media (max-width: 900px) {
-  .sm-tabs {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-/* Câu nhắc về ranh giới nghiệp vụ: người vay không liên quan tới chuyển nhượng. */
-.sm-note {
-  padding: 12px 16px;
-  margin-bottom: 18px;
-  border-radius: var(--radius-lg);
-  border: 1px solid var(--border-color);
-  border-left: 3px solid var(--primary-color);
   background: var(--card-bg);
-  color: var(--text-secondary);
-  font-size: 13px;
-  line-height: 1.6;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
 }
 
-/*
- * Cảnh báo nợ xấu ngay trong ô bảng.
- *
- * Có ký hiệu và chữ, không chỉ màu: bán Note nợ xấu là hợp lệ nhưng người đọc phải nhận ra được
- * kể cả khi không phân biệt được màu sắc.
- */
+.sm-figure {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 14px 18px;
+  text-align: left;
+  background: none;
+  border: none;
+  font: inherit;
+  color: inherit;
+}
+
+.sm-figure + .sm-figure {
+  border-left: 1px solid var(--border-color);
+}
+
+.sm-figure.is-button {
+  cursor: pointer;
+}
+
+.sm-figure.is-button:hover {
+  background: #f8fafd;
+}
+
+.sm-figure.is-button:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: -2px;
+}
+
+.sm-figure-label {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.sm-figure-value {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.sm-figure-hint {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+/* Có lần khớp Payment từ chối: tô đỏ cả số lẫn chữ gợi ý để không lẫn với ô bình thường. */
+.sm-figure.is-danger .sm-figure-value,
+.sm-figure.is-danger .sm-figure-hint {
+  color: var(--danger);
+}
+
+/* ── Bộ chọn chế độ xem + bộ lọc ──────────────────────────────── */
+.sm-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.sm-segment {
+  display: inline-flex;
+  padding: 3px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: var(--card-bg);
+}
+
+.sm-segment button {
+  padding: 6px 16px;
+  border: none;
+  border-radius: calc(var(--radius-md) - 3px);
+  background: none;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.sm-segment button.is-active {
+  background: var(--brand);
+  color: #fff;
+}
+
+.sm-segment button:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+
+/* Nhãn "Mua"/"Bán" trước tên nhà đầu tư trong bảng giao dịch. */
+.sm-party {
+  display: inline-block;
+  min-width: 30px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.sm-party-row {
+  white-space: nowrap;
+}
+
 .sm-warning-inline {
   margin-top: 4px;
   font-size: 12px;
   font-weight: 600;
   color: var(--danger);
-  line-height: 1.4;
+}
+
+/* ── Hộp thoại sổ lệnh ───────────────────────────────────────── */
+.sm-book-kv {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.sm-book-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+  gap: 12px;
+}
+
+.sm-ladder {
+  display: grid;
+  gap: 2px;
+}
+
+.sm-ladder-side {
+  font-size: 12px;
+  padding: 2px 8px;
+}
+
+.sm-ladder-row {
+  position: relative;
+  display: grid;
+  grid-template-columns: 72px 1fr auto;
+  align-items: center;
+  gap: 8px;
+  min-height: 30px;
+  padding: 0 8px;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+/* Thanh độ sâu mọc từ mép phải (phía cột số Note), dài theo số Note so với mức lớn nhất. */
+.sm-ladder-bar {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: 6px;
+}
+
+.sm-ladder-bar.is-bid { background: rgba(10, 125, 79, 0.12); }
+.sm-ladder-bar.is-ask { background: rgba(194, 38, 58, 0.10); }
+
+.sm-ladder-row > :not(.sm-ladder-bar) {
+  position: relative;
+}
+
+.sm-ladder-price {
+  font-variant-numeric: tabular-nums;
+}
+
+.sm-ladder-qty {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.sm-ladder-spread {
+  margin: 6px 0;
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: #eef3fb;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+  color: var(--text-primary);
+}
+
+/* Khớp gần đây trong hộp thoại: danh sách gọn thay vì bảng, để không tràn khỏi thẻ hẹp. */
+.sm-ticks {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sm-tick {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 36px 64px 56px;
+  align-items: center;
+  gap: 8px;
+  min-height: 34px;
+  border-bottom: 1px solid var(--border-color);
+  font-size: 13px;
+}
+
+.sm-tick:last-child {
+  border-bottom: none;
+}
+
+.sm-tick-price,
+.sm-tick .sm-ladder-qty {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 900px) {
+  .sm-summary,
+  .sm-book-kv {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .sm-figure:nth-child(3) {
+    border-left: none;
+  }
+
+  .sm-figure:nth-child(n + 3) {
+    border-top: 1px solid var(--border-color);
+  }
+
+  .sm-book-grid {
+    grid-template-columns: 1fr;
+  }
 }

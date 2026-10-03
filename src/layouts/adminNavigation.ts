@@ -25,8 +25,8 @@ export const ADMIN_NAV_SECTIONS: AdminNavigationSection[] = [
     label: 'ĐẦU TƯ & GIAO DỊCH',
     items: [
       { to: '/investments/funding', label: 'Gọi vốn & Notes', icon: 'chart', isAvailable: true },
+      // Bảng khớp lệnh (D1) chính là sổ lệnh của chợ thứ cấp, nên không còn mục "Bảng khớp lệnh" riêng.
       { to: '/investments/secondary', label: 'Chợ thứ cấp Notes', icon: 'file', isAvailable: true },
-      { to: '/investments/market', label: 'Bảng khớp lệnh', icon: 'chart', isAvailable: false },
       { to: '/investments/orders', label: 'Lệnh đầu tư', icon: 'file', isAvailable: false },
     ],
   },
