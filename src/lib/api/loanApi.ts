@@ -14,6 +14,7 @@ export const loanApi = createApi({
     'AdminApplication',
     'AdminApplicationList',
     'CreditAssessment',
+    'ServicingOperations',
   ],
   endpoints: () => ({}),
 });

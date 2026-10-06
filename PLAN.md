@@ -18,7 +18,7 @@ DRAFT -> APPROVED -> IN_PROGRESS -> READY_FOR_REVIEW -> ACCEPTED
 |---|---|---|---|---|
 | WEB-LOAN-001 | Product → Fineract → assessment → admin decision/Contract | LN-003–LN-008 | `IN_PROGRESS` | [Plan](plans/WEB-LOAN-001-end-to-end.md) |
 | WEB-LOAN-002 | Listing và theo dõi gọi vốn | LN-009–LN-010 | `BACKLOG` | Chưa tạo |
-| WEB-LOAN-003 | Giải ngân, servicing, repayment, overdue | LN-011–LN-014 | `BACKLOG` | Chưa tạo |
+| WEB-LOAN-003 | Giải ngân, servicing, repayment, overdue | LN-011–LN-017 | `IN_PROGRESS` | [Plan](plans/WEB-LOAN-003-servicing-operations.md) |
 
 ## Quy tắc đồng bộ về sau
 

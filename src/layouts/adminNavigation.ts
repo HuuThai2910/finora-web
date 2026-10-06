@@ -35,7 +35,7 @@ export const ADMIN_NAV_SECTIONS: AdminNavigationSection[] = [
     items: [
       { to: '/loans', label: 'Quản lý khoản vay', icon: 'loan', isAvailable: true },
       { to: '/loans?status=PENDING_REVIEW', label: 'Phê duyệt khoản vay', icon: 'check', isAvailable: true },
-      { to: '/loans/overdue', label: 'Nợ quá hạn & Thu hồi', icon: 'clock', isAvailable: false },
+      { to: '/loans/overdue', label: 'Nợ quá hạn & Thu hồi', icon: 'clock', isAvailable: true },
       { to: '/disbursement', label: 'Giám sát giải ngân', icon: 'workflow', isAvailable: false },
     ],
   },
@@ -60,7 +60,7 @@ export const ADMIN_NAV_SECTIONS: AdminNavigationSection[] = [
       { to: '/loans/npl-config', label: 'Cấu hình xử lý nợ xấu', icon: 'alert', isAvailable: false },
       { to: '/fraud-monitoring', label: 'Fraud & Cảnh báo sớm', icon: 'scan', isAvailable: false },
       { to: '/blockchain', label: 'Blockchain Explorer', icon: 'chain', isAvailable: false },
-      { to: '/reconciliation', label: 'Đối soát & Báo cáo', icon: 'download', isAvailable: false },
+      { to: '/reconciliation', label: 'Đối soát & Báo cáo', icon: 'download', isAvailable: true },
     ],
   },
 ];
@@ -68,6 +68,8 @@ export const ADMIN_NAV_SECTIONS: AdminNavigationSection[] = [
 export function getAdminPageTitle(pathname: string): string {
   if (/^\/loans\/[^/]+\/review$/.test(pathname)) return 'Chi tiết hồ sơ vay';
   if (pathname === '/loans') return 'Quản lý khoản vay';
+  if (pathname === '/loans/overdue' || pathname === '/loans/operations') return 'Vận hành khoản vay';
+  if (pathname === '/reconciliation') return 'Đối soát & Báo cáo';
   if (pathname === '/products') return 'Sản phẩm vay';
   if (pathname === '/loans/evaluation') return 'Chính sách đánh giá AI';
   if (pathname === '/loans/scoring') return 'Chấm điểm & Giải thích AI';

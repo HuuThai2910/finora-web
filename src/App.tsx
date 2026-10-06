@@ -11,6 +11,7 @@ import { UserListPage } from '@/features/user';
 import { CustomerKycPage, CustomerDetailPage } from '@/features/kyc';
 import { FundingPage } from '@/features/investment';
 import { SecondaryMarketPage } from '@/features/secondary-market';
+import { ServicingOperationsPage } from '@/features/servicing';
 
 export default function App() {
   const dispatch = useDispatch<AppDispatch>();
@@ -44,7 +45,8 @@ export default function App() {
           <Route path="loans" element={<LoanListPage />} />
           <Route path="loans/:applicationNumber/review" element={<LoanApprovalPage />} />
           <Route path="loans/approval" element={<Navigate to="/loans?status=PENDING_REVIEW" replace />} />
-          <Route path="loans/overdue" element={<Navigate to="/loans" replace />} />
+          <Route path="loans/overdue" element={<ServicingOperationsPage />} />
+          <Route path="loans/operations" element={<ServicingOperationsPage />} />
           <Route path="disbursement" element={<Navigate to="/loans" replace />} />
           <Route path="loans/evaluation" element={<LoanEvaluationPage />} />
           <Route path="loans/scoring" element={<CreditScoringPage />} />
@@ -55,6 +57,7 @@ export default function App() {
           <Route path="users" element={<UserListPage />} />
           <Route path="customers/kyc" element={<CustomerKycPage />} />
           <Route path="customers/kyc/:id" element={<CustomerDetailPage />} />
+          <Route path="reconciliation" element={<ServicingOperationsPage />} />
         </Route>
 
         <Route path="*" element={<Navigate to="/loans" replace />} />
