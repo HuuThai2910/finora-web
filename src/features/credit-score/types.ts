@@ -18,7 +18,7 @@ export interface CreditScoreRequest {
   so_cccd?: string;
 }
 
-/** Vết của một luật đã chạy — cơ sở giải trình của Rule Engine (D4). */
+/** Vết của một luật đã chạy: cơ sở giải trình của bộ luật chấm điểm. */
 export interface RuleTraceItem {
   ma: string;
   mo_ta: string;
@@ -31,6 +31,10 @@ export interface RuleTraceItem {
   thieu_du_lieu: boolean;
 }
 
+/**
+ * Kết quả của POST /credit/score cũ. finora-ai hiện KHÔNG còn endpoint này (chỉ có
+ * /credit/explain); type giữ lại vì `features/loan/types.ts` còn re-export.
+ */
 export interface CreditScoreResponse {
   pd_probability: number;
   risk_score: number;
@@ -44,14 +48,14 @@ export interface CreditScoreResponse {
   model_version: string;
 }
 
-/** Một yếu tố ảnh hưởng tới PD, đo bằng đóng góp TreeSHAP (C1.2). */
+/** Một yếu tố ảnh hưởng tới PD, đo bằng đóng góp TreeSHAP. */
 export interface YeuToAnhHuong {
   dac_trung: string;
   mo_ta: string;
   gia_tri: number;
   /** Đóng góp vào log-odds: dương = đẩy về phía rủi ro, âm = kéo về an toàn. */
   muc_dong_gop: number;
-  /** True khi đặc trưng là rò rỉ nhãn đã biết (int_rate) — hiển thị kèm cảnh báo. */
+  /** True khi đặc trưng là rò rỉ nhãn đã biết (int_rate): hiển thị kèm cảnh báo. */
   la_leakage: boolean;
 }
 
@@ -82,7 +86,7 @@ export interface GiaiThichMoHinh {
   tom_tat: TomTatYeuTo;
 }
 
-/** Bản diễn giải cho người vay — thay số log-odds bằng câu chữ và việc cần làm. */
+/** Bản diễn giải cho người vay: thay số log-odds bằng câu chữ và việc cần làm. */
 export interface DienGiaiNguoiDung {
   thong_diep: string;
   ly_do_chinh: string[];
@@ -93,11 +97,16 @@ export interface CreditExplainResponse {
   pd_probability: number;
   risk_score: number;
   evaluation_score: number;
-  credit_grade: 'A' | 'B' | 'C' | 'D';
+  /** Tên hạng lấy nguyên từ bảng hạng cấu hình động, không cố định A-D. */
+  credit_grade: string;
   decision: 'APPROVED' | 'PENDING_REVIEW' | 'REJECTED';
   dien_giai: DienGiaiNguoiDung;
   giai_thich_mo_hinh: GiaiThichMoHinh;
   rule_trace: RuleTraceItem[];
+  /** Mã luật loại trực tiếp bị vi phạm. */
   rejection_reasons: string[];
+  /** Mã lý do bắt buộc thẩm định thủ công, không phải lý do từ chối. */
+  review_reasons: string[];
   model_version: string;
+  decision_policy_version: string;
 }

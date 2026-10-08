@@ -21,7 +21,7 @@ export interface ListingSearchParams {
   size?: number;
 }
 
-const endpoints = investmentApi.injectEndpoints({
+export const investmentEndpoints = investmentApi.injectEndpoints({
   endpoints: (builder) => ({
     getMarketListings: builder.query<PageResponse<MarketListing>, ListingSearchParams>({
       query: (params) => ({ url: '/market/listings', params }),
@@ -32,6 +32,12 @@ const endpoints = investmentApi.injectEndpoints({
           id: listingId,
         })) ?? []),
       ],
+    }),
+
+    /** Một khoản trên sàn, mọi trạng thái (trang chi tiết quản trị). */
+    getMarketListing: builder.query<MarketListing, number>({
+      query: (listingId) => `/market/listings/${listingId}`,
+      providesTags: (_result, _error, listingId) => [{ type: 'MarketListing', id: listingId }],
     }),
 
     getFundingProgress: builder.query<FundingProgress, number>({
@@ -51,6 +57,7 @@ const endpoints = investmentApi.injectEndpoints({
       }),
       invalidatesTags: (_result, _error, { listingId }) => [
         { type: 'MarketListingList', id: 'ALL' },
+        { type: 'MarketListing', id: listingId },
         { type: 'FundingProgress', id: listingId },
       ],
     }),
@@ -107,16 +114,20 @@ const endpoints = investmentApi.injectEndpoints({
       invalidatesTags: [{ type: 'FundingSettings', id: 'CURRENT' }],
     }),
 
-    /** Đóng các khoản đã hết hạn gọi vốn mà chưa đủ; worker cũng gọi định kỳ. */
+    /**
+     * Đóng các khoản đã hết hạn gọi vốn mà chưa đủ; worker cũng gọi định kỳ.
+     * Không biết trước khoản nào bị đóng nên làm mới cả nhóm chi tiết lẫn tiến độ.
+     */
     closeExpiredListings: builder.mutation<{ closedCount: number }, void>({
       query: () => ({ url: '/investments/admin/listings/close-expired', method: 'POST' }),
-      invalidatesTags: [{ type: 'MarketListingList', id: 'ALL' }],
+      invalidatesTags: [{ type: 'MarketListingList', id: 'ALL' }, 'MarketListing', 'FundingProgress'],
     }),
   }),
 });
 
 export const {
   useGetMarketListingsQuery,
+  useGetMarketListingQuery,
   useGetFundingProgressQuery,
   useGetListingInvestorsQuery,
   useApproveListingMutation,
@@ -126,6 +137,6 @@ export const {
   useGetFundingSettingsQuery,
   useUpdateFundingSettingsMutation,
   useCloseExpiredListingsMutation,
-} = endpoints;
+} = investmentEndpoints;
 
 export type { ListingStatus };

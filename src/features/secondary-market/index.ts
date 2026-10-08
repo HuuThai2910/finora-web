@@ -1,1 +1,1 @@
-export { SecondaryMarketPage } from './component/SecondaryMarketPage';
+export { SecondaryMarketPage } from './pages/SecondaryMarketPage';

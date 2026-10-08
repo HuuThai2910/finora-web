@@ -10,13 +10,22 @@ import type { ListingInvestor, ListingStatus } from './types';
 
 export type FundingStageKey = 'DRAFT' | 'OPEN' | 'FUNDED' | 'FINALIZED' | 'NOTES_ISSUED';
 
-export const FUNDING_STAGES: ReadonlyArray<{ key: FundingStageKey; label: string; hint: string }> = [
-  { key: 'DRAFT', label: 'Chờ duyệt', hint: 'Worker tự lấy khoản đã ký hợp đồng về' },
-  { key: 'OPEN', label: 'Gọi vốn', hint: 'Nhà đầu tư đặt lệnh, tiền bị giữ trong ví' },
-  { key: 'FUNDED', label: 'Đủ vốn', hint: 'Tổng cam kết chạm mục tiêu' },
-  { key: 'FINALIZED', label: 'Khóa vốn', hint: 'Phần vốn bị khóa, không hủy được nữa' },
-  { key: 'NOTES_ISSUED', label: 'Phát hành Note', hint: 'Xé vốn thành Note mệnh giá cố định' },
+export const FUNDING_STAGES: ReadonlyArray<{ key: FundingStageKey; label: string }> = [
+  { key: 'DRAFT', label: 'Chờ duyệt' },
+  { key: 'OPEN', label: 'Gọi vốn' },
+  { key: 'FUNDED', label: 'Đủ vốn' },
+  { key: 'FINALIZED', label: 'Khóa vốn' },
+  { key: 'NOTES_ISSUED', label: 'Phát hành Note' },
 ];
+
+/** Vị trí của từng chặng trong `FUNDING_STAGES`, để màn hình không phải nhớ số thứ tự. */
+export const STAGE_INDEX: Record<FundingStageKey, number> = {
+  DRAFT: 0,
+  OPEN: 1,
+  FUNDED: 2,
+  FINALIZED: 3,
+  NOTES_ISSUED: 4,
+};
 
 export type StageState = 'done' | 'current' | 'todo';
 
@@ -142,17 +151,29 @@ export function daysUntil(iso: string, now: Date = new Date()): number {
 export type WindowTone = 'normal' | 'warning' | 'expired';
 
 /**
- * Chữ mô tả cửa sổ gọi vốn của một khoản đang mở.
+ * Khoản đang gọi vốn đã quá hạn nhưng chưa được đóng.
  *
  * Quá hạn không tự đổi trạng thái ở client: listing chỉ sang CLOSED khi worker hoặc quản
- * trị gọi đóng, nên ở đây chỉ nói "hết hạn — chờ đóng" chứ không tự gọi nó đã đóng.
+ * trị gọi đóng, nên ở đây chỉ nói "quá hạn, chờ đóng" chứ không tự gọi nó đã đóng.
  */
+export function isOverdue(listing: { status: ListingStatus; fundingClosesAt: string }, now: Date = new Date()): boolean {
+  if (listing.status !== 'OPEN') return false;
+  const closesAt = new Date(listing.fundingClosesAt).getTime();
+  return Number.isFinite(closesAt) && closesAt < now.getTime();
+}
+
+/** Chữ mô tả cửa sổ gọi vốn của một khoản đang mở. */
 export function describeFundingWindow(closesAt: string, now: Date = new Date()): {
   label: string;
   tone: WindowTone;
 } {
+  const target = new Date(closesAt).getTime();
+  // Đã qua hạn dù chỉ vài giờ cũng là quá hạn; làm tròn lên để không hiện "0 ngày".
+  if (Number.isFinite(target) && target < now.getTime()) {
+    const late = Math.max(1, Math.ceil((now.getTime() - target) / DAY_MS));
+    return { label: `Quá hạn ${late} ngày, chờ đóng`, tone: 'expired' };
+  }
   const days = daysUntil(closesAt, now);
-  if (days < 0) return { label: `Hết hạn ${-days} ngày — chờ đóng`, tone: 'expired' };
   if (days === 0) return { label: 'Đóng hôm nay', tone: 'warning' };
   if (days <= 3) return { label: `Còn ${days} ngày`, tone: 'warning' };
   return { label: `Còn ${days} ngày`, tone: 'normal' };

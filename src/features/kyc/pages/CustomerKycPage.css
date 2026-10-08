@@ -1,0 +1,176 @@
+/* Trang Khách hàng eKYC: thẻ kết quả eKYC + danh sách. Thành phần chung nằm ở styles/ui.css. */
+
+/* ---------- Hai thẻ biểu đồ (mockup .k-overview) ---------- */
+.kyc-overview {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+  gap: 16px;
+}
+
+.kyc-signup-plot {
+  height: 220px;
+}
+
+@media (max-width: 1000px) {
+  .kyc-overview {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* ---------- Thẻ biểu đồ ---------- */
+.kyc-chart {
+  padding: 16px 18px 12px;
+}
+
+.kyc-chart-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.kyc-chart-head h2 {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.kyc-chart-lead {
+  margin-top: 4px;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.kyc-chart-lead b {
+  color: var(--text-primary);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.kyc-chart-plot {
+  /* Cao gần bằng biểu đồ tuần bên cạnh (mockup để cả hai 220px) để các thanh giãn đều, không dồn lên đầu thẻ. */
+  height: 200px;
+  margin-top: 8px;
+}
+
+.kyc-chart-body {
+  display: grid;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.kyc-skel-lead { width: 60%; }
+.kyc-skel-plot { height: 140px; }
+
+.kyc-chart-data {
+  margin-top: 4px;
+}
+
+.kyc-chart-data summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 0;
+  color: var(--brand);
+  font-size: 12px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.kyc-chart-data summary::-webkit-details-marker {
+  display: none;
+}
+
+.kyc-chart-data summary::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  margin-right: 4px;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(-45deg);
+  transition: transform 0.15s;
+}
+
+.kyc-chart-data[open] summary::before {
+  transform: rotate(45deg);
+}
+
+.kyc-data-table {
+  width: 100%;
+  max-width: 480px;
+  margin-top: 6px;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.kyc-data-table th {
+  padding: 4px 8px;
+  background: var(--surface-muted);
+  color: var(--text-muted);
+  font-weight: 500;
+  text-align: left;
+}
+
+.kyc-data-table td {
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--row-divider);
+  color: var(--text-secondary);
+}
+
+.kyc-data-table .num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Danh sách ---------- */
+.kyc-list {
+  padding: 14px 14px 12px;
+}
+
+.kyc-list-bar {
+  margin-bottom: 12px;
+}
+
+/* Có hồ sơ chờ duyệt tay: số đếm in đậm màu cảnh báo để không bị bỏ sót */
+.ui-tabs .n.kyc-hot {
+  color: var(--warning);
+  font-weight: 700;
+  opacity: 1;
+}
+
+.kyc-name {
+  display: block;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.kyc-name.empty {
+  color: var(--text-muted);
+  font-weight: 400;
+}
+
+@media (max-width: 1100px) {
+  .kyc-table .hide-md {
+    display: none;
+  }
+}
+
+@media (max-width: 760px) {
+  .kyc-list {
+    padding: 14px 10px 10px;
+  }
+
+  .kyc-chart {
+    padding: 14px 12px 10px;
+  }
+
+  .kyc-table .hide-sm {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kyc-chart-data summary::before {
+    transition: none;
+  }
+}

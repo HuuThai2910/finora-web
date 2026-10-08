@@ -1,1 +1,1 @@
-export { default as ServicingOperationsPage } from './components/ServicingOperationsPage';
+export { default as ServicingOperationsPage } from './pages/ServicingOperationsPage';

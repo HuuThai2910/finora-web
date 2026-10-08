@@ -24,6 +24,9 @@ export interface MarketListing {
   noteDenomination: string;
   minInvestmentAmount: string;
   status: ListingStatus;
+  /** Số hợp đồng vay đã ký; null khi khoản chưa gắn hợp đồng. */
+  contractNumber: string | null;
+  contractStatus: string | null;
   fundingClosesAt: string;
 }
 
@@ -41,12 +44,6 @@ export interface FundingProgress {
   fullyFundedAt: string | null;
 }
 
-/**
- * Một nhà đầu tư đã góp vốn, nhìn từ màn quản trị.
- *
- * Không có tên hay liên hệ: hồ sơ người dùng thuộc finora-user, còn sàn cố ý không mang
- * dữ liệu cá nhân.
- */
 /** Duyệt khoản vay đang chờ lên sàn, với mệnh giá Note do quản trị chốt. */
 export interface ApproveListingRequest {
   targetAmount: string;
@@ -55,6 +52,12 @@ export interface ApproveListingRequest {
   fundingDays: number;
 }
 
+/**
+ * Một phần vốn của nhà đầu tư, nhìn từ màn quản trị.
+ *
+ * Không có tên hay liên hệ: hồ sơ người dùng thuộc finora-user, còn sàn cố ý không mang
+ * dữ liệu cá nhân. `createdAt` là lúc đặt lệnh góp vốn.
+ */
 export interface ListingInvestor {
   commitmentId: number;
   investorId: string;
@@ -64,6 +67,8 @@ export interface ListingInvestor {
   status: 'ACTIVE' | 'FINALIZED' | 'CANCELLED';
   createdAt: string;
 }
+
+export type CommitmentStatus = ListingInvestor['status'];
 
 export interface InvestmentNote {
   noteNumber: string;
@@ -77,6 +82,8 @@ export interface InvestmentNote {
   status: 'ACTIVE' | 'CLOSED' | 'DEFAULTED';
   issuedAt: string;
 }
+
+export type NoteStatus = InvestmentNote['status'];
 
 /** Phân trang chuẩn của backend FINORA. */
 export interface PageResponse<T> {

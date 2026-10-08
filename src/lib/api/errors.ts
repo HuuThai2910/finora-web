@@ -21,7 +21,28 @@ export function toUiApiError(error: unknown): UiApiError {
     message: 'Không thể kết nối hệ thống. Vui lòng thử lại sau.',
   };
 
-  if (!error || typeof error !== 'object' || !('status' in error)) return fallback;
+  if (!error || typeof error !== 'object') return fallback;
+
+  // Đã là lỗi giao diện (vd lệnh nghiệp vụ trả kết quả thất bại với HTTP 200): giữ nguyên mã lỗi.
+  if ('code' in error && typeof error.code === 'string' && 'message' in error && typeof error.message === 'string') {
+    return error as UiApiError;
+  }
+
+  if (!('status' in error)) return fallback;
+
+  // Lỗi do `apiFetch` (finora-user) ném ra: đã có sẵn message, envelope gốc nằm trong `data`.
+  if ('message' in error && typeof error.message === 'string') {
+    const raw = 'data' in error && typeof error.data === 'object' && error.data !== null
+      ? error.data as ApiErrorEnvelope
+      : undefined;
+    return {
+      status: typeof error.status === 'number' ? error.status : undefined,
+      code: raw?.code ?? 'REQUEST_FAILED',
+      message: error.message,
+      traceId: raw?.traceId,
+      fieldErrors: raw?.fieldErrors,
+    };
+  }
 
   const fetchError = error as FetchBaseQueryError;
   const data = typeof fetchError.data === 'object' && fetchError.data !== null

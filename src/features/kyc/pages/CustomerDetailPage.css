@@ -1,0 +1,159 @@
+/* Trang Chi tiết hồ sơ khách hàng. Thành phần chung nằm ở styles/ui.css. */
+
+.cust-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.cust-back:hover {
+  color: var(--brand);
+}
+
+.cust-back svg {
+  width: 14px;
+  height: 14px;
+}
+
+.cust-state {
+  padding: 16px;
+}
+
+/* ---------- Đầu trang ---------- */
+.cust-head {
+  align-items: flex-start;
+}
+
+.cust-head-main {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.cust-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.cust-title-row h1 {
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+
+.cust-title-row h1.empty {
+  color: var(--text-muted);
+}
+
+.cust-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  row-gap: 4px;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.cust-meta > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.cust-meta > span + span {
+  margin-left: 12px;
+  padding-left: 12px;
+  border-left: 1px solid var(--border-color);
+}
+
+.cust-meta .k {
+  color: var(--text-muted);
+}
+
+/* ---------- Thẻ hồ sơ ---------- */
+.cust-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  align-items: start;
+}
+
+.cust-card {
+  overflow: hidden;
+}
+
+.cust-card-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 14px 18px 10px;
+}
+
+.cust-card-title h2 {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.cust-dl {
+  padding: 0 18px 8px;
+}
+
+.cust-field {
+  display: grid;
+  grid-template-columns: 150px minmax(0, 1fr);
+  gap: 12px;
+  align-items: baseline;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--row-divider);
+}
+
+.cust-field:last-child {
+  border-bottom: 0;
+}
+
+.cust-field dt {
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.cust-field dd {
+  min-width: 0;
+  color: var(--text-primary);
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+
+.cust-missing {
+  color: var(--text-muted);
+}
+
+@media (max-width: 960px) {
+  .cust-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 760px) {
+  .cust-meta > span + span {
+    margin-left: 0;
+    padding-left: 0;
+    border-left: 0;
+  }
+
+  .cust-meta {
+    column-gap: 12px;
+  }
+
+  .cust-field {
+    grid-template-columns: 120px minmax(0, 1fr);
+  }
+}

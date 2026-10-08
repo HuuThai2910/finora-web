@@ -1,6 +1,7 @@
-export { default as LoanListPage } from './component/LoanListPage';
-export { default as LoanApprovalPage } from './component/LoanApprovalPage';
-export { default as LoanEvaluationPage } from './component/LoanEvaluationPage';
-export { CreditScoringPage } from '@/features/credit-score';
-export { default as OverduePage } from './component/OverduePage';
-export { default as DisbursementPage } from './component/DisbursementPage';
+export { default as LoanListPage } from './pages/LoanListPage';
+export { default as LoanReviewPage } from './pages/LoanReviewPage';
+// Dùng chung cho trang khác (Tổng quan): tra tên người dùng, nhãn và màu trạng thái hồ sơ.
+export { useActorNames } from './hooks/useActorNames';
+export { APPLICATION_STATUS_LABELS } from './formatters';
+export { applicationStatusTone, formatCompactDateTime, shortApplicationNumber } from './mappers/applicationListDisplay';
+export type { AdminLoanReviewSummary, LoanApplicationStatus } from './types';

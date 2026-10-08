@@ -1,0 +1,19 @@
+/* Hạng A đến E: màu theo mức rủi ro của chữ cái; hạng khác để trung tính. */
+.aig-grade {
+  display: inline-grid;
+  place-items: center;
+  min-width: 26px;
+  height: 26px;
+  padding: 0 6px;
+  border-radius: var(--radius-sm);
+  background: #eef2f8;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.aig-grade.g-a { background: var(--success-bg); color: var(--success); }
+.aig-grade.g-b { background: var(--brand-50); color: var(--brand); }
+.aig-grade.g-c { background: var(--warning-bg); color: var(--warning); }
+.aig-grade.g-d,
+.aig-grade.g-e { background: var(--danger-bg); color: var(--danger); }

@@ -1,5 +1,6 @@
-export { default as CreditScoringPage } from './component/CreditScoringPage';
-export * from './types';
-export * from './constant';
-export * from './api/creditScoreApi';
-export * from './hooks/useCreditScoring';
+/*
+ * Public API của feature chấm điểm và giải thích AI: trang và type dùng chung
+ * (`features/loan/types.ts` re-export các type này).
+ */
+export { default as CreditScoringPage } from './pages/CreditScoringPage';
+export type * from './types';

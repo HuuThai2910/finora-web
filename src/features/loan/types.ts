@@ -2,9 +2,9 @@ import type {
   DienGiaiNguoiDung,
   GiaiThichMoHinh,
   RuleTraceItem,
-} from '@/features/credit-score/types';
+} from '@/features/credit-score';
 
-import type { PageResponse, RepaymentMethod } from '@/features/product/types';
+import type { PageResponse, RepaymentMethod } from '@/features/product';
 
 export type LoanApplicationStatus =
   | 'SUBMITTED' | 'ELIGIBILITY_PENDING' | 'SCORING' | 'SCORING_RETRY_PENDING'
@@ -117,10 +117,11 @@ export interface AdminLoanReviewSummary {
   /** ID quản trị viên đã ra quyết định; null khi hồ sơ chưa được duyệt hoặc từ chối. */
   adminDecidedBy: string | null;
   adminDecidedAt: string | null;
+  /** Mục đích vay (`LoanPurpose`) để bảng danh sách hiện icon và nhãn mà không gọi chi tiết từng hồ sơ. */
+  purposeCode: string;
 }
 
 export interface AdminLoanReviewDetail extends AdminLoanReviewSummary {
-  purposeCode: string;
   purposeDetail: string | null;
   pricingPolicyVersion: string | null;
   financialInformation: ApplicantFinancialInformation;
@@ -208,64 +209,11 @@ export interface ScoringRetryAcceptedResponse {
 export type AdminLoanReviewPage = PageResponse<AdminLoanReviewSummary>;
 export type AssessmentPage = PageResponse<CreditAssessmentSummary>;
 
-/* ── AI Config (finora-ai /api/v1/ai/config/product) ────────────────────── */
-
-export interface GradeConfig {
-  grade: string;
-  min_score: number;
-  max_score: number;
-  limit: number;
-}
-
-export interface ApprovalThresholds {
-  auto_approve: number;
-  auto_reject: number;
-}
-
-export interface ModelWeights {
-  pd_weight: number;
-  risk_weight: number;
-}
-
-export interface LegalLimits {
-  max_platform_limit: number;
-  /** Trần tổng dư nợ một khách hàng trên toàn bộ nền tảng — QĐ 2866/QĐ-NHNN. */
-  max_total_debt_all_platforms: number;
-  max_interest_rate: number;
-  max_term_months: number;
-}
-
-export interface AiProductConfig {
-  grades: GradeConfig[];
-  approval_thresholds: ApprovalThresholds;
-  model_weights: ModelWeights;
-  legal_limits: LegalLimits;
-}
-
-export interface AiProductConfigUpdate {
-  grades: GradeConfig[];
-  approval_thresholds: ApprovalThresholds;
-  model_weights?: ModelWeights;
-}
-
-/* ── Re-exports from @/features/rule-engine and @/features/credit-score ─── */
+/* ── Type giải thích AI dùng ở trang chi tiết hồ sơ (nguồn: @/features/credit-score) ── */
 export type {
-  RuleBac,
-  AiRule,
-  AiTruong,
-  AiRulesResponse,
-  AiRulesUpdate,
-} from '@/features/rule-engine';
-
-export type {
-  CreditScoreRequest,
   RuleTraceItem,
-  CreditScoreResponse,
   YeuToAnhHuong,
   YeuToGop,
   TomTatYeuTo,
-  GiaiThichMoHinh,
   DienGiaiNguoiDung,
-  CreditExplainResponse,
 } from '@/features/credit-score';
-

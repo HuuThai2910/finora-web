@@ -1,55 +1,78 @@
 import { loanApi } from '@/lib/api/loanApi';
-import type { CollectionAction, CollectionCase, PageResponse, QuarantinedRepaymentEvent,
-  ReconciliationIncident, RescheduleRequest, RescheduleStatus, StaleLoan } from '../types';
+import type {
+  CollectionAction, CollectionCase, CollectionCaseStatus, CollectionStage, CreateCollectionActionRequest,
+  PageResponse, QuarantinedRepaymentEvent, ReconciliationIncident, RescheduleDecision, RescheduleRequest,
+  RescheduleStatus, StaleLoan,
+} from '../types';
+
+export interface PageArgs { page: number; size: number }
+
+/**
+ * Mỗi hàng đợi một id tag riêng để mutation chỉ làm mới đúng danh sách bị ảnh hưởng, kể cả
+ * các truy vấn `size=1` dùng để đếm số trên tab.
+ */
+const tag = (id: string) => ({ type: 'ServicingOperations' as const, id });
 
 export const servicingApi = loanApi.injectEndpoints({
   endpoints: (builder) => ({
-    collectionCases: builder.query<PageResponse<CollectionCase>, { page: number; status?: string }>({
-      query: (params) => ({ url: '/admin/collection-cases', params: { ...params, size: 20 } }),
-      providesTags: ['ServicingOperations'],
+    collectionCases: builder.query<PageResponse<CollectionCase>, PageArgs & { status?: CollectionCaseStatus; stage?: CollectionStage }>({
+      query: (params) => ({ url: '/admin/collection-cases', params }),
+      providesTags: [tag('COLLECTION')],
     }),
-    recordCollectionAction: builder.mutation<CollectionAction, { caseId: string; note: string; key: string }>({
-      query: ({ caseId, note, key }) => ({
-        url: `/admin/collection-cases/${caseId}/actions`, method: 'POST',
-        body: { actionType: 'BORROWER_CONTACTED', note },
+    collectionActions: builder.query<PageResponse<CollectionAction>, PageArgs & { caseId: string }>({
+      query: ({ caseId, ...params }) => ({ url: `/admin/collection-cases/${caseId}/actions`, params }),
+      providesTags: (_result, _error, { caseId }) => [tag(`ACTIONS-${caseId}`)],
+    }),
+    recordCollectionAction: builder.mutation<CollectionAction, { caseId: string; body: CreateCollectionActionRequest; key: string }>({
+      query: ({ caseId, body, key }) => ({
+        url: `/admin/collection-cases/${caseId}/actions`,
+        method: 'POST',
+        body,
         headers: { 'Idempotency-Key': key },
       }),
-      invalidatesTags: ['ServicingOperations'],
+      invalidatesTags: (_result, _error, { caseId }) => [tag(`ACTIONS-${caseId}`)],
     }),
-    rescheduleRequests: builder.query<PageResponse<RescheduleRequest>, { page: number; status?: RescheduleStatus }>({
-      query: (params) => ({ url: '/admin/loan-reschedule-requests', params: { ...params, size: 20 } }),
-      providesTags: ['ServicingOperations'],
+    rescheduleRequests: builder.query<PageResponse<RescheduleRequest>, PageArgs & { status?: RescheduleStatus }>({
+      query: (params) => ({ url: '/admin/loan-reschedule-requests', params }),
+      providesTags: [tag('RESCHEDULE')],
     }),
-    staleLoans: builder.query<PageResponse<StaleLoan>, { page: number }>({
-      query: (params) => ({ url: '/admin/loan-servicing-reconciliation', params: { ...params, size: 20 } }),
-      providesTags: ['ServicingOperations'],
-    }),
-    reconciliationIncidents: builder.query<PageResponse<ReconciliationIncident>, { page: number }>({
-      query: (params) => ({ url: '/admin/loan-servicing-reconciliation/incidents', params: { ...params, size: 20, status: 'OPEN' } }),
-      providesTags: ['ServicingOperations'],
-    }),
-    quarantinedEvents: builder.query<PageResponse<QuarantinedRepaymentEvent>, { page: number }>({
-      query: (params) => ({ url: '/admin/repayment-event-quarantine', params: { ...params, size: 20, status: 'PENDING' } }),
-      providesTags: ['ServicingOperations'],
-    }),
-    decideReschedule: builder.mutation<RescheduleRequest, { requestId: string; decision: 'approve' | 'reject'; comment: string; key: string }>({
+    decideReschedule: builder.mutation<RescheduleRequest, { requestId: string; decision: RescheduleDecision; comment: string | null; key: string }>({
       query: ({ requestId, decision, comment, key }) => ({
         url: `/admin/loan-reschedule-requests/${requestId}/${decision}`,
-        method: 'POST', body: { comment }, headers: { 'Idempotency-Key': key },
+        method: 'POST',
+        body: { comment },
+        headers: { 'Idempotency-Key': key },
       }),
-      invalidatesTags: ['ServicingOperations'],
+      invalidatesTags: [tag('RESCHEDULE')],
     }),
+    staleLoans: builder.query<PageResponse<StaleLoan>, PageArgs>({
+      query: (params) => ({ url: '/admin/loan-servicing-reconciliation', params }),
+      providesTags: [tag('RECONCILIATION')],
+    }),
+    reconciliationIncidents: builder.query<PageResponse<ReconciliationIncident>, PageArgs>({
+      query: (params) => ({ url: '/admin/loan-servicing-reconciliation/incidents', params: { ...params, status: 'OPEN' } }),
+      providesTags: [tag('INCIDENTS')],
+    }),
+    // Đối soát đọc lại hệ thống lõi: số liệu quá hạn và sai lệch có thể đổi theo, nên làm mới cả ba hàng đợi.
     reconcileLoan: builder.mutation<StaleLoan, string>({
       query: (loanNumber) => ({ url: `/admin/loan-servicing-reconciliation/${loanNumber}/reconcile`, method: 'POST' }),
-      invalidatesTags: ['ServicingOperations'],
+      invalidatesTags: [tag('RECONCILIATION'), tag('INCIDENTS'), tag('COLLECTION')],
     }),
+    quarantinedEvents: builder.query<PageResponse<QuarantinedRepaymentEvent>, PageArgs>({
+      query: (params) => ({ url: '/admin/repayment-event-quarantine', params: { ...params, status: 'PENDING' } }),
+      providesTags: [tag('QUARANTINE')],
+    }),
+    // Ghép được sự kiện trả nợ thì khoản vay có thể hết quá hạn, nên làm mới cả hàng đợi thu hồi.
     replayQuarantine: builder.mutation<QuarantinedRepaymentEvent, string>({
       query: (eventId) => ({ url: `/admin/repayment-event-quarantine/${eventId}/replay`, method: 'POST' }),
-      invalidatesTags: ['ServicingOperations'],
+      invalidatesTags: [tag('QUARANTINE'), tag('COLLECTION')],
     }),
   }),
 });
 
-export const { useCollectionCasesQuery, useRescheduleRequestsQuery, useStaleLoansQuery,
-  useReconciliationIncidentsQuery, useQuarantinedEventsQuery, useDecideRescheduleMutation,
-  useReconcileLoanMutation, useReplayQuarantineMutation, useRecordCollectionActionMutation } = servicingApi;
+export const {
+  useCollectionCasesQuery, useCollectionActionsQuery, useRecordCollectionActionMutation,
+  useRescheduleRequestsQuery, useDecideRescheduleMutation,
+  useStaleLoansQuery, useReconciliationIncidentsQuery, useReconcileLoanMutation,
+  useQuarantinedEventsQuery, useReplayQuarantineMutation,
+} = servicingApi;

@@ -8,8 +8,8 @@
 
 const VI = 'vi-VN';
 
-/** Giá trị thiếu hiển thị bằng gạch ngang, không phải chuỗi rỗng hay số 0. */
-export const EMPTY = '—';
+/** Giá trị thiếu hiển thị bằng gạch nối "-" (quy tắc giao diện: không dùng gạch dài), không phải chuỗi rỗng hay số 0. */
+export const EMPTY = '-';
 
 /**
  * Số tiền dạng thuần số, không kèm ký hiệu tiền tệ.

@@ -15,6 +15,8 @@ export const loanApi = createApi({
     'AdminApplicationList',
     'CreditAssessment',
     'ServicingOperations',
+    // API thống kê (STATS-001): summary và series của hồ sơ, danh mục cho vay, thu hồi.
+    'LoanStatistics',
   ],
   endpoints: () => ({}),
 });

@@ -1,0 +1,172 @@
+/* Trang Chính sách đánh giá AI. Thành phần chung (ui-card, ui-btn, ui-table...) nằm ở styles/ui.css. */
+
+.aip-page-head {
+  align-items: center;
+}
+
+.aip-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.aip-top {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  align-items: start;
+}
+
+/* ---------- Thẻ có đầu thẻ kẻ ngang ---------- */
+.aip-card {
+  overflow: hidden;
+}
+
+.aip-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 52px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.aip-card-head h2 {
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.aip-head-main {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  min-width: 0;
+}
+
+.aip-meta {
+  color: var(--text-muted);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+.aip-meta strong {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+/* ---------- Khối định nghĩa: nhãn | giá trị | ghi chú ---------- */
+.aip-def-row {
+  display: grid;
+  grid-template-columns: 168px 128px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  min-height: 48px;
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--row-divider);
+}
+
+.aip-def-row:last-child {
+  border-bottom: 0;
+}
+
+.aip-def-row dt {
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.aip-def-value {
+  font-size: 14px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.aip-def-note {
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+/* ---------- Ô nhập (dùng chung cho cả bộ luật) ---------- */
+.aip-input {
+  width: 100%;
+  height: 34px;
+  padding: 0 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  background: #fff;
+  font: inherit;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+  transition: border-color 0.15s;
+}
+
+.aip-input:focus {
+  outline: 0;
+  border-color: var(--brand);
+  box-shadow: 0 0 0 3px rgba(29, 86, 196, 0.15);
+}
+
+.aip-def-value .aip-input {
+  width: 100px;
+  text-align: right;
+}
+
+/* ---------- Bảng trong thẻ ---------- */
+.aip-table-wrap {
+  padding: 8px 12px 4px;
+}
+
+.aip-grade-table td.num .aip-input {
+  width: 88px;
+  text-align: right;
+}
+
+.aip-grade-table td.num .aip-input.money {
+  width: 150px;
+}
+
+.aip-wrap-table td {
+  white-space: normal;
+}
+
+.aip-wrap-table td.strong {
+  white-space: nowrap;
+}
+
+.aip-muted {
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.aip-foot {
+  padding: 10px 16px 14px;
+  border-top: 1px solid var(--row-divider);
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+@media (max-width: 1100px) {
+  .aip-top {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 700px) {
+  .aip-card-head {
+    flex-wrap: wrap;
+  }
+
+  .aip-def-row {
+    grid-template-columns: 1fr auto;
+  }
+
+  .aip-def-note {
+    grid-column: 1 / -1;
+  }
+}

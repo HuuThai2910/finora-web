@@ -35,7 +35,7 @@ export function formatPercent(value: number | null | undefined, fraction = false
 }
 
 export function formatPercentagePoints(value: number | null | undefined): string {
-  if (value == null) return '—';
+  if (value == null) return EMPTY;
   const sign = value > 0 ? '+' : '';
   // 4 chữ số thập phân, khác mặc định của formatNumber, nên giữ bản riêng.
   return `${sign}${new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 4 }).format(value)} điểm phần trăm`;
@@ -66,6 +66,7 @@ const LABELS: Record<string, string> = {
   PENDING: 'Đang chờ xử lý',
   PROCESSING: 'Đang xử lý',
   EXPIRED: 'Đã hết hạn',
+  REJECTED: 'Bị từ chối',
   ELIGIBLE: 'Đủ điều kiện',
   INELIGIBLE: 'Chưa đủ điều kiện',
   INVALID_PROFILE: 'Hồ sơ cần kiểm tra thêm',
@@ -90,8 +91,13 @@ const LABELS: Record<string, string> = {
 
 /** Chuyển enum backend sang câu tiếng Việt; vẫn giữ fallback để UI không vỡ khi backend thêm giá trị. */
 export function formatBusinessLabel(value: string | null | undefined): string {
-  if (!value) return '—';
+  if (!value) return EMPTY;
   return LABELS[value] ?? value.split('_').join(' ').toLocaleLowerCase('vi-VN');
+}
+
+/** Nhãn tiếng Việt nếu giá trị là enum đã biết, ngược lại `null` để nơi gọi giữ nguyên giá trị gốc. */
+export function findBusinessLabel(value: string): string | null {
+  return LABELS[value] ?? null;
 }
 
 export function formatMonths(value: number | null | undefined): string {

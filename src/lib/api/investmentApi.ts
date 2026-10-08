@@ -25,6 +25,8 @@ export const investmentApi = createApi({
     'CommitmentNotes',
     'FundingSettings',
     'OrderBooks',
+    // API thống kê (STATS-001): summary và series của gọi vốn, chợ Notes, Auto-Invest.
+    'InvestmentStatistics',
   ],
   endpoints: () => ({}),
 });

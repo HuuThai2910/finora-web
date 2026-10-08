@@ -2,43 +2,34 @@ import { type ReactNode } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import type { RootState } from '@/app/store';
+import type { CurrentUser } from '../types';
+import { BrandMark } from './BrandMark';
+import './ProtectedRoute.css';
 
 interface ProtectedRouteProps {
   children: ReactNode;
-  requiredRole?: 'ADMIN' | 'BORROWER' | 'INVESTOR';
+  requiredRole?: CurrentUser['role'];
 }
 
+const ROLE_LABELS: Record<CurrentUser['role'], string> = {
+  ADMIN: 'quản trị viên',
+  BORROWER: 'người vay',
+  INVESTOR: 'nhà đầu tư',
+};
+
+/**
+ * Chặn route theo phiên và vai trò để cải thiện trải nghiệm; backend vẫn là nơi kiểm soát quyền.
+ */
 export function ProtectedRoute({ children, requiredRole = 'ADMIN' }: ProtectedRouteProps) {
   const location = useLocation();
   const { isAuthenticated, isLoading, profile } = useSelector((state: RootState) => state.auth);
 
   if (isLoading) {
     return (
-      <div style={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        minHeight: '100vh',
-        background: '#0a1530',
-        color: '#22d3ee',
-        fontFamily: 'system-ui, sans-serif'
-      }}>
-        <div style={{
-          width: 44,
-          height: 44,
-          border: '3px solid rgba(34, 211, 238, 0.2)',
-          borderTopColor: '#22d3ee',
-          borderRadius: '50%',
-          animation: 'spin 0.8s linear infinite',
-          marginBottom: 16
-        }} />
-        <p style={{ fontSize: 14, color: '#aeb9d4' }}>Đang xác thực phiên làm việc FINORA...</p>
-        <style>{`
-          @keyframes spin {
-            to { transform: rotate(360deg); }
-          }
-        `}</style>
+      <div className="auth-wait" role="status" aria-live="polite">
+        <span className="auth-wait-logo"><BrandMark /></span>
+        <span className="auth-wait-spinner" aria-hidden="true" />
+        <p>Đang kiểm tra phiên đăng nhập...</p>
       </div>
     );
   }
@@ -49,46 +40,22 @@ export function ProtectedRoute({ children, requiredRole = 'ADMIN' }: ProtectedRo
 
   if (requiredRole && profile && profile.role !== requiredRole) {
     return (
-      <div style={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        minHeight: '80vh',
-        padding: 24,
-        textAlign: 'center'
-      }}>
-        <div style={{
-          width: 64,
-          height: 64,
-          borderRadius: '50%',
-          background: 'rgba(225, 29, 46, 0.1)',
-          color: '#e11d2e',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          fontSize: 28,
-          marginBottom: 16
-        }}>
-          ⚠️
+      <div className="auth-denied">
+        <div className="auth-denied-card">
+          <span className="auth-denied-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M5 11h14v11H5Z" />
+              <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+            </svg>
+          </span>
+          <h1>Không có quyền truy cập</h1>
+          <p>
+            Tài khoản {profile.email} là {ROLE_LABELS[profile.role] ?? profile.role}. Trang này chỉ dành cho{' '}
+            {ROLE_LABELS[requiredRole]}.
+          </p>
+          {/* Tải lại toàn trang để phiên được kiểm tra lại từ đầu khi đổi tài khoản. */}
+          <a className="auth-denied-btn" href="/login">Đăng nhập bằng tài khoản khác</a>
         </div>
-        <h2 style={{ fontSize: 22, color: '#0f1b30', marginBottom: 8 }}>Từ chối quyền truy cập (403 Forbidden)</h2>
-        <p style={{ fontSize: 14, color: '#4a5670', maxWidth: 460, marginBottom: 20 }}>
-          Tài khoản của bạn ({profile.email}) mang vai trò <strong>{profile.role}</strong>, không đủ thẩm quyền để truy cập trang quản trị dành riêng cho <strong>{requiredRole}</strong>.
-        </p>
-        <button
-          onClick={() => window.location.href = '/login'}
-          style={{
-            padding: '10px 20px',
-            background: '#1d4ed8',
-            color: '#fff',
-            borderRadius: 8,
-            fontWeight: 600,
-            cursor: 'pointer'
-          }}
-        >
-          Đăng nhập bằng tài khoản khác
-        </button>
       </div>
     );
   }

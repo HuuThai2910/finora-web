@@ -1,0 +1,648 @@
+/* Bộ luật chấm điểm rủi ro (lớp rl-*). Khung thẻ, ô nhập dùng aip-* của trang chính sách. */
+
+.rl-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.rl-note {
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border-color);
+  background: var(--surface-muted);
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.rl-state {
+  padding: 12px 16px 0;
+}
+
+/* Lưới thẻ luật: một cột trên màn hẹp, nhiều cột khi đủ rộng. Viền giữa các thẻ là
+   viền phải/dưới của từng thẻ; lề âm giấu viền ở mép thẻ cha. */
+.rl-list {
+  --rl-col-min: 320px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(var(--rl-col-min), 100%), 1fr));
+  margin: 0 -1px -1px 0;
+}
+
+.rl-list.editing {
+  --rl-col-min: 420px;
+}
+
+.rl-empty {
+  grid-column: 1 / -1;
+  padding: 24px 16px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  text-align: center;
+}
+
+/* container cho phép khối bên trong tự sắp lại theo bề ngang CỦA THẺ. */
+.rl-item {
+  container: rl-card / inline-size;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+  padding: 16px;
+  background: #fff;
+  border-right: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--border-color);
+}
+
+/* Luật đã tắt vẫn đọc được nhưng lùi về sau; lúc đang sửa thì không làm mờ. */
+.rl-item.off {
+  background: var(--surface-muted);
+}
+
+.rl-item.off:not(:has(.rl-edit-bar)) :is(.rl-table, .rl-foot) {
+  opacity: 0.6;
+}
+
+.rl-item-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.rl-item-head.editing {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.rl-item-title {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.rl-item-title h3 {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.rl-code {
+  color: var(--text-secondary);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+.rl-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.rl-tag {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--brand-50);
+  color: var(--brand);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.rl-tag.muted {
+  background: #eef2fa;
+  color: var(--text-secondary);
+}
+
+/* ---------- Bảng bậc điểm / bảng điểm phân loại ---------- */
+.rl-table {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 13px;
+}
+
+.rl-table th {
+  padding: 6px 10px;
+  background: #f6f8fd;
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 500;
+  text-align: left;
+}
+
+.rl-table th:first-child { border-radius: 8px 0 0 8px; }
+.rl-table th:last-child { border-radius: 0 8px 8px 0; }
+
+.rl-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--row-divider);
+  overflow-wrap: anywhere;
+  vertical-align: middle;
+}
+
+.rl-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.rl-table tfoot td {
+  padding: 8px 10px 0;
+  border-bottom: 0;
+}
+
+.rl-table .rl-score {
+  width: 84px;
+  text-align: right;
+}
+
+.rl-table strong {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.rl-table .rl-tool-col {
+  width: 40px;
+  padding-left: 4px;
+  padding-right: 4px;
+  text-align: center;
+}
+
+.rl-unit {
+  color: var(--text-muted);
+  font-weight: 400;
+}
+
+.rl-con-lai {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.rl-note-sm {
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.rl-nguong-edit {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.rl-nguong-edit .aip-input {
+  flex: 1 1 72px;
+  min-width: 64px;
+}
+
+.rl-vo-cuc {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-secondary);
+}
+
+.rl-vo-cuc svg {
+  width: 16px;
+  height: 16px;
+}
+
+.rl-dup-msg {
+  color: var(--danger);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+/* ---------- Ô nhập trong bộ luật ---------- */
+.rl-panel .aip-input {
+  font-size: 13px;
+}
+
+.rl-panel .rl-num {
+  text-align: right;
+}
+
+.rl-panel .rl-cell-input {
+  height: 30px;
+  padding: 0 8px;
+}
+
+.rl-panel .aip-input.dup {
+  border-color: var(--danger);
+  background: var(--danger-bg);
+  color: var(--danger);
+}
+
+.rl-input-code {
+  background: var(--surface-muted);
+  color: var(--text-secondary);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
+}
+
+.rl-input-code:focus {
+  background: #fff;
+}
+
+.rl-select {
+  cursor: pointer;
+  text-overflow: ellipsis;
+}
+
+.rl-textarea {
+  height: auto;
+  min-height: 72px;
+  padding: 8px 10px;
+  line-height: 1.5;
+  resize: vertical;
+}
+
+.rl-panel .aip-input::placeholder {
+  color: var(--text-muted);
+}
+
+/* ---------- Nút nhỏ trong thẻ ---------- */
+.rl-link {
+  height: 28px;
+  padding: 0 8px;
+  border-radius: var(--radius-sm);
+  color: var(--brand);
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.rl-link:hover {
+  background: var(--brand-50);
+}
+
+.rl-tool {
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  background: #fff;
+  color: var(--text-secondary);
+}
+
+.rl-tool.bare {
+  width: 30px;
+  height: 30px;
+  border-color: transparent;
+}
+
+.rl-tool svg {
+  width: 16px;
+  height: 16px;
+}
+
+.rl-tool:hover:not(:disabled) {
+  background: var(--surface-muted);
+  color: var(--text-primary);
+}
+
+.rl-tool.danger:hover:not(:disabled) {
+  background: var(--danger-bg);
+  color: var(--danger);
+}
+
+.rl-tool:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.rl-delete {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 12px;
+  border: 1px solid var(--danger);
+  border-radius: var(--radius-md);
+  background: #fff;
+  color: var(--danger);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.rl-delete svg {
+  width: 14px;
+  height: 14px;
+}
+
+.rl-delete:hover {
+  background: var(--danger-bg);
+}
+
+.rl-edit-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.rl-tools {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+/* Công tắc bật/tắt luật */
+.rl-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  user-select: none;
+}
+
+.rl-switch input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+.rl-switch-track {
+  position: relative;
+  flex: none;
+  width: 32px;
+  height: 18px;
+  border-radius: 999px;
+  background: var(--border-strong);
+  transition: background 0.2s;
+}
+
+.rl-switch-track::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform 0.2s;
+}
+
+.rl-switch input:checked + .rl-switch-track {
+  background: var(--brand);
+}
+
+.rl-switch input:checked + .rl-switch-track::after {
+  transform: translateX(14px);
+}
+
+.rl-switch input:focus-visible + .rl-switch-track {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+
+/* ---------- Trường khi sửa ---------- */
+.rl-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.rl-field label {
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.rl-name-fields,
+.rl-fields {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+
+@container rl-card (min-width: 340px) {
+  .rl-name-fields {
+    grid-template-columns: minmax(0, 1.4fr) minmax(150px, 1fr);
+  }
+
+  .rl-fields {
+    grid-template-columns: minmax(0, 1fr) 84px;
+    align-items: end;
+  }
+
+  .rl-fields:not(.two) > .rl-field:first-child {
+    grid-column: 1 / -1;
+  }
+}
+
+@container rl-card (min-width: 600px) {
+  .rl-fields:not(.two) {
+    grid-template-columns: minmax(0, 1fr) 170px 84px;
+  }
+
+  .rl-fields:not(.two) > .rl-field:first-child {
+    grid-column: auto;
+  }
+}
+
+/* ---------- Chân thẻ ---------- */
+.rl-foot {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: auto;
+  padding-top: 12px;
+  border-top: 1px solid var(--row-divider);
+  font-size: 13px;
+}
+
+.rl-foot-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 30px;
+  padding-right: 10px;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.rl-foot-row strong {
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.rl-foot-row .aip-input {
+  width: 64px;
+}
+
+.rl-foot-block {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.rl-foot-label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.rl-goi-y {
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.rl-goi-y.auto {
+  color: var(--text-muted);
+}
+
+.rl-hint {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.rl-hint code,
+.rl-tip-pop code {
+  padding: 0 4px;
+  border-radius: 4px;
+  background: #eef2f8;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
+}
+
+.rl-counter {
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Chú giải biến {moc}: hiện khi rê chuột hoặc focus vào nút. */
+.rl-tip {
+  position: relative;
+  display: inline-flex;
+}
+
+.rl-tip-btn {
+  display: inline-grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  color: var(--text-muted);
+}
+
+.rl-tip-btn:hover {
+  color: var(--text-primary);
+}
+
+.rl-tip-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+.rl-tip-pop {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: -8px;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 280px;
+  max-width: calc(100vw - 40px);
+  padding: 8px 12px;
+  border-radius: var(--radius-md);
+  background: var(--text-primary);
+  box-shadow: var(--shadow);
+  color: #eef2fa;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.5;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.15s, visibility 0.15s;
+}
+
+.rl-tip:hover .rl-tip-pop,
+.rl-tip:focus-within .rl-tip-pop {
+  opacity: 1;
+  visibility: visible;
+}
+
+.rl-tip-pop strong {
+  color: #fff;
+  font-weight: 600;
+}
+
+.rl-tip-pop code {
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+}
+
+/* ---------- Nút thêm luật ---------- */
+.rl-add {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-height: 120px;
+  padding: 24px 16px;
+  border-right: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--border-color);
+  outline: 1px dashed var(--border-strong);
+  outline-offset: -8px;
+  background: #fff;
+  color: var(--brand);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.rl-add:hover {
+  background: var(--brand-50);
+}
+
+.rl-add:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: -4px;
+}
+
+.rl-add svg {
+  width: 18px;
+  height: 18px;
+}
+
+.rl-add small {
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 400;
+}
+
+@media (max-width: 640px) {
+  .rl-tools {
+    width: 100%;
+    justify-content: flex-start;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rl-panel *,
+  .rl-panel *::after {
+    transition: none !important;
+  }
+}

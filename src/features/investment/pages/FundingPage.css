@@ -1,0 +1,325 @@
+/* Gọi vốn & Notes: dải số liệu + bảng danh sách + hộp thoại tham số sàn (theo funding.html).
+   Thành phần chung nằm ở styles/ui.css; ở đây chỉ phần riêng, tiền tố `fu-`. */
+
+.fu-head-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* ---------- Dải số liệu gọn ---------- */
+.fu-strip {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+}
+
+.fu-strip-item {
+  display: grid;
+  align-content: start;
+  gap: 2px;
+  min-width: 0;
+  padding: 14px 18px;
+  border-left: 1px solid var(--row-divider);
+}
+
+.fu-strip-item:first-child {
+  border-left: 0;
+}
+
+.fu-strip-item dt {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.fu-strip-item dd {
+  font-size: 18px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.fu-strip-item.hot dd:not(.sub) {
+  color: var(--warning);
+}
+
+.fu-strip-item dd.sub {
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.fu-strip-item .late {
+  color: var(--danger);
+}
+
+.fu-skel-label { width: 80px; }
+.fu-skel-value { width: 110px; height: 18px; margin-top: 4px; }
+
+/* ---------- Danh sách ---------- */
+.fu-list {
+  padding: 14px 14px 12px;
+}
+
+.fu-list-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.ui-tabs .n.fu-hot {
+  color: var(--warning);
+  font-weight: 700;
+  opacity: 1;
+}
+
+.ui-tabs button[aria-selected='true'] .n.fu-hot {
+  color: #fff;
+}
+
+.fu-filters {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.fu-input {
+  width: 100%;
+  height: 34px;
+  padding: 0 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  background: #fff;
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 14px;
+}
+
+.fu-input:focus {
+  outline: 0;
+  border-color: var(--brand);
+  box-shadow: 0 0 0 3px rgba(29, 86, 196, 0.15);
+}
+
+.fu-input[aria-invalid='true'] {
+  border-color: var(--danger);
+}
+
+.fu-filters .fu-input {
+  width: 128px;
+}
+
+.fu-table td,
+.fu-table th {
+  padding-left: 10px;
+  padding-right: 10px;
+}
+
+.fu-table th:nth-child(1) { width: 46%; }
+.fu-table th:nth-child(2) { width: 16%; }
+.fu-table th:nth-child(3) { width: 20%; }
+.fu-table .fu-last { text-align: right; }
+
+.fu-name {
+  max-width: 0;
+}
+
+.fu-title {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.fu-table tr.clickable:hover .fu-title,
+.fu-title:focus-visible {
+  color: var(--brand);
+}
+
+.fu-muted {
+  color: var(--text-muted);
+}
+
+.fu-progress {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 56px;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.fu-thin {
+  display: block;
+  height: 6px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #eef0f3;
+}
+
+.fu-thin i {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--brand);
+}
+
+.fu-window.warning { color: var(--warning); }
+.fu-window.expired { color: var(--danger); }
+
+/* ---------- Hộp thoại tham số sàn ---------- */
+.fu-settings {
+  display: grid;
+  gap: 14px;
+  color: var(--text-primary);
+}
+
+.fu-field {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  border: 0;
+  font-size: 13px;
+}
+
+.fu-field > span,
+.fu-field legend {
+  margin-bottom: 6px;
+  font-weight: 500;
+}
+
+.fu-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.fu-chip {
+  min-width: 88px;
+  height: 32px;
+  padding: 0 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  background: #fff;
+  font-size: 13px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+.fu-chip:hover {
+  border-color: var(--brand);
+}
+
+.fu-chip[aria-pressed='true'] {
+  border-color: var(--brand);
+  background: var(--brand-50);
+  color: var(--brand);
+  box-shadow: 0 0 0 1px var(--brand);
+}
+
+.fu-chips .fu-denom-input {
+  width: 140px;
+  height: 32px;
+}
+
+.fu-form-2 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.fu-err {
+  color: var(--danger);
+  font-size: 12px;
+}
+
+.fu-meta {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.fu-maintenance {
+  display: grid;
+  justify-items: start;
+  gap: 8px;
+  padding-top: 14px;
+  border-top: 1px solid var(--row-divider);
+}
+
+.fu-maintenance h3 {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.fu-maintenance p {
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.fu-maintenance .ui-alert {
+  justify-self: stretch;
+}
+
+@media (max-width: 900px) {
+  .fu-strip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .fu-strip-item:nth-child(3) {
+    border-left: 0;
+  }
+
+  .fu-strip-item:nth-child(n + 3) {
+    border-top: 1px solid var(--row-divider);
+  }
+}
+
+@media (max-width: 760px) {
+  .fu-list {
+    padding: 14px 10px 10px;
+  }
+
+  .fu-table .hide-sm {
+    display: none;
+  }
+
+  .fu-table th:nth-child(1) { width: auto; }
+
+  .fu-table td.fu-name {
+    white-space: normal;
+  }
+
+  .fu-table .fu-title {
+    white-space: normal;
+  }
+
+  .fu-filters {
+    width: 100%;
+  }
+
+  .fu-filters label {
+    flex: 1 1 120px;
+  }
+
+  .fu-filters .fu-input,
+  .fu-filters .ui-select {
+    width: 100%;
+  }
+
+  .fu-form-2 {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Mã khoản vay dưới tên: chữ đơn cách nhỏ như mockup .gv-code */
+.fu-code {
+  font-size: 12px;
+}

@@ -1,0 +1,452 @@
+/* Chi tiết khoản gọi vốn (theo funding-detail.html): trái là thẻ theo tab, phải là tiến trình dọc.
+   Thành phần chung ở styles/ui.css; phần riêng dùng tiền tố `fd-`. */
+
+.fd-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.fd-head-skel {
+  display: grid;
+  gap: 8px;
+}
+
+.fd-skel-title { width: 320px; max-width: 100%; height: 22px; }
+.fd-skel-meta { width: 220px; max-width: 100%; }
+
+.fd-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 20px;
+  align-items: start;
+}
+
+.fd-main {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+
+.fd-tabs {
+  border-bottom: 1px solid var(--border-color);
+}
+
+.fd-tabs button {
+  height: 42px;
+}
+
+.fd-card {
+  padding: 16px 18px;
+}
+
+.fd-card-title {
+  margin-bottom: 10px;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.fd-rows div {
+  padding: 8px 0;
+  font-size: 14px;
+}
+
+.fd-rows dd {
+  font-weight: 500;
+}
+
+/* ---------- Thanh tiến độ ghép từ phần góp ---------- */
+.fd-meter-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.fd-meter-pct {
+  font-size: 28px;
+  font-weight: 600;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+
+.fd-meter-amt {
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+.fd-meter {
+  display: flex;
+  gap: 2px;
+  height: 14px;
+  margin: 10px 0 8px;
+  padding: 2px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #eef0f3;
+}
+
+.fd-seg {
+  flex: none;
+  height: 100%;
+  border-radius: 999px;
+  background: #a3bde3;
+  transition: opacity 0.15s var(--ease);
+}
+
+.fd-seg.locked {
+  background: var(--brand);
+}
+
+/* Rê chuột lên một phần góp thì làm mờ phần còn lại */
+.fd-meter:hover .fd-seg {
+  opacity: 0.35;
+}
+
+.fd-meter .fd-seg:hover {
+  opacity: 1;
+}
+
+.fd-legend {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.fd-legend i {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin-right: 5px;
+  border-radius: 3px;
+  background: #a3bde3;
+  vertical-align: -1px;
+}
+
+.fd-legend i.locked {
+  background: var(--brand);
+}
+
+.fd-legend-n {
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Biểu đồ vốn góp ---------- */
+.fd-lead {
+  margin: -4px 0 8px;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.fd-lead b {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.fd-chart {
+  height: 220px;
+}
+
+.fd-chart-empty {
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.fd-data {
+  margin-top: 8px;
+  font-size: 13px;
+}
+
+.fd-data summary {
+  width: max-content;
+  color: var(--brand);
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.fd-data .ui-table-wrap {
+  margin-top: 8px;
+}
+
+/* ---------- Bảng nhà đầu tư, Note ---------- */
+.fd-table-card {
+  padding: 14px 14px 12px;
+}
+
+.fd-muted-row td,
+.fd-muted {
+  color: var(--text-muted);
+}
+
+.fd-note-sum {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+  margin: 0 4px 10px;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.fd-note-sum b {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+/* ---------- Tiến trình dọc ---------- */
+.fd-flow {
+  position: sticky;
+  top: 72px;
+  max-height: calc(100vh - 88px);
+  overflow-y: auto;
+  padding: 16px 18px;
+}
+
+.fd-flow h2 {
+  margin-bottom: 12px;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.fd-flow ol {
+  display: grid;
+  list-style: none;
+}
+
+.fd-flow li {
+  position: relative;
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
+  gap: 10px;
+  padding-bottom: 16px;
+}
+
+.fd-flow li:last-child {
+  padding-bottom: 0;
+}
+
+.fd-flow li:not(:last-child)::before {
+  content: '';
+  position: absolute;
+  top: 24px;
+  bottom: 2px;
+  left: 10px;
+  width: 2px;
+  background: var(--border-color);
+}
+
+.fd-flow li.done:not(:last-child)::before {
+  background: var(--brand);
+}
+
+.fd-flow .dot {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border: 2px solid var(--border-strong);
+  border-radius: 50%;
+  background: #fff;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.fd-flow .dot svg {
+  width: 11px;
+  height: 11px;
+}
+
+.fd-flow li.done .dot {
+  border-color: var(--brand);
+  background: var(--brand);
+  color: #fff;
+}
+
+.fd-flow li.current .dot {
+  border-color: var(--brand);
+  color: var(--brand);
+}
+
+.fd-flow li.late .dot {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.fd-flow li.stop .dot {
+  border-color: var(--danger);
+  background: var(--danger);
+  color: #fff;
+}
+
+.fd-flow li.skip {
+  opacity: 0.45;
+}
+
+.fd-step-body {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  padding-top: 1px;
+}
+
+.fd-step-name {
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.fd-flow li.done .fd-step-name {
+  color: var(--text-primary);
+}
+
+.fd-flow li.current .fd-step-name {
+  color: var(--brand);
+  font-weight: 600;
+}
+
+.fd-flow li.late .fd-step-name,
+.fd-flow li.stop .fd-step-name {
+  color: var(--danger);
+  font-weight: 600;
+}
+
+.fd-step-time {
+  color: var(--text-muted);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.fd-step-time .warning { color: var(--warning); }
+.fd-step-time .expired { color: var(--danger); }
+
+.fd-work {
+  display: grid;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.fd-block {
+  width: 100%;
+  height: 36px;
+}
+
+.fd-hint {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+/* Form duyệt lên sàn trong cột tiến trình */
+.fd-field-label {
+  margin-bottom: -4px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.fd-chips {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.fd-chip {
+  display: grid;
+  justify-items: center;
+  min-width: 0;
+  padding: 5px 4px;
+  border: 1px solid var(--border-strong);
+  border-radius: 12px;
+  background: #fff;
+  font-size: 13px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.3;
+}
+
+.fd-chip small {
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 400;
+}
+
+.fd-chip small.fit {
+  color: var(--success);
+}
+
+.fd-chip:hover {
+  border-color: var(--brand);
+}
+
+.fd-chip[aria-pressed='true'] {
+  border-color: var(--brand);
+  background: var(--brand-50);
+  color: var(--brand);
+  box-shadow: 0 0 0 1px var(--brand);
+}
+
+.fd-days {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 72px;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.fd-days .fu-input {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.fd-mini {
+  display: grid;
+  gap: 4px;
+  padding: 8px 10px;
+  border-radius: var(--radius-md);
+  background: var(--surface-muted);
+}
+
+.fd-mini div {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.fd-mini dt {
+  color: var(--text-muted);
+}
+
+.fd-mini dd {
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+.fd-mini dd.warn {
+  color: var(--warning);
+}
+
+@media (max-width: 1180px) {
+  .fd-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .fd-flow {
+    position: static;
+    max-height: none;
+    order: -1;
+  }
+}
+
+@media (max-width: 760px) {
+  .fd-table-card {
+    padding: 12px 10px 10px;
+  }
+
+  .fd-meter-pct {
+    font-size: 24px;
+  }
+}

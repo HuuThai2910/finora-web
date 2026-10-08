@@ -1,144 +1,152 @@
-import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { Suspense, useEffect, useState } from 'react';
+import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import type { AppDispatch, RootState } from '@/app/store';
 import { logoutUser } from '@/features/auth';
-import { ADMIN_NAV_SECTIONS, getAdminPageTitle, type AdminNavigationItem } from './adminNavigation';
+import { Icon } from '@/components/Icon';
+import { RowMenu } from '@/components/RowMenu';
+import { initials } from '@/components/Avatar';
+import { ADMIN_NAV_SECTIONS, getAdminBreadcrumb } from './adminNavigation';
 import { SidebarIcon } from './SidebarIcon';
+import '@/styles/ui.css';
 import './AdminLayout.css';
-
-function NavigationLabel({ item }: { item: AdminNavigationItem }) {
-  return (
-    <>
-      <SidebarIcon name={item.icon} />
-      <span className="sidebar-item-label">{item.label}</span>
-      {!item.isAvailable && <span className="sidebar-item-status">Sắp triển khai</span>}
-    </>
-  );
-}
 
 export default function AdminLayout() {
   const location = useLocation();
   const navigate = useNavigate();
   const dispatch = useDispatch<AppDispatch>();
   const { profile, user } = useSelector((state: RootState) => state.auth);
+  // Ngăn menu trượt chỉ dùng trên màn hẹp; trạng thái mở là chuyện riêng của khung trang.
+  const [navOpen, setNavOpen] = useState(false);
 
-  const pageTitle = getAdminPageTitle(location.pathname);
+  const breadcrumb = getAdminBreadcrumb(location.pathname);
   const displayName = profile?.fullName || user?.fullName || 'Quản trị viên';
-  const selectedStatus = new URLSearchParams(location.search).get('status');
+
+  useEffect(() => {
+    document.title = `${breadcrumb.current} | FINORA Quản trị`;
+  }, [breadcrumb.current]);
+
+  // Đổi trang thì đóng ngăn menu, nếu không ngăn sẽ che nội dung vừa mở.
+  useEffect(() => {
+    setNavOpen(false);
+  }, [location.pathname]);
+
+  useEffect(() => {
+    if (!navOpen) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setNavOpen(false);
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [navOpen]);
 
   const handleLogout = async () => {
     await dispatch(logoutUser());
     navigate('/login', { replace: true });
   };
 
-  const isNavigationItemActive = (item: AdminNavigationItem, routerActive: boolean) => {
-    if (item.to === '/loans?status=PENDING_REVIEW') {
-      return location.pathname === '/loans' && selectedStatus === 'PENDING_REVIEW';
-    }
-    if (item.to === '/loans') {
-      return routerActive && selectedStatus !== 'PENDING_REVIEW';
-    }
-    if (item.to === '/customers/kyc') {
-      return location.pathname.startsWith('/customers/kyc');
-    }
-    return routerActive;
-  };
-
   return (
-    <div className="app-layout">
-      <aside className="sidebar">
+    <div className={`app-layout${navOpen ? ' nav-open' : ''}`}>
+      <aside className="sidebar" id="admin-sidebar">
         <div className="sidebar-logo">
           <div className="sidebar-logo-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <path d="M12 2 3 7v10l9 5 9-5V7l-9-5z" />
               <path d="M12 22V12" />
               <path d="m3 7 9 5 9-5" />
             </svg>
           </div>
           <div className="sidebar-logo-text">
-            <h1>FINORA</h1>
-            <span>P2P LENDING</span>
+            <span className="sidebar-brand">FINORA</span>
+            <span>Quản trị</span>
           </div>
         </div>
 
         <nav className="sidebar-nav" aria-label="Điều hướng quản trị">
           {ADMIN_NAV_SECTIONS.map((section) => (
-            <div className="sidebar-section" key={section.label}>
-              <div className="sidebar-section-label">{section.label}</div>
-              {section.items.map((item) => item.isAvailable ? (
-                <NavLink
-                  key={item.to}
-                  to={item.to}
-                  end
-                  className={({ isActive }) =>
-                    `sidebar-item${isNavigationItemActive(item, isActive) ? ' active' : ''}`
-                  }
-                >
-                  <NavigationLabel item={item} />
-                </NavLink>
-              ) : (
-                <button
-                  key={item.to}
-                  type="button"
-                  className="sidebar-item disabled"
-                  disabled
-                  title={`${item.label} chưa được kết nối chức năng`}
-                >
-                  <NavigationLabel item={item} />
-                </button>
-              ))}
+            <div className="sidebar-section" key={section.label || 'root'}>
+              {section.label && <div className="sidebar-section-label">{section.label}</div>}
+              {section.items.map((item) => {
+                const active = item.matches(location.pathname);
+                return (
+                  <NavLink
+                    key={item.to}
+                    to={item.to}
+                    end
+                    // Dùng hàm để NavLink không tự gắn lớp "active" theo tiền tố đường dẫn
+                    // (/loans/operations nằm dưới /loans); mục đang chọn do `matches` quyết định.
+                    className={() => `sidebar-item${active ? ' active' : ''}`}
+                    aria-current={active ? 'page' : undefined}
+                  >
+                    <SidebarIcon name={item.icon} />
+                    <span className="sidebar-item-label">{item.label}</span>
+                  </NavLink>
+                );
+              })}
             </div>
           ))}
         </nav>
 
         <button type="button" className="sidebar-logout" onClick={handleLogout}>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-            <polyline points="16 17 21 12 16 7" />
-            <line x1="21" x2="9" y1="12" y2="12" />
-          </svg>
-          Đổi vai trò / Đăng xuất
+          <Icon name="logout" />
+          Đăng xuất
         </button>
       </aside>
 
+      <div className="nav-scrim" onClick={() => setNavOpen(false)} aria-hidden="true" />
+
       <div className="main-area">
         <header className="admin-header">
-          <div className="header-breadcrumb">
-            <div className="header-title">{pageTitle}</div>
-            <div className="header-path">FINORA / Quản trị / {pageTitle}</div>
-          </div>
+          <button
+            type="button"
+            className="nav-toggle"
+            aria-label={navOpen ? 'Đóng menu' : 'Mở menu'}
+            aria-expanded={navOpen}
+            aria-controls="admin-sidebar"
+            onClick={() => setNavOpen((open) => !open)}
+          >
+            <Icon name="menu" />
+          </button>
+          <nav className="header-breadcrumb" aria-label="Vị trí trang">
+            {breadcrumb.section && (
+              <>
+                <span>{breadcrumb.section}</span>
+                <span className="sep" aria-hidden="true">/</span>
+              </>
+            )}
+            {breadcrumb.parent && (
+              <>
+                <Link to={breadcrumb.parent.to}>{breadcrumb.parent.label}</Link>
+                <span className="sep" aria-hidden="true">/</span>
+              </>
+            )}
+            <span className="current" aria-current="page">{breadcrumb.current}</span>
+          </nav>
           <div className="header-actions">
-            {/* Trạng thái hệ thống gộp thành một chip mờ: thông tin nền, không tranh chú ý với nội dung trang. */}
-            <div className="header-status" title="Đang đồng bộ với Hyperledger Fabric">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
-                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
-              </svg>
-              <span>Fabric #48210</span>
-              <span className="header-live-dot" aria-label="Đang trực tuyến" />
-            </div>
-            <button type="button" className="header-icon-btn" aria-label="Chế độ tối">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
-              </svg>
-            </button>
-            <span className="header-divider" />
-            {/* Ai đang thao tác. Đăng xuất nằm ở đáy sidebar, không lặp lại ở đây. */}
-            <div className="header-user" title={displayName}>
-              <div className="header-user-avatar" aria-hidden="true">
-                {displayName.charAt(0).toUpperCase()}
-              </div>
-              <div className="header-user-info">
-                <span className="header-user-name">{displayName}</span>
-                <span className="header-user-role">{profile?.role || 'ADMIN'}</span>
-              </div>
-            </div>
+            {/* Menu tài khoản như mockup (soft.js): bấm tên mở danh sách; hiện chỉ có Đăng xuất. */}
+            <RowMenu
+              label={`Tài khoản ${displayName}`}
+              buttonClassName="header-user"
+              buttonContent={(
+                <>
+                  <span className="header-user-avatar" aria-hidden="true">{initials(displayName)}</span>
+                  <span className="header-user-info">
+                    <span className="header-user-name">{displayName}</span>
+                    <span className="header-user-role">Quản trị viên</span>
+                  </span>
+                  <span className="header-user-chevron"><Icon name="chevronDown" /></span>
+                </>
+              )}
+              items={[{ key: 'logout', label: 'Đăng xuất', icon: 'logout', onSelect: () => void handleLogout() }]}
+            />
           </div>
         </header>
 
         <main className="admin-content">
           <div className="admin-page">
-            <Outlet />
+            <Suspense fallback={<div className="ui-empty" aria-busy="true">Đang tải trang...</div>}>
+              <Outlet />
+            </Suspense>
           </div>
         </main>
       </div>

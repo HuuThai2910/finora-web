@@ -5,6 +5,8 @@ import { userApi } from '@/features/user/api/userApi';
 export interface ActorName {
   fullName: string | null;
   email: string;
+  /** Đã xác minh eKYC (`ekycStatus === 'VERIFIED'`), để bảng hồ sơ gắn dấu xác minh cạnh tên. */
+  ekycVerified: boolean;
 }
 
 /**
@@ -29,7 +31,7 @@ async function fetchActor(actorId: string): Promise<ActorName | null> {
   const request = userApi
     .getUserById(actorId)
     .then((user) => {
-      const actor: ActorName = { fullName: user.fullName, email: user.email };
+      const actor: ActorName = { fullName: user.fullName, email: user.email, ekycVerified: user.ekycStatus === 'VERIFIED' };
       cache.set(actorId, actor);
       return actor;
     })

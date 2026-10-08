@@ -47,6 +47,9 @@ export interface CreateLoanProductRequest {
   repaymentMethod: RepaymentMethod;
 }
 
+/** Thao tác đổi trạng thái của quản trị viên; mỗi thao tác là một endpoint POST có kiểm tra `version`. */
+export type ProductAction = 'activate' | 'deactivate' | 'archive' | 'core-sync';
+
 export interface CoreProductSyncResponse {
   product: LoanProduct;
   commandId: string;

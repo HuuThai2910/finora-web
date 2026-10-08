@@ -16,7 +16,7 @@ import {
 
 export { parseDecimal };
 
-/** Ngày giờ — giữ export ở đây để màn hình không phải import từ hai nơi. */
+/** Ngày giờ: giữ export ở đây để màn hình không phải import từ hai nơi. */
 export const formatDateTime = formatDateTimeBase;
 
 /** Chỉ ngày, dùng cho hạn gọi vốn trên bảng. */

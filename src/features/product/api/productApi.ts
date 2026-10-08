@@ -63,7 +63,7 @@ const productApi = loanApi.injectEndpoints({
 
 export const {
   useGetAdminProductsQuery,
-  useLazyGetAdminProductQuery,
+  useGetAdminProductQuery,
   useCreateProductMutation,
   useSyncProductMutation,
   useChangeProductStatusMutation,

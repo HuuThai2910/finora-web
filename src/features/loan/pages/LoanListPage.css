@@ -1,0 +1,131 @@
+/* Trang Quản lý hồ sơ vay: thẻ chờ thẩm định + danh sách. Thành phần chung nằm ở styles/ui.css. */
+
+/* Hàng đầu: biểu đồ giá trị hồ sơ nộp 30 ngày + thẻ gọn chờ thẩm định (mockup .ln-top) */
+.loan-top {
+  display: grid;
+  grid-template-columns: minmax(0, 1.75fr) minmax(300px, 1fr);
+  gap: 16px;
+}
+
+.loan-top > * {
+  min-width: 0;
+}
+
+.loan-top-card {
+  padding: 16px 18px;
+}
+
+.loan-top-card .ui-card-head {
+  flex-wrap: nowrap;
+}
+
+.loan-top-plot {
+  height: 170px;
+  margin-top: 4px;
+}
+
+.loan-top-body {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.loan-top-empty,
+.loan-pending-note {
+  margin-top: 10px;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.loan-pending-rows {
+  margin-top: 8px;
+}
+
+/* Dòng cảnh báo "chưa chấm được điểm": icon tròn nền đỏ nhạt như mockup .soft-rows dd.bad */
+.loan-pending-rows dd.bad {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--danger);
+}
+
+.loan-pending-rows dd.bad svg {
+  width: 18px;
+  height: 18px;
+  padding: 3px;
+  border-radius: 50%;
+  background: var(--danger-bg);
+}
+
+.loan-pending-rows dt svg {
+  width: 15px;
+  height: 15px;
+  color: var(--text-muted);
+}
+
+.loan-skel-big { width: 55%; height: 26px; }
+.loan-skel-plot { height: 150px; }
+.loan-skel-value { width: 110px; height: 14px; }
+
+.loan-list {
+  padding: 14px 14px 12px;
+}
+
+.loan-list-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.loan-table td,
+.loan-table th {
+  padding-left: 10px;
+  padding-right: 10px;
+}
+
+.loan-app-main {
+  min-width: 0;
+}
+
+.loan-verified {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  color: var(--brand);
+}
+
+.loan-borrower {
+  display: inline-block;
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: middle;
+}
+
+.loan-score {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.loan-score.success { color: var(--success); }
+.loan-score.warning { color: var(--warning); }
+.loan-score.danger { color: var(--danger); }
+
+@media (max-width: 1100px) {
+  .loan-top {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 760px) {
+  .loan-table .hide-sm {
+    display: none;
+  }
+
+  .loan-list {
+    padding: 14px 10px 10px;
+  }
+}
