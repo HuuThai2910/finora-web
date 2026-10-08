@@ -4,80 +4,67 @@ export interface ApiError {
   data?: unknown;
 }
 
-let isRefreshing = false;
-let refreshSubscribers: ((ok: boolean) => void)[] = [];
+/*
+ * Làm mới phiên dùng chung cho mọi client (apiFetch và các slice RTK Query qua `withReauth`).
+ * Access token cookie chỉ sống 5 phút, nên khi nhiều request cùng gặp 401 chỉ được gọi
+ * /auth/refresh một lần: các request còn lại chờ chung một promise rồi gửi lại.
+ */
+let refreshPromise: Promise<boolean> | null = null;
+let lastRefreshAt = 0;
 
-function subscribeTokenRefresh(cb: (ok: boolean) => void) {
-  refreshSubscribers.push(cb);
+function refreshSession(): Promise<boolean> {
+  if (!refreshPromise) {
+    refreshPromise = fetch('/api/v1/auth/refresh', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+    })
+      .then((res) => res.ok)
+      .catch(() => false)
+      .then((ok) => {
+        if (ok) {
+          lastRefreshAt = Date.now();
+        } else {
+          window.dispatchEvent(new CustomEvent('auth:unauthorized'));
+        }
+        return ok;
+      })
+      .finally(() => {
+        refreshPromise = null;
+      });
+  }
+  return refreshPromise;
 }
 
-function onRefreshed(ok: boolean) {
-  refreshSubscribers.forEach((cb) => cb(ok));
-  refreshSubscribers = [];
+/**
+ * Gọi khi một request gửi lúc `startedAt` bị 401. Nếu phiên đã được làm mới sau thời điểm đó
+ * (request mang cookie cũ, về muộn hơn lần refresh) thì chỉ cần gửi lại, không refresh thêm.
+ * Trả về `true` khi nên gửi lại request.
+ */
+export function renewSession(startedAt: number): Promise<boolean> {
+  if (startedAt < lastRefreshAt) {
+    return Promise.resolve(true);
+  }
+  return refreshSession();
 }
 
 export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
-  const defaultHeaders: HeadersInit = {
-    'Content-Type': 'application/json',
-  };
-
-  const response = await fetch(path, {
-    credentials: 'include',
-    ...init,
-    headers: {
-      ...defaultHeaders,
-      ...init?.headers,
-    },
-  });
-
-  if (response.status === 401 && !path.includes('/auth/login') && !path.includes('/auth/refresh')) {
-    if (!isRefreshing) {
-      isRefreshing = true;
-      try {
-        const refreshRes = await fetch('/api/v1/auth/refresh', {
-          method: 'POST',
-          credentials: 'include',
-          headers: { 'Content-Type': 'application/json' },
-        });
-
-        if (refreshRes.ok) {
-          isRefreshing = false;
-          onRefreshed(true);
-        } else {
-          isRefreshing = false;
-          onRefreshed(false);
-          window.dispatchEvent(new CustomEvent('auth:unauthorized'));
-          throw new Error('Phiên đăng nhập đã hết hạn');
-        }
-      } catch (err) {
-        isRefreshing = false;
-        onRefreshed(false);
-        window.dispatchEvent(new CustomEvent('auth:unauthorized'));
-        throw err;
-      }
-    }
-
-    // Wait for the refreshing process
-    const retryOk = await new Promise<boolean>((resolve) => {
-      subscribeTokenRefresh((ok) => resolve(ok));
+  const send = () =>
+    fetch(path, {
+      credentials: 'include',
+      ...init,
+      headers: {
+        'Content-Type': 'application/json',
+        ...init?.headers,
+      },
     });
 
-    if (retryOk) {
-      // Retry original request
-      const retryRes = await fetch(path, {
-        credentials: 'include',
-        ...init,
-        headers: {
-          ...defaultHeaders,
-          ...init?.headers,
-        },
-      });
+  const startedAt = Date.now();
+  let response = await send();
 
-      if (!retryRes.ok) {
-        return handleError(retryRes);
-      }
-      return retryRes.json();
-    }
+  // Các endpoint /auth/* tự xử lý phiên (đăng nhập, làm mới, đăng xuất) nên không thử lại.
+  if (response.status === 401 && !path.includes('/auth/') && (await renewSession(startedAt))) {
+    response = await send();
   }
 
   if (!response.ok) {

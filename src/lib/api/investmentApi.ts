@@ -1,4 +1,5 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
+import { withReauth } from './withReauth';
 
 /**
  * API slice của Investment Service (sàn gọi vốn, Notes).
@@ -10,10 +11,13 @@ export const investmentApi = createApi({
   reducerPath: 'investmentApi',
   // Investment Service đọc danh tính từ access token; web nhận token trong cookie HttpOnly
   // do finora-user đặt, nên request phải kèm cookie mới được nhận diện là quản trị viên.
-  baseQuery: fetchBaseQuery({
-    baseUrl: import.meta.env.VITE_INVESTMENT_API_URL ?? '/api/v1',
-    credentials: 'include',
-  }),
+  // Cookie access token sống 5 phút: gặp 401 thì `withReauth` làm mới phiên rồi gửi lại.
+  baseQuery: withReauth(
+    fetchBaseQuery({
+      baseUrl: import.meta.env.VITE_INVESTMENT_API_URL ?? '/api/v1',
+      credentials: 'include',
+    }),
+  ),
   // `CommitmentNotes` tách riêng: phát hành Note không đổi listing nhưng phải làm mới
   // danh sách Note của từng phần vốn. `FundingSettings` chỉ có một bản ghi.
   // `OrderBooks` cho chợ Notes (sổ lệnh Ask/Bid): tách riêng vì mua bán Note đổi độc lập với
