@@ -1,0 +1,173 @@
+/*
+ * Nửa trái màn đăng nhập: thương hiệu, lời giới thiệu và video giới thiệu FINORA.
+ * Nền xanh nhạt, mảng tròn mờ và sóng ở LoginBackdrop (trải cả trang), nên nửa này để nền trong suốt.
+ */
+.ls {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  padding: 36px 48px 0;
+}
+
+/* Xuất hiện lần lượt khi mở trang */
+.ls-enter {
+  animation: ls-rise 0.8s var(--ease) both;
+  animation-delay: var(--d, 0ms);
+}
+
+@keyframes ls-rise {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: none; }
+}
+
+.ls-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.ls-logo {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: var(--brand);
+  color: #fff;
+}
+
+.ls-logo svg {
+  width: 19px;
+  height: 19px;
+}
+
+.ls-wordmark {
+  color: var(--text-primary);
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+.ls-wordmark span {
+  margin-left: 6px;
+  color: var(--text-secondary);
+  font-weight: 500;
+  letter-spacing: 0;
+}
+
+.ls-copy {
+  max-width: 520px;
+  margin-top: clamp(20px, 4vh, 44px);
+}
+
+.ls-headline {
+  color: var(--text-primary);
+  font-size: clamp(28px, 2.6vw, 38px);
+  font-weight: 800;
+  line-height: 1.18;
+  letter-spacing: -0.01em;
+}
+
+.ls-headline span {
+  color: var(--brand);
+}
+
+.ls-lead {
+  margin-top: 12px;
+  color: var(--text-secondary);
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+/* ---------- Video giới thiệu ---------- */
+/*
+ * Vùng video chiếm phần cao còn lại của nửa trái. Đáy chừa chỗ để "mặt sàn" trong video (khoảng 92%
+ * chiều cao) nằm trên đỉnh sóng nền: video phủ lên sóng thì sóng bị cắt ngang thành một ô.
+ */
+.ls-video-wrap {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  padding: 20px 0 72px;
+}
+
+/*
+ * Vùng 16:9 co vừa cả bề ngang lẫn bề cao của phần còn lại (đơn vị cq theo .ls-video-fit), nên màn
+ * thấp không bị đẩy ra thanh cuộn và màn rộng không bị video quá khổ. Canh trái theo dòng chữ phía trên.
+ */
+.ls-video-fit {
+  display: grid;
+  flex: 1;
+  place-items: center start;
+  container-type: size;
+}
+
+.ls-video {
+  position: relative;
+  width: min(100cqw, 100cqh * 16 / 9, 900px);
+  aspect-ratio: 16 / 9;
+}
+
+/*
+ * Video nằm phẳng trên nền trang, không khung, không bóng. Đây là bản nhúng (finora-video: render.py
+ * --embed) có nền phẳng gần trùng nền trang, nên chỉ cần làm mờ một dải hẹp ở mép là video hoà vào
+ * trang. Mép dưới bắt đầu mờ từ 92% để không mờ chân nhân vật trong video.
+ */
+.ls-video-media {
+  --fade-x: linear-gradient(to right, transparent, #000 3%, #000 96%, transparent);
+  --fade-y: linear-gradient(to bottom, transparent, #000 5%, #000 92%, transparent);
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  -webkit-mask-image: var(--fade-x), var(--fade-y);
+  -webkit-mask-composite: source-in;
+  mask-image: var(--fade-x), var(--fade-y);
+  mask-composite: intersect;
+}
+
+.ls-video-bigplay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  display: grid;
+  place-items: center;
+  width: 68px;
+  height: 68px;
+  margin: -34px 0 0 -34px;
+  border-radius: 50%;
+  background: var(--brand);
+  color: #fff;
+  transition: background 0.2s;
+}
+
+.ls-video-bigplay:hover {
+  background: var(--brand-600);
+}
+
+.ls-video-bigplay:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 3px;
+}
+
+.ls-video-bigplay svg {
+  width: 26px;
+  height: 26px;
+  margin-left: 4px;
+}
+
+@media (max-height: 760px) {
+  .ls-copy { margin-top: 18px; }
+  .ls-headline { font-size: 28px; }
+  .ls-lead { margin-top: 8px; font-size: 14px; }
+  .ls-video-wrap { padding-bottom: 60px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ls *,
+  .ls *::before,
+  .ls *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}

@@ -1,24 +1,150 @@
 /*
- * Màn đăng nhập quản trị (finora-web-mockup/login.html): nền navy một màu như sidebar,
- * thẻ trắng bo tròn, nút xanh đặc. Không gradient, không quầng sáng.
+ * Màn đăng nhập quản trị: trái là video giới thiệu (LoginShowcase), phải là form; nền xanh nhạt có sóng
+ * (LoginBackdrop) trải cả trang. Mọi thứ nằm phẳng trên nền: không đổ bóng, không nhấc nổi khi rê chuột.
+ * Mascot robot FINORA (MascotPeek) ló đầu sau mép thẻ form, đổi dáng theo ô đang gõ, có bong bóng thoại.
+ * Màn hẹp chỉ còn form + mascot.
  */
 .login-wrapper {
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(440px, 1fr);
   min-height: 100vh;
+  overflow: hidden;
+  background: linear-gradient(165deg, #f6f9ff 0%, #e9f1fd 52%, #dce8fb 100%);
+}
+
+.login-panel {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 32px 16px;
-  background: var(--sidebar-bg);
+  padding: 32px 24px 52px;
 }
 
+/* Logo trên form chỉ hiện khi nửa minh hoạ bị ẩn (màn hẹp) */
 .login-brand {
-  display: flex;
+  display: none;
   align-items: center;
   gap: 10px;
   width: 100%;
   max-width: 400px;
-  margin-bottom: 20px;
+  margin-bottom: 8px;
+}
+
+.login-stack {
+  /* Bề rộng khung mascot; ảnh mascot 240 x 132 (MascotPeek), mép dưới ảnh trùng mép trên thẻ. */
+  --peek-w: 210px;
+  position: relative;
+  width: 100%;
+  max-width: 400px;
+  padding-top: calc(var(--peek-w) * 132 / 240);
+}
+
+/* Khung mascot dừng đúng ở mép trên thẻ: phần thân dưới coi như nấp sau thẻ. */
+.login-peek {
+  position: absolute;
+  top: 0;
+  right: 14px;
+  width: var(--peek-w);
+  aspect-ratio: 240 / 132;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+/*
+ * Mọi biến dạng đều lấy gốc ở mép dưới (mép thẻ) và không đẩy thân lên cao hơn chỗ đứng, để phần thân bị cắt
+ * ở mép ảnh không bao giờ lộ ra phía trên thẻ.
+ */
+.login-peek-body,
+.login-peek-rig,
+.login-peek-rig img {
+  position: absolute;
+  inset: 0;
+  transform-origin: 50% 100%;
+}
+
+/* Trồi lên từ sau thẻ lúc mở trang: vươn dài khi lao lên, dẹt xuống khi dừng rồi nảy về dáng thường */
+.login-peek-body {
+  transform: translateY(100%);
+}
+
+.login-peek[data-shown] .login-peek-body {
+  transform: none;
+  animation: login-peek-rise 0.9s both;
+}
+
+@keyframes login-peek-rise {
+  0% { transform: translateY(100%) scale(0.92, 1.1); animation-timing-function: cubic-bezier(0.25, 0.7, 0.4, 1); }
+  52% { transform: translateY(0) scale(0.95, 1.07); animation-timing-function: ease-out; }
+  72% { transform: scale(1.06, 0.92); animation-timing-function: ease-in-out; }
+  88% { transform: scale(0.99, 1.015); animation-timing-function: ease-out; }
+  100% { transform: none; }
+}
+
+/* Các tư thế chồng lên nhau; nhịp thụt-trồi đổi dáng chạy trên .login-peek-rig (useMascotPose) */
+.login-peek-rig img {
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  /* Không làm mờ chéo: ảnh đổi lúc robot đang khuất sau thẻ */
+  animation: login-peek-idle 3.6s ease-in-out infinite;
+  user-select: none;
+}
+
+.login-peek-rig img[data-active] {
+  opacity: 1;
+}
+
+/* Đứng yên: lắc lư quanh mép thẻ kèm thở nhẹ (phồng lên ở hai điểm giữa nhịp lắc) cho đỡ cứng */
+@keyframes login-peek-idle {
+  0%, 100% { transform: rotate(-1.2deg); }
+  25% { transform: rotate(0deg) scale(1.008, 1.018); }
+  50% { transform: rotate(1.2deg); }
+  75% { transform: rotate(0deg) scale(1.008, 1.018); }
+}
+
+/* Lời mascot (chào, đang kiểm tra, chưa đăng nhập được, đang gõ mật khẩu); đặt bên trái đầu mascot */
+.login-peek-say {
+  position: absolute;
+  top: 12px;
+  right: 214px;
+  z-index: 3;
+  padding: 7px 12px;
+  border: 1px solid #e6edf8;
+  border-radius: 14px;
+  background: #fff;
+  color: var(--text-primary);
+  font-size: 12.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  transform-origin: 100% 50%;
+  animation: login-say-in 0.4s cubic-bezier(0.34, 1.6, 0.64, 1) both;
+}
+
+.login-peek-say::after {
+  content: '';
+  position: absolute;
+  top: calc(50% - 6px);
+  right: -7px;
+  width: 12px;
+  height: 12px;
+  border: inherit;
+  border-top: 0;
+  border-left: 0;
+  background: #fff;
+  transform: rotate(-45deg);
+}
+
+.login-stack[data-mood='error'] .login-peek-say {
+  border-color: #f6d3d8;
+  color: var(--danger);
+}
+
+@keyframes login-say-in {
+  from { opacity: 0; transform: scale(0.5); }
+  to { opacity: 1; transform: none; }
 }
 
 .login-logo {
@@ -38,35 +164,55 @@
 }
 
 .login-wordmark {
-  color: #fff;
+  color: var(--text-primary);
   font-size: 15px;
   font-weight: 700;
 }
 
 .login-wordmark span {
   margin-left: 6px;
-  color: var(--sidebar-muted);
+  color: var(--text-secondary);
   font-weight: 400;
 }
 
 .login-card {
+  position: relative;
+  z-index: 1;
   width: 100%;
-  max-width: 400px;
   padding: 28px 28px 24px;
-  border-radius: 16px;
+  border: 1px solid var(--border-color);
+  border-radius: 20px;
   background: var(--card-bg);
-  box-shadow: 0 24px 60px rgba(6, 22, 56, 0.4);
+  animation: login-rise 0.7s var(--ease) 0.15s both;
+}
+
+/* Nội dung thẻ hiện lần lượt */
+.login-card > *,
+.login-form > * {
+  animation: login-rise 0.6s var(--ease) both;
+}
+
+.login-card > :nth-child(1) { animation-delay: 0.3s; }
+.login-card > :nth-child(2) { animation-delay: 0.36s; }
+.login-form > :nth-child(1) { animation-delay: 0.44s; }
+.login-form > :nth-child(2) { animation-delay: 0.52s; }
+.login-form > :nth-child(3) { animation-delay: 0.6s; }
+.login-card > .login-demo { animation-delay: 0.7s; }
+
+@keyframes login-rise {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: none; }
 }
 
 .login-title {
   color: var(--text-primary);
-  font-size: 20px;
+  font-size: 22px;
   font-weight: 700;
   line-height: 1.3;
 }
 
 .login-subtitle {
-  margin: 4px 0 20px;
+  margin: 4px 0 22px;
   color: var(--text-secondary);
   font-size: 13px;
 }
@@ -77,7 +223,7 @@
   gap: 8px;
   margin-bottom: 16px;
   padding: 10px 12px;
-  border-radius: var(--radius-md);
+  border-radius: 10px;
   background: var(--danger-bg);
   color: var(--danger);
   font-size: 13px;
@@ -85,6 +231,8 @@
 
 .login-error-banner svg {
   flex: none;
+  width: 16px;
+  height: 16px;
   margin-top: 2px;
 }
 
@@ -103,7 +251,7 @@
 .login-label {
   color: var(--text-primary);
   font-size: 13px;
-  font-weight: 500;
+  font-weight: 600;
 }
 
 .login-input-wrap {
@@ -112,21 +260,41 @@
   align-items: center;
 }
 
+/* Icon đầu ô như ô nhập của app mobile; sáng màu nhấn khi ô đang được chọn */
+.login-input-icon {
+  position: absolute;
+  left: 12px;
+  display: grid;
+  color: var(--text-muted);
+  pointer-events: none;
+  transition: color 0.2s;
+}
+
+.login-input-icon svg {
+  width: 16px;
+  height: 16px;
+}
+
+.login-input-wrap:focus-within .login-input-icon {
+  color: var(--brand);
+}
+
 .login-input {
   width: 100%;
-  height: 36px;
-  padding: 0 10px;
+  height: 40px;
+  padding: 0 12px 0 38px;
   border: 1px solid var(--border-strong);
-  border-radius: var(--radius-md);
+  border-radius: 10px;
   background: #fff;
   color: var(--text-primary);
   font: inherit;
   font-size: 14px;
   outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
 }
 
 .login-input.has-toggle {
-  padding-right: 38px;
+  padding-right: 40px;
 }
 
 .login-input::placeholder {
@@ -140,8 +308,8 @@
 
 .login-toggle {
   position: absolute;
-  top: 4px;
-  right: 4px;
+  top: 6px;
+  right: 6px;
   display: grid;
   place-items: center;
   width: 28px;
@@ -171,17 +339,29 @@
   justify-content: center;
   gap: 8px;
   width: 100%;
-  height: 36px;
+  height: 40px;
   margin-top: 4px;
-  border-radius: var(--radius-md);
+  border-radius: 10px;
   background: var(--brand);
   color: #fff;
   font-size: 14px;
   font-weight: 600;
+  transition: background 0.2s;
 }
 
+.login-submit svg {
+  width: 16px;
+  height: 16px;
+  transition: transform 0.2s var(--ease);
+}
+
+/* Rê chuột chỉ đậm màu và đẩy mũi tên, nút không nổi lên */
 .login-submit:hover:not(:disabled) {
   background: var(--brand-600);
+}
+
+.login-submit:hover:not(:disabled) svg {
+  transform: translateX(3px);
 }
 
 .login-submit:focus-visible {
@@ -207,69 +387,106 @@
   to { transform: rotate(360deg); }
 }
 
-/* Tài khoản dùng thử (chỉ ở môi trường phát triển) */
+/* Tài khoản dùng thử (chỉ ở môi trường phát triển): một hàng ba nút viên thuốc theo vai trò */
 .login-demo {
-  margin-top: 24px;
+  margin-top: 22px;
   padding-top: 16px;
   border-top: 1px solid var(--border-color);
 }
 
 .login-demo-title {
   color: var(--text-primary);
-  font-size: 13px;
-  font-weight: 500;
+  font-size: 12.5px;
+  font-weight: 600;
 }
 
-.login-demo-hint {
-  margin: 2px 0 8px;
+.login-demo-title span {
+  margin-left: 4px;
   color: var(--text-muted);
-  font-size: 12px;
+  font-weight: 400;
 }
 
 .login-demo-list {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  margin-top: 10px;
 }
 
-.login-demo-row {
+.login-demo-chip {
   display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 12px;
-  width: calc(100% + 16px);
-  margin: 0 -8px;
-  padding: 6px 8px;
-  border-radius: var(--radius-md);
-  font-size: 13px;
-  text-align: left;
-}
-
-.login-demo-row:hover {
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-width: 0;
+  height: 30px;
+  padding: 0 8px;
+  white-space: nowrap;
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
   background: var(--surface-muted);
+  color: var(--text-secondary);
+  font-size: 12.5px;
+  font-weight: 500;
+  transition: background 0.2s, border-color 0.2s, color 0.2s;
 }
 
-.login-demo-row:hover .login-demo-email {
+.login-demo-chip svg {
+  flex: none;
+  width: 14px;
+  height: 14px;
+}
+
+.login-demo-chip:hover,
+.login-demo-chip[data-active] {
+  border-color: #c9d8f2;
+  background: var(--brand-50);
   color: var(--brand);
 }
 
-.login-demo-row:focus-visible {
+.login-demo-chip:focus-visible {
   outline: 2px solid var(--brand);
-  outline-offset: 0;
+  outline-offset: 2px;
 }
 
-.login-demo-email {
-  color: var(--text-primary);
-  overflow-wrap: anywhere;
-}
-
-.login-demo-role {
-  color: var(--text-muted);
+.login-foot {
+  position: absolute;
+  bottom: 18px;
+  left: 0;
+  width: 100%;
+  color: var(--text-secondary);
   font-size: 12px;
-  white-space: nowrap;
+  text-align: center;
+}
+
+@media (max-width: 960px) {
+  .login-wrapper {
+    grid-template-columns: 1fr;
+  }
+
+  .login-wrapper > .ls {
+    display: none;
+  }
+
+  .login-brand {
+    display: flex;
+  }
 }
 
 @media (max-width: 480px) {
   .login-card {
     padding: 22px 18px 20px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .login-wrapper *,
+  .login-wrapper *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .login-spinner {
+    animation: login-spin 0.8s linear infinite !important;
   }
 }

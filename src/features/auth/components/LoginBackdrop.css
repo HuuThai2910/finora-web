@@ -1,0 +1,66 @@
+/*
+ * Nền màn đăng nhập (LoginBackdrop): nằm dưới cả hai nửa trang, trong .login-wrapper (isolation: isolate).
+ * Mọi vòng lặp chạy bằng transform để trình duyệt dồn lên GPU, không đụng layout.
+ */
+.lb {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+/* Mảng tròn mờ trôi chậm ở góc phải trên, sau đầu nhân vật */
+.lb-blob {
+  position: absolute;
+  top: -160px;
+  right: -140px;
+  width: 520px;
+  height: 520px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 40% 40%, rgba(26, 96, 224, 0.15), rgba(26, 96, 224, 0) 70%);
+  filter: blur(8px);
+  animation: lb-drift 18s ease-in-out infinite alternate;
+}
+
+@keyframes lb-drift {
+  from { transform: translate3d(0, 0, 0) scale(1); }
+  to { transform: translate3d(-40px, 30px, 0) scale(1.12); }
+}
+
+/* Sóng xanh trôi ở đáy, ba lớp khác tốc độ */
+.lb-waves {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 120px;
+  overflow: hidden;
+}
+
+.lb-wave {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 200%;
+  height: 100%;
+  animation: lb-slide 43s linear infinite;
+}
+
+.lb-wave-0 path { fill: rgba(26, 96, 224, 0.07); }
+.lb-wave-1 { animation-duration: 31s; animation-direction: reverse; }
+.lb-wave-1 path { fill: rgba(26, 96, 224, 0.1); }
+.lb-wave-2 { animation-duration: 22s; }
+.lb-wave-2 path { fill: rgba(26, 96, 224, 0.14); }
+
+@keyframes lb-slide {
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(-50%, 0, 0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lb-blob,
+  .lb-wave {
+    animation: none;
+  }
+}
