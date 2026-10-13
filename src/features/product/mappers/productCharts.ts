@@ -5,24 +5,24 @@ import {
   type ProductStat,
 } from '@/features/statistics';
 import type { ChartOption } from '@/lib/charts/echarts';
-import { CHART_FOCUS, CHART_PALETTE, chartNumber, moneyShort, tooltipHtml } from '@/lib/charts/theme';
+import { CHART_FOCUS, CHART_FONT, CHART_PALETTE, chartNumber, moneyShort, tooltipHtml } from '@/lib/charts/theme';
 import { formatCurrency, formatPercent } from '@/utils';
 
 /**
- * Biểu đồ của trang Sản phẩm vay, chép từ buildDemandOption, buildRiskOption, buildDisbursedOption của mockup
- * products.html. Số liệu từ API thống kê Loan: series cột tháng (`productPoints` thưa, chỉ có dòng khác 0) và
- * `portfolio.byProduct` của summary. Hàm thuần.
+ * Biểu đồ của trang Sản phẩm vay, gốc từ buildDemandOption, buildRiskOption, buildDisbursedOption của mockup
+ * products.html (hai biểu đồ đầu trang nay vẽ bằng cột thay cho đường và thanh ngang). Số liệu từ API thống kê
+ * Loan: series cột tháng (`productPoints` thưa, chỉ có dòng khác 0) và `portfolio.byProduct` của summary. Hàm thuần.
  */
 
 type AxisParams = Array<{ dataIndex: number }>;
 
-/** Số sản phẩm được vẽ đường riêng; phần còn lại gộp một đường xám. */
-const LINE_LIMIT = CHART_PALETTE.categorical.length;
+/** Số sản phẩm có màu riêng trong cột; phần còn lại gộp một nhóm xám. */
+const NAMED_LIMIT = CHART_PALETTE.categorical.length;
 
 export interface DemandGroup {
   name: string;
   color: string;
-  /** Đường gộp các sản phẩm còn lại: nét đứt. */
+  /** Nhóm gộp các sản phẩm còn lại: màu xám, nằm trên cùng mỗi cột. */
   others: boolean;
   values: number[];
   total: number;
@@ -37,11 +37,11 @@ export interface DemandData {
 export const productName = (id: number, names: Map<number, string>) => names.get(id) ?? `Sản phẩm #${id}`;
 
 /**
- * Hồ sơ nộp mỗi tháng của từng sản phẩm. Ba sản phẩm nhiều hồ sơ nhất có đường riêng, các sản phẩm khác
- * gộp thành "Sản phẩm khác". Cột không có dòng trong `productPoints` nghĩa là 0 hồ sơ (backend chỉ trả dòng khác 0).
+ * Hồ sơ nộp mỗi tháng của từng sản phẩm. Ba sản phẩm nhiều hồ sơ nhất có màu riêng, các sản phẩm khác
+ * gộp thành "N sản phẩm khác". Cột không có dòng trong `productPoints` nghĩa là 0 hồ sơ (backend chỉ trả dòng khác 0).
  *
- * Chỉ vẽ các tháng đã trọn (bỏ cột tháng chứa `today`, như mockup): tháng đang chạy mới có vài ngày nên đường
- * luôn cắm xuống ở đầu mút, trông như nhu cầu giảm mạnh trong khi tháng chưa hết.
+ * Chỉ vẽ các tháng đã trọn (bỏ cột tháng chứa `today`, như mockup): tháng đang chạy mới có vài ngày nên cột
+ * cuối luôn thấp hẳn, trông như nhu cầu giảm mạnh trong khi tháng chưa hết.
  * @param today hôm nay theo giờ Việt Nam (YYYY-MM-DD).
  */
 export function toDemandData(series: LoanStatisticsSeries, names: Map<number, string>, today: string): DemandData {
@@ -60,8 +60,8 @@ export function toDemandData(series: LoanStatisticsSeries, names: Map<number, st
     .map(([id, values]) => ({ id, values, total: values.reduce((sum, value) => sum + value, 0) }))
     .filter((item) => item.total > 0)
     .sort((a, b) => b.total - a.total);
-  const top = ranked.slice(0, LINE_LIMIT);
-  const rest = ranked.slice(LINE_LIMIT);
+  const top = ranked.slice(0, NAMED_LIMIT);
+  const rest = ranked.slice(NAMED_LIMIT);
   const groups: DemandGroup[] = top.map((item, position) => ({
     name: productName(item.id, names),
     color: CHART_PALETTE.categorical[position],
@@ -106,37 +106,58 @@ export function describeDemandTrend({ groups }: DemandData): DemandTrend {
   return { rising, falling };
 }
 
-/** Một đường cho mỗi nhóm sản phẩm, số tháng cuối ở đầu mút. */
+/** Nhóm nằm trên cùng cột của một tháng: nhóm cuối có hồ sơ; tháng không có hồ sơ nào thì là nhóm đầu. */
+function topGroupIndex(groups: DemandGroup[], position: number): number {
+  for (let index = groups.length - 1; index > 0; index -= 1) {
+    if (groups[index].values[position] > 0) return index;
+  }
+  return 0;
+}
+
+/**
+ * Cột chồng hồ sơ nộp mỗi tháng, mỗi nhóm sản phẩm một khúc. Nhóm nhiều hồ sơ nhất nằm sát trục để xu hướng
+ * của nó đọc được ngay, nhóm gộp xám nằm trên cùng. Khúc trên cùng của tháng bo đầu và mang nhãn tổng tháng.
+ * Chú giải chỉ để nhận màu, không bấm ẩn nhóm: ẩn một khúc thì nhãn tổng trên đỉnh cột sẽ sai.
+ */
 export function buildDemandOption({ months, groups }: DemandData): ChartOption {
+  const totals = months.map((_, position) => groups.reduce((sum, group) => sum + group.values[position], 0));
+  const tops = months.map((_, position) => topGroupIndex(groups, position));
+  const gridTop = groups.length > 2 ? 56 : 36;
   return {
-    legend: { data: groups.map((group) => group.name), itemGap: 14, itemWidth: 10, itemHeight: 10 },
-    grid: { left: 4, right: 40, top: groups.length > 2 ? 56 : 36, bottom: 4, containLabel: true },
+    legend: { data: groups.map((group) => group.name), selectedMode: false, itemGap: 14, itemWidth: 10, itemHeight: 10 },
+    grid: { left: 4, right: 8, top: gridTop, bottom: 4, containLabel: true },
+    // Thẻ hẹp như điện thoại thì chú giải xuống thêm một dòng; hạ vùng vẽ để dòng đó không đè nhãn trục y.
+    media: [
+      { query: { minWidth: 0 }, option: { grid: { top: gridTop } } },
+      { query: { maxWidth: 420 }, option: { grid: { top: gridTop + 26 } } },
+    ],
     tooltip: {
       trigger: 'axis',
+      axisPointer: { type: 'shadow' },
       formatter: (params: AxisParams) => {
         const position = params[0]?.dataIndex ?? 0;
         const rows = groups.map((group) => ({ label: group.name, value: `${chartNumber(group.values[position])} hồ sơ`, color: group.color }));
-        const total = groups.reduce((sum, group) => sum + group.values[position], 0);
-        return tooltipHtml(bucketTitle(months[position], 'MONTH'), rows, `Tổng ${chartNumber(total)} hồ sơ`);
+        return tooltipHtml(bucketTitle(months[position], 'MONTH'), rows, `Tổng ${chartNumber(totals[position])} hồ sơ`);
       },
     },
-    xAxis: { type: 'category', data: months.map((month) => bucketLabel(month, 'MONTH')), boundaryGap: false },
+    xAxis: { type: 'category', data: months.map((month) => bucketLabel(month, 'MONTH')) },
     yAxis: { type: 'value', minInterval: 1, splitNumber: 4 },
-    series: groups.map((group) => ({
+    series: groups.map((group, groupIndex) => ({
       name: group.name,
-      type: 'line',
-      // Cong rất nhẹ và giữ đơn điệu theo trục x: số liệu thật có thể nhảy mạnh giữa hai tháng, đường cong
-      // mạnh (0,3 như mockup) sẽ vồng quá điểm thật, vẽ ra một đỉnh hay một đáy không có.
-      smooth: 0.12,
-      smoothMonotone: 'x',
-      data: group.values,
+      type: 'bar',
+      stack: 'demand',
+      barMaxWidth: 24,
       color: group.color,
-      showSymbol: true,
-      symbolSize: 7,
-      lineStyle: { width: 2, ...(group.others ? { type: 'dashed' } : {}) },
-      itemStyle: { borderColor: CHART_PALETTE.surface, borderWidth: 2 },
-      endLabel: { show: true, formatter: (param: { value: number }) => chartNumber(param.value), color: CHART_PALETTE.ink2, fontSize: 11, distance: 6 },
+      // Viền màu nền làm khe hở giữa các khúc, như cột chồng ở trang Tổng quan.
+      itemStyle: { borderColor: CHART_PALETTE.surface, borderWidth: 1, borderRadius: 0 },
       emphasis: CHART_FOCUS,
+      data: group.values.map((value, position) => (tops[position] === groupIndex
+        ? {
+          value,
+          itemStyle: { borderRadius: [4, 4, 0, 0] },
+          label: { show: true, position: 'top', distance: 6, formatter: chartNumber(totals[position]), color: CHART_PALETTE.ink2, fontSize: 11 },
+        }
+        : value)),
     })),
   };
 }
@@ -148,11 +169,36 @@ export function toRiskRows(products: ProductStat[]): Array<ProductStat & { nplRa
     .sort((a, b) => b.nplRatioPercent - a.nplRatioPercent);
 }
 
-/** Thanh ngang tỷ lệ nợ xấu từng sản phẩm, vạch đứt là tỷ lệ toàn danh mục (nếu có). */
+/** Tên sản phẩm dài hơn chừng này ký tự thì cắt kèm "…" để nhãn trục không chiếm nhiều dòng; tên đủ có ở tooltip và bảng. */
+const NAME_MAX_CHARS = 36;
+
+const axisName = (name: string) => (name.length > NAME_MAX_CHARS ? `${name.slice(0, NAME_MAX_CHARS - 1).trimEnd()}…` : name);
+
+/** Nấc bề rộng biểu đồ (px) để tính lại bề rộng nhãn trục, cách nhau 20px. Nấc 0 luôn khớp nên thu hẹp lại vẫn đúng. */
+const LABEL_WIDTH_STEPS = [0, ...Array.from({ length: 56 }, (_, index) => 300 + index * 20)];
+
+/**
+ * ECharts không tự co nhãn trục danh mục theo bề rộng một cột, nên tên sản phẩm dài sẽ đè lên nhau khi thẻ hẹp.
+ * Media query của ECharts tính theo bề rộng biểu đồ và chạy lại mỗi lần đổi cỡ; các nấc khớp được gộp theo thứ
+ * tự nên nấc lớn nhất thắng. Mỗi nấc đặt bề rộng nhãn bằng bề rộng một cột ở cỡ nhỏ nhất của nấc trừ khe hở,
+ * tên dài tự xuống dòng.
+ * @param sidePadding tổng lề trái phải của grid (px).
+ */
+function categoryLabelMedia(count: number, sidePadding: number): NonNullable<ChartOption['media']> {
+  return LABEL_WIDTH_STEPS.map((minWidth) => ({
+    query: { minWidth },
+    option: { xAxis: { axisLabel: { width: Math.max(28, Math.floor((Math.max(minWidth, 300) - sidePadding) / count) - 6) } } },
+  }));
+}
+
+/**
+ * Cột tỷ lệ nợ xấu từng sản phẩm, cao nhất bên trái; vạch đứt ngang là tỷ lệ toàn danh mục (nếu có), nhãn vạch
+ * đặt ở đầu phải, phía trên các cột thấp nhất. Tên sản phẩm dưới trục cũng bấm được vì cột 0% không có hình để bấm.
+ */
 export function buildRiskOption(rows: Array<ProductStat & { nplRatioPercent: number }>, platformRatio: number | null): ChartOption {
   const max = Math.max(5, ...rows.map((row) => row.nplRatioPercent), platformRatio ?? 0);
   return {
-    grid: { left: 16, right: 56, top: 22, bottom: 4, containLabel: true },
+    grid: { left: 4, right: 8, top: 26, bottom: 4, containLabel: true },
     tooltip: {
       trigger: 'axis',
       axisPointer: { type: 'shadow' },
@@ -165,34 +211,44 @@ export function buildRiskOption(rows: Array<ProductStat & { nplRatioPercent: num
         ], 'Bấm để xem sản phẩm');
       },
     },
-    xAxis: { type: 'value', show: false, max: Math.ceil(max) },
-    yAxis: {
+    xAxis: {
       type: 'category',
-      inverse: true,
       data: rows.map((row) => row.productName),
-      axisLine: { show: false },
-      axisTick: { show: false },
-      axisLabel: { color: CHART_PALETTE.ink2, fontSize: 12, width: 170, overflow: 'truncate' },
+      triggerEvent: true,
+      axisLabel: {
+        interval: 0,
+        hideOverlap: false,
+        color: CHART_PALETTE.ink2,
+        // Khai báo font ngay ở nhãn: containLabel đo nhãn chỉ bằng thuộc tính của axisLabel (không lấy font chung
+        // của theme), đo bằng font mặc định thì ngắt dòng ít hơn lúc vẽ và dòng cuối bị cắt ở đáy biểu đồ.
+        fontFamily: CHART_FONT,
+        fontSize: 11,
+        lineHeight: 14,
+        overflow: 'break',
+        formatter: axisName,
+      },
     },
+    yAxis: { type: 'value', show: false, max: Math.ceil(max) },
     series: [{
       type: 'bar',
-      barWidth: 12,
+      barMaxWidth: 24,
       cursor: 'pointer',
       color: CHART_PALETTE.brand,
-      itemStyle: { borderRadius: [0, 4, 4, 0] },
+      itemStyle: { borderRadius: [4, 4, 0, 0] },
       data: rows.map((row) => row.nplRatioPercent),
-      label: { show: true, position: 'right', distance: 6, color: CHART_PALETTE.ink, fontSize: 12, formatter: (param: { value: number }) => formatPercent(param.value) },
+      label: { show: true, position: 'top', distance: 6, color: CHART_PALETTE.ink, fontSize: 12, formatter: (param: { value: number }) => formatPercent(param.value) },
       ...(platformRatio == null ? {} : {
         markLine: {
           silent: true,
           symbol: 'none',
           z: 1,
           lineStyle: { color: '#aab6c8', width: 1, type: 'dashed' },
-          label: { position: 'end', formatter: `toàn danh mục ${formatPercent(platformRatio)}`, color: CHART_PALETTE.muted, fontSize: 11 },
-          data: [{ xAxis: platformRatio }],
+          label: { position: 'insideEndTop', formatter: `toàn danh mục ${formatPercent(platformRatio)}`, color: CHART_PALETTE.muted, fontSize: 11 },
+          data: [{ yAxis: platformRatio }],
         },
       }),
     }],
+    media: categoryLabelMedia(rows.length, 12),
   };
 }
 

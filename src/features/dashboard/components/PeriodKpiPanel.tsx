@@ -6,26 +6,29 @@ import { Icon } from '@/components/Icon';
 import { StaleProjectionNote, type LoanStatisticsSummary } from '@/features/statistics';
 import { formatCurrency, formatNumber, formatPercent } from '@/utils';
 import type { DashboardStatistics } from '../hooks/useDashboardStatistics';
-import { buildTrendOption } from '../mappers/chartOptions';
-import { buildPeriodKpis, formatDelta, type KpiTile } from '../mappers/periodKpis';
+import { moneyShort } from '@/lib/charts/theme';
+import { buildLevelTrendOption, buildTrendOption } from '../mappers/chartOptions';
+import { buildPeriodKpis, formatKpiDelta, isFlatDelta, portfolioTrendPoints, type KpiTile } from '../mappers/periodKpis';
 import { rollingAverage } from '../mappers/rolling';
 import type { PeriodKpiKey } from '../types';
 import { DashCardHead } from './DashCardHead';
 
 /** Dòng thứ ba của ô số: chênh lệch có mũi tên khi so được, không thì ghi chú trung tính. */
 function DeltaLine({ tile, period }: { tile: KpiTile; period: number }) {
-  if (!tile.delta) return <span className="dash-delta">{tile.note}</span>;
-  const { percent, good } = tile.delta;
-  if (Math.abs(percent) < 0.05) return <span className="dash-delta" title={`so với ${period} ngày trước đó`}><b>0,0%</b></span>;
+  const { delta } = tile;
+  if (!delta) return <span className="dash-delta">{tile.note}</span>;
+  if (isFlatDelta(delta)) {
+    return <span className="dash-delta" title={`so với ${period} ngày trước đó`}><b>{delta.unit === 'point' ? '0,00 điểm' : '0,0%'}</b></span>;
+  }
   return (
-    <span className={`dash-delta ${good ? 'good' : 'bad'}`} title={`so với ${period} ngày trước đó`}>
-      <Icon name={percent >= 0 ? 'arrowUp' : 'arrowDown'} />
-      <b>{formatDelta(percent)}</b>
+    <span className={`dash-delta ${delta.good ? 'good' : 'bad'}`} title={`so với ${period} ngày trước đó`}>
+      <Icon name={delta.percent >= 0 ? 'arrowUp' : 'arrowDown'} />
+      <b>{formatKpiDelta(delta)}</b>
     </span>
   );
 }
 
-/** Phần dưới khi chọn ô ảnh chụp (dư nợ, nợ xấu): số chi tiết, vì backend chưa có lịch sử để vẽ xu hướng. */
+/** Phần dưới khi chọn ô dư nợ hoặc nợ xấu mà không có lịch sử theo ngày (Fineract không đọc được): số hiện tại. */
 function SnapshotFacts({ kind, summary }: { kind: 'outstanding' | 'npl'; summary: LoanStatisticsSummary }) {
   const { portfolio } = summary;
   const rows = kind === 'outstanding'
@@ -45,7 +48,7 @@ function SnapshotFacts({ kind, summary }: { kind: 'outstanding' | 'npl'; summary
       <dl className="ui-rows">
         {rows.map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}
       </dl>
-      <p className="ui-chart-note">Số hiện tại. Hệ thống chưa lưu dư nợ theo ngày nên chưa vẽ được xu hướng.</p>
+      <p className="ui-chart-note">Số hiện tại; chưa đọc được lịch sử từ Fineract nên chưa vẽ được xu hướng.</p>
       <StaleProjectionNote count={portfolio.staleProjections} />
     </div>
   );
@@ -58,14 +61,19 @@ interface PeriodKpiPanelProps {
   onSelect: (key: PeriodKpiKey) => void;
 }
 
+const PERCENT2 = new Intl.NumberFormat('vi-VN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const percent2 = (value: number) => `${PERCENT2.format(value)}%`;
+
 /**
  * Thẻ "Số liệu N ngày": bốn ô là bốn nút chọn; phần dưới vẽ bình quân 7 ngày của ô đang chọn (vốn gọi
- * được, phí chợ Notes) hoặc số chi tiết của ô ảnh chụp (dư nợ, nợ xấu).
+ * được, phí chợ Notes) hoặc số cuối mỗi ngày (cuối mỗi tuần với kỳ 90 ngày) của dư nợ và tỷ lệ nợ xấu.
  */
 export function PeriodKpiPanel({ stats, selected, onSelect }: PeriodKpiPanelProps) {
-  const { period, currentFrom, loanSummary, investmentCompare, investmentPeriods } = stats;
-  const tiles = buildPeriodKpis(loanSummary.data, investmentPeriods);
+  const { period, currentFrom, chartBucket, loanSummary, loanChart, loanCompare, loanPeriods, investmentCompare, investmentPeriods } = stats;
+  const tiles = buildPeriodKpis(loanSummary.data, investmentPeriods, loanPeriods, loanCompare.currentData?.portfolioHistory?.unavailableLoans ?? 0);
+  const unavailableLoans = loanChart.currentData?.portfolioHistory?.unavailableLoans ?? 0;
   const comparePoints = investmentCompare.currentData?.points;
+  const loanChartPoints = loanChart.currentData?.points;
 
   const trend = useMemo(() => {
     if (!comparePoints || (selected !== 'committed' && selected !== 'fee')) return null;
@@ -77,10 +85,21 @@ export function PeriodKpiPanel({ stats, selected, onSelect }: PeriodKpiPanelProp
     };
   }, [comparePoints, currentFrom, selected]);
 
+  const levelTrend = useMemo(() => {
+    if (!loanChartPoints || (selected !== 'outstanding' && selected !== 'npl')) return null;
+    const points = portfolioTrendPoints(loanChartPoints, selected);
+    if (!points.length) return null;
+    return buildLevelTrendOption(selected === 'outstanding'
+      ? { points, bucket: chartBucket, name: 'Dư nợ cuối ngày', format: moneyShort }
+      : { points, bucket: chartBucket, name: 'Tỷ lệ nợ xấu', format: percent2 });
+  }, [loanChartPoints, selected, chartBucket]);
+
   const snapshot = selected === 'outstanding' || selected === 'npl';
   const source = snapshot ? loanSummary : investmentCompare;
   // Đổi kỳ thì series kỳ mới chưa về (`currentData` rỗng) dù `isLoading` đã false: vẫn là đang tải.
+  // Ô dư nợ, nợ xấu chờ cả series biểu đồ; series lỗi thì vẫn hiện số hiện tại thay cho đường xu hướng.
   const loanPending = !loanSummary.data && !loanSummary.error;
+  const loanTrendPending = loanPending || (!loanChart.currentData && !loanChart.error);
   const investmentPending = !investmentPeriods && !investmentCompare.error;
   const pending = (key: PeriodKpiKey) => (key === 'outstanding' || key === 'npl' ? loanPending : investmentPending);
 
@@ -100,8 +119,16 @@ export function PeriodKpiPanel({ stats, selected, onSelect }: PeriodKpiPanelProp
       <div className="dash-trend" role="tabpanel" aria-label={tiles.find((tile) => tile.key === selected)?.label}>
         {source.error ? (
           <ErrorNotice error={source.error} onRetry={source.refetch} />
-        ) : (snapshot ? loanPending : investmentPending) ? (
+        ) : (snapshot ? loanTrendPending : investmentPending) ? (
           <span className="ui-skeleton dash-trend-skel" aria-busy="true" />
+        ) : snapshot && levelTrend ? (
+          <>
+            <span className="dash-trend-note">{chartBucket === 'DAY' ? 'Theo ngày' : 'Cuối mỗi tuần'}</span>
+            <EChart className="dash-trend-plot" option={levelTrend} ariaLabel={`Biểu đồ đường ${selected === 'outstanding' ? 'dư nợ' : 'tỷ lệ nợ xấu'} cuối ${chartBucket === 'DAY' ? 'mỗi ngày' : 'mỗi tuần'}, ${period} ngày gần nhất`} />
+            {unavailableLoans > 0 && (
+              <p className="ui-chart-note">{unavailableLoans} khoản vay chưa đọc được lịch sử từ Fineract nên đường này chưa tính các khoản đó.</p>
+            )}
+          </>
         ) : snapshot ? (
           loanSummary.data && <SnapshotFacts kind={selected} summary={loanSummary.data} />
         ) : !trend || trend.empty ? (

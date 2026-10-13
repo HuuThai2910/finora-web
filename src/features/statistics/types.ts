@@ -113,6 +113,25 @@ export interface LoanSeriesPoint {
    * thiếu, nơi đọc phải coi `undefined` là "chưa có số liệu", không phải 0.
    */
   applicationsSubmittedAmount?: number;
+  /**
+   * Danh mục cuối cột, backend tính lại từ lịch sử giao dịch trên Fineract. `null` với cột chưa tới hoặc khi
+   * không đọc được khoản nào; thiếu hẳn khi gateway chưa cập nhật (trường mới 2026-10-13).
+   */
+  portfolio?: PortfolioPosition | null;
+}
+
+/** Dư nợ tại cuối một cột: ngày cuối của cột, hoặc hôm nay với cột đang chạy. */
+export interface PortfolioPosition {
+  asOf: string;
+  /** Số khoản còn dư nợ gốc tại ngày đó. */
+  loans: number;
+  principalOutstanding: number;
+  /** Dư nợ gốc nhóm 3 đến 5 theo số ngày quá hạn của ngày đó. */
+  nplPrincipalOutstanding: number;
+  /** Phần trăm; null khi dư nợ gốc bằng 0. */
+  nplRatioPercent: number | null;
+  /** Đủ năm nhóm, nhóm 1 trước. */
+  debtGroups: Array<{ debtGroup: number; loans: number; principalOutstanding: number }>;
 }
 
 /** Dòng thưa: chỉ có cặp (cột, sản phẩm) khác 0. */
@@ -139,6 +158,11 @@ export interface LoanFunnel {
 export interface LoanStatisticsSeries extends StatisticsSeries<LoanSeriesPoint> {
   productPoints: LoanProductPoint[];
   funnel: LoanFunnel;
+  /**
+   * Số khoản vay cần đọc lịch sử trong kỳ và số khoản không đọc được từ Fineract (bị bỏ khỏi dư nợ theo
+   * ngày, nên số theo ngày có thể thấp hơn số hiện tại). Thiếu khi gateway chưa cập nhật.
+   */
+  portfolioHistory?: { loans: number; unavailableLoans: number };
 }
 
 /* ---------------- User ---------------- */

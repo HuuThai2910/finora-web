@@ -1,6 +1,6 @@
 import { Icon } from '@/components/Icon';
 import { ErrorNotice } from '@/components/ErrorNotice';
-import { formatMoney } from '../formatters';
+import { formatMoney, formatPercent } from '../formatters';
 import { daysSince, formatCompactDateTime } from '../mappers/applicationListDisplay';
 import type { PendingReviewSummary } from '../hooks/usePendingReviewSummary';
 
@@ -13,7 +13,7 @@ interface PendingReviewCardProps {
 
 const SCORE_FORMAT = new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 1 });
 
-const ROW_LABELS = ['Tổng số tiền đề nghị', 'Hạn mức AI gợi ý', 'Điểm bình quân', 'Chưa chấm được điểm', 'Chờ lâu nhất'];
+const ROW_LABELS = ['Tổng số tiền đề nghị', 'Xác suất vỡ nợ bình quân', 'Điểm bình quân', 'Chưa chấm được điểm', 'Chờ lâu nhất'];
 
 /**
  * Thẻ gọn "Đang chờ thẩm định" cạnh biểu đồ 30 ngày (mockup loans.html): các dòng nhãn, giá trị.
@@ -44,7 +44,7 @@ export function PendingReviewCard({ summary, isLoading, error, onRetry }: Pendin
         <>
           <dl className="ui-rows loan-pending-rows">
             <div><dt>Tổng số tiền đề nghị</dt><dd>{formatMoney(summary.requestedAmount)}</dd></div>
-            <div><dt>Hạn mức AI gợi ý</dt><dd>{formatMoney(summary.suggestedLimit)}</dd></div>
+            <div><dt>Xác suất vỡ nợ bình quân</dt><dd>{formatPercent(summary.averagePd, true)}</dd></div>
             <div>
               <dt>Điểm bình quân</dt>
               <dd>{summary.averageScore == null ? '-' : `${SCORE_FORMAT.format(summary.averageScore)} / 100`}</dd>
@@ -67,7 +67,7 @@ export function PendingReviewCard({ summary, isLoading, error, onRetry }: Pendin
           </dl>
           {summary.sampled < summary.total && (
             <p className="loan-pending-note">
-              Tổng tiền, hạn mức và điểm tính trên {summary.sampled} hồ sơ mới nhất trong {summary.total} hồ sơ đang chờ.
+              Tổng tiền, xác suất vỡ nợ và điểm tính trên {summary.sampled} hồ sơ mới nhất trong {summary.total} hồ sơ đang chờ.
             </p>
           )}
         </>

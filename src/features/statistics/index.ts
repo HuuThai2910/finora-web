@@ -10,7 +10,10 @@ export {
   useGetUserStatisticsSeriesQuery,
 } from './api/statisticsApi';
 export { StaleProjectionNote } from './components/StaleProjectionNote';
-export { buildDebtGroupOption, debtGroupName, overdueGroups } from './mappers/debtGroupOption';
+export {
+  buildDebtGroupMonthsOption, buildDebtGroupOption, debtGroupName, groupPrincipal, overdueGroups, OVERDUE_DEBT_GROUPS,
+  type DebtGroupMonth,
+} from './mappers/debtGroupOption';
 export {
   buildTradedValueOption, formatPricePercent, permilleToPercent,
 } from './mappers/marketOptions';

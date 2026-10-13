@@ -17,6 +17,16 @@ interface DailyTableProps {
   onSelect: (key: PeriodKpiKey) => void;
 }
 
+/** Ghi chú dưới bảng: cách lấy số của cột tuần và số khoản vay không đọc được lịch sử từ Fineract. */
+function dailyNote(weekly: boolean, unavailableLoans: number): string | null {
+  const parts: string[] = [];
+  if (weekly) parts.push('Tuần bắt đầu thứ Hai; dư nợ và nợ xấu lấy cuối tuần, các cột khác cộng cả tuần');
+  if (unavailableLoans > 0) {
+    parts.push(`${unavailableLoans} khoản vay chưa đọc được lịch sử từ Fineract nên chưa tính vào dư nợ và nợ xấu`);
+  }
+  return parts.length ? `${parts.join('. ')}.` : null;
+}
+
 /**
  * Thẻ "Số liệu từng ngày, N ngày" (mockup .db-daily): kỳ 7/30 ngày mỗi dòng một ngày, kỳ 90 ngày mỗi dòng
  * một tuần, mới nhất ở trên. Cùng nguồn series với thẻ biểu đồ nên không gọi thêm API. Trang của bảng là
@@ -33,6 +43,7 @@ export function DailyTable({ stats, selected, onSelect }: DailyTableProps) {
     [investmentPoints, loanPoints],
   );
   const error = investmentChart.error ?? loanChart.error;
+  const note = dailyNote(weekly, loanChart.currentData?.portfolioHistory?.unavailableLoans ?? 0);
   const pageRows = rows?.slice(page * DAILY_PAGE_SIZE, (page + 1) * DAILY_PAGE_SIZE) ?? [];
 
   return (
@@ -58,18 +69,19 @@ export function DailyTable({ stats, selected, onSelect }: DailyTableProps) {
                   <th scope="col">{weekly ? 'Tuần' : 'Ngày'}</th>
                   {DAILY_COLUMNS.map((column) => {
                     const on = column.kpi != null && column.kpi === selected;
+                    const header = weekly && column.weeklyHeader ? column.weeklyHeader : column.header;
                     return (
                       <th key={column.key} scope="col" className={on ? 'num on' : 'num'}>
                         {column.kpi ? (
                           <button
                             type="button"
                             aria-pressed={on}
-                            title={`Xem xu hướng ${column.header.toLowerCase()}`}
+                            title={`Xem xu hướng ${header.toLowerCase()}`}
                             onClick={() => column.kpi && onSelect(column.kpi)}
                           >
-                            {column.header}
+                            {header}
                           </button>
-                        ) : column.header}
+                        ) : header}
                       </th>
                     );
                   })}
@@ -96,10 +108,7 @@ export function DailyTable({ stats, selected, onSelect }: DailyTableProps) {
               </tbody>
             </table>
           </div>
-          <p className="dash-daily-note">
-            Dư nợ cuối ngày và tỷ lệ nợ xấu chưa có lịch sử theo ngày nên không có trong bảng
-            {weekly ? '; tuần bắt đầu thứ Hai, các cột cộng cả tuần' : ''}.
-          </p>
+          {note && <p className="dash-daily-note">{note}</p>}
           <Pager page={page} size={DAILY_PAGE_SIZE} total={rows.length} unit={weekly ? 'tuần' : 'ngày'} onPage={setPage} />
         </>
       )}

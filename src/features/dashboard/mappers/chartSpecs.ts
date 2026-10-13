@@ -1,12 +1,18 @@
 import {
+  bucketTitle,
+  buildDebtGroupMonthsOption,
   buildDebtGroupOption,
   changePercent,
   buildTradedValueOption,
   debtGroupName,
   formatIsoDate,
+  groupPrincipal,
+  OVERDUE_DEBT_GROUPS,
   overdueGroups,
   sumOf,
   type CreditGradeStat,
+  type DebtGroupMonth,
+  type LoanStatisticsSummary,
   type StatisticsBucket,
 } from '@/features/statistics';
 import type { ChartOption } from '@/lib/charts/echarts';
@@ -164,12 +170,59 @@ function gradesSpec(stats: DashboardStatistics): ChartSpec {
   };
 }
 
+const MILLIONS = new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 0 });
+const POINTS2 = new Intl.NumberFormat('vi-VN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+/** "tăng 0,12 điểm" hoặc "giảm 0,12 điểm" so với cuối tháng trước; không so được thì bỏ. */
+function nplChange(now: number | null, before: number | null | undefined): string {
+  if (now == null || before == null) return '.';
+  const diff = now - before;
+  return `, ${diff >= 0 ? 'tăng' : 'giảm'} ${POINTS2.format(Math.abs(diff))} điểm so với cuối tháng trước.`;
+}
+
+/**
+ * Dư nợ quá hạn theo nhóm nợ của 6 tháng gần nhất, số cuối mỗi tháng backend tính lại từ lịch sử Fineract.
+ * Không đọc được lịch sử thì quay về ảnh chụp hiện tại theo nhóm nợ.
+ */
 function overdueSpec(stats: DashboardStatistics): ChartSpec {
-  const note = 'Số hiện tại; hệ thống chưa lưu lịch sử nên chưa có diễn biến 6 tháng';
-  const pending = gate([stats.loanSummary]);
+  const pending = gate([stats.loanSummary, stats.loanMonths]);
   if (pending) return pending;
   const portfolio = stats.loanSummary.currentData?.portfolio;
-  if (!portfolio) return { status: 'loading' };
+  const series = stats.loanMonths.currentData;
+  if (!portfolio || !series) return { status: 'loading' };
+  const months: DebtGroupMonth[] = series.points.flatMap((point) => (point.portfolio ? [{ bucketStart: point.bucketStart, position: point.portfolio }] : []));
+  if (!months.length) return overdueSnapshotSpec(portfolio);
+  const unavailable = series.portfolioHistory?.unavailableLoans ?? 0;
+  const note = [
+    'Cuối mỗi tháng, tháng này tính đến hôm nay; đơn vị triệu đồng, N2 đến N5 là nhóm nợ 2 đến 5',
+    ...(unavailable > 0 ? [`${unavailable} khoản vay chưa đọc được lịch sử từ Fineract nên chưa tính`] : []),
+  ].join('. ');
+  if (months.every((month) => OVERDUE_DEBT_GROUPS.every((group) => groupPrincipal(month.position, group) === 0))) {
+    return { status: 'empty', text: `Không có khoản vay quá hạn trong ${months.length} tháng gần nhất.`, note };
+  }
+  const last = months[months.length - 1].position;
+  const before = months.length > 1 ? months[months.length - 2].position : undefined;
+  return {
+    status: 'ready',
+    option: buildDebtGroupMonthsOption(months),
+    ariaLabel: `Biểu đồ cột chồng dư nợ gốc quá hạn theo nhóm nợ 2 đến 5, cuối mỗi tháng trong ${months.length} tháng`,
+    lead: [
+      'Nợ xấu (nhóm 3 đến 5) ', { strong: money(last.nplPrincipalOutstanding) },
+      ', bằng ', { strong: formatPercent(last.nplRatioPercent) }, ' dư nợ gốc',
+      nplChange(last.nplRatioPercent, before?.nplRatioPercent),
+    ],
+    headers: ['Tháng', ...OVERDUE_DEBT_GROUPS.map((group) => `N${group}`)],
+    rows: months.map((month) => [
+      bucketTitle(month.bucketStart, 'MONTH').replace('Tháng ', 'Th'),
+      ...OVERDUE_DEBT_GROUPS.map((group) => MILLIONS.format(groupPrincipal(month.position, group) / 1e6)),
+    ]),
+    note,
+  };
+}
+
+/** Biểu đồ nợ quá hạn khi không có lịch sử: ảnh chụp hiện tại theo nhóm nợ, kèm tiền quá hạn. */
+function overdueSnapshotSpec(portfolio: LoanStatisticsSummary['portfolio']): ChartSpec {
+  const note = 'Số hiện tại; chưa đọc được lịch sử từ Fineract nên chưa có diễn biến 6 tháng';
   if (overdueGroups(portfolio.byDebtGroup).every((group) => group.loans === 0)) {
     return { status: 'empty', text: 'Hiện không có khoản vay nào quá hạn.', note };
   }

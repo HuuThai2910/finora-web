@@ -7,10 +7,14 @@ import {
   useGetLoanStatisticsSeriesQuery,
   useGetLoanStatisticsSummaryQuery,
   useGetUserStatisticsSeriesQuery,
+  lastMonthsRange,
   vnToday,
   type StatisticsRange,
 } from '@/features/statistics';
 import type { PeriodDays } from '../types';
+
+/** Số tháng của biểu đồ dư nợ quá hạn theo nhóm nợ (mockup: "6 tháng gần nhất"). */
+export const OVERDUE_CHART_MONTHS = 6;
 
 /**
  * Số liệu theo kỳ của trang Tổng quan (7/30/90 ngày).
@@ -36,6 +40,8 @@ export function useDashboardStatistics(period: PeriodDays) {
   const investmentChart = useGetInvestmentStatisticsSeriesQuery(chartRange);
   const loanCompare = useGetLoanStatisticsSeriesQuery(compareRange);
   const loanChart = useGetLoanStatisticsSeriesQuery(chartRange);
+  // Biểu đồ nợ quá hạn: số cuối mỗi tháng của 6 tháng gần nhất, không đổi theo kỳ 7/30/90.
+  const loanMonths = useGetLoanStatisticsSeriesQuery(lastMonthsRange(OVERDUE_CHART_MONTHS));
   const userCompare = useGetUserStatisticsSeriesQuery(compareRange);
   const userChart = useGetUserStatisticsSeriesQuery(chartRange);
 
@@ -68,10 +74,11 @@ export function useDashboardStatistics(period: PeriodDays) {
     loanCompare,
     loanPeriods,
     loanChart,
+    loanMonths,
     userCompare,
     userPeriods,
     userChart,
-    refetch: () => [loanSummary, investmentSummary, investmentCompare, investmentChart, loanCompare, loanChart, userCompare, userChart]
+    refetch: () => [loanSummary, investmentSummary, investmentCompare, investmentChart, loanCompare, loanChart, loanMonths, userCompare, userChart]
       .forEach((query) => void query.refetch()),
     isFetching: [loanSummary, investmentSummary, investmentCompare, loanCompare, loanChart].some((query) => query.isFetching),
   };

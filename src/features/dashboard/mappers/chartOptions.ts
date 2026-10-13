@@ -1,6 +1,7 @@
 import {
   bucketLabel,
   bucketTitle,
+  formatIsoDate,
   type CreditGradeStat,
   type InvestmentSeriesPoint,
   type StatisticsBucket,
@@ -51,6 +52,45 @@ export function buildTrendOption({ points, name }: TrendInput): ChartOption {
     yAxis: { type: 'value', scale: true, axisLabel: { formatter: moneyShort } },
     series: [{
       name, type: 'line', ...SMOOTH, data: points.map((point) => Math.round(point.average)),
+      color: CHART_PALETTE.brand, areaStyle: chartArea(CHART_PALETTE.brand),
+    }],
+  };
+}
+
+export interface LevelPoint {
+  bucketStart: string;
+  /** Ngày của số liệu: cuối cột, hoặc hôm nay với cột đang chạy. */
+  asOf: string;
+  value: number;
+}
+
+export interface LevelTrendInput {
+  points: LevelPoint[];
+  bucket: StatisticsBucket;
+  name: string;
+  format: (value: number) => string;
+}
+
+/**
+ * Xu hướng của số dư (dư nợ, tỷ lệ nợ xấu): số cuối mỗi ngày hoặc cuối mỗi tuần, không lấy bình quân vì
+ * số dư không giật như số tiền phát sinh trong ngày (mockup buildTrendOption, kind "last").
+ */
+export function buildLevelTrendOption({ points, bucket, name, format }: LevelTrendInput): ChartOption {
+  return {
+    grid: { left: 4, right: 24, top: 12, bottom: 4, containLabel: true },
+    tooltip: {
+      trigger: 'axis',
+      formatter: (params: AxisParams) => {
+        const point = points[firstIndex(params)];
+        return tooltipHtml(`Cuối ngày ${formatIsoDate(point.asOf)}`, [
+          { label: name, value: format(point.value), color: CHART_PALETTE.brand },
+        ]);
+      },
+    },
+    xAxis: { type: 'category', data: points.map((point) => bucketLabel(point.bucketStart, bucket)), boundaryGap: false },
+    yAxis: { type: 'value', scale: true, axisLabel: { formatter: format } },
+    series: [{
+      name, type: 'line', ...SMOOTH, data: points.map((point) => point.value),
       color: CHART_PALETTE.brand, areaStyle: chartArea(CHART_PALETTE.brand),
     }],
   };

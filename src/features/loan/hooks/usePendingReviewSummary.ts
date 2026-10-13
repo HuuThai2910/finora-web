@@ -9,11 +9,17 @@ export interface PendingReviewSummary {
   /** Số hồ sơ thật sự dùng để cộng tổng; nhỏ hơn `total` khi hàng chờ dài hơn một trang. */
   sampled: number;
   requestedAmount: number;
-  suggestedLimit: number;
+  /** PD bình quân (0..1) của các hồ sơ đã có PD; null khi chưa hồ sơ nào có. Thay hạn mức gợi ý mà AI v17 đã bỏ. */
+  averagePd: number | null;
   /** Điểm đánh giá bình quân của các hồ sơ đã có điểm; null khi chưa hồ sơ nào có điểm. */
   averageScore: number | null;
   unscored: number;
   oldest: AdminLoanReviewSummary | null;
+}
+
+function average(values: (number | null | undefined)[]): number | null {
+  const present = values.filter((value): value is number => value != null);
+  return present.length ? present.reduce((sum, value) => sum + value, 0) / present.length : null;
 }
 
 function summarize(items: AdminLoanReviewSummary[], total: number, oldest: AdminLoanReviewSummary | null): PendingReviewSummary {
@@ -24,8 +30,8 @@ function summarize(items: AdminLoanReviewSummary[], total: number, oldest: Admin
     total,
     sampled: items.length,
     requestedAmount: items.reduce((sum, item) => sum + item.requestedAmount, 0),
-    suggestedLimit: items.reduce((sum, item) => sum + (item.assessment?.suggestedLimit ?? 0), 0),
-    averageScore: scores.length ? scores.reduce((sum, score) => sum + score, 0) / scores.length : null,
+    averagePd: average(items.map((item) => item.assessment?.pdProbability)),
+    averageScore: average(scores),
     unscored: items.length - scores.length,
     oldest,
   };

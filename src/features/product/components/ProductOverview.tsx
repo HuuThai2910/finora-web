@@ -10,7 +10,7 @@ import {
 } from '../mappers/productCharts';
 
 interface Props {
-  /** Bấm một thanh nợ xấu để mở ngăn chi tiết của sản phẩm đó. */
+  /** Bấm một cột nợ xấu (hoặc tên sản phẩm dưới cột) để mở ngăn chi tiết của sản phẩm đó. */
   onOpenProduct: (productId: number) => void;
 }
 
@@ -69,7 +69,7 @@ export function ProductOverview({ onOpenProduct }: Props) {
               className="ui-chart-plot"
               option={demandOption}
               notMerge
-              ariaLabel={`Biểu đồ đường số hồ sơ vay nộp mỗi tháng của từng sản phẩm, ${demand.months.length} tháng trọn gần nhất`}
+              ariaLabel={`Biểu đồ cột chồng số hồ sơ vay nộp mỗi tháng theo sản phẩm, ${demand.months.length} tháng trọn gần nhất`}
             />
             <ChartDataTable
               headers={['Tháng', ...demand.groups.map((group) => group.name), 'Tổng']}
@@ -103,7 +103,7 @@ export function ProductOverview({ onOpenProduct }: Props) {
               className="ui-chart-plot"
               option={riskOption}
               notMerge
-              ariaLabel="Biểu đồ thanh tỷ lệ nợ xấu của từng sản phẩm, so với toàn danh mục"
+              ariaLabel="Biểu đồ cột tỷ lệ nợ xấu của từng sản phẩm, so với toàn danh mục"
               onClick={({ dataIndex }) => {
                 const row = riskRows[dataIndex];
                 if (row) onOpenProduct(row.productId);
