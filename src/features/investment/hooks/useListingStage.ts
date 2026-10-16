@@ -45,7 +45,9 @@ export function useListingStage(listing: MarketListing | undefined): ListingStag
       : notesQuery.data.length > 0;
 
   return {
-    stage: listing ? resolveListingStage(listing.status, investorsQuery.data, notesIssued) : null,
+    stage: listing
+      ? resolveListingStage(listing.status, investorsQuery.data, notesIssued, listing.cancellationReason != null)
+      : null,
     investors,
     investorsLoaded: investorsQuery.data !== undefined,
     investorsLoading: investorsQuery.isLoading,

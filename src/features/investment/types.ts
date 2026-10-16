@@ -28,6 +28,10 @@ export interface MarketListing {
   contractNumber: string | null;
   contractStatus: string | null;
   fundingClosesAt: string;
+  /** Chỉ có khi `CANCELLED` do finora-loan hủy đợt gọi vốn đã đủ vốn (không giải ngân). */
+  cancelledAt?: string | null;
+  /** `CONTRACT_DECLINED`, `CONTRACT_EXPIRED` hoặc `DISBURSEMENT_FAILED`; mã lạ hiện nguyên văn. */
+  cancellationReason?: string | null;
 }
 
 export interface FundingProgress {

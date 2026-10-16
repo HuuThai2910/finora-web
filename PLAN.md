@@ -12,6 +12,11 @@ DRAFT -> APPROVED -> IN_PROGRESS -> READY_FOR_REVIEW -> ACCEPTED
 - Chỉ Thái chuyển task sang `APPROVED` hoặc `ACCEPTED`.
 - Khi backend contract thay đổi, cập nhật plan trước khi sửa UI nếu thay đổi luồng hoặc acceptance criteria.
 
+Trạng thái trong bảng là trạng thái **nghiệm thu task**, không phải kết luận code của luồng chưa tồn tại.
+`READY_FOR_REVIEW` nghĩa là code/build đã có nhưng còn chờ owner/UAT; `IN_PROGRESS` phải đọc plan và code
+để tách phần hiện hành khỏi phần acceptance/hardening còn thiếu. Plan tổng hợp liên repository nằm tại
+`../finora-platform/.agents/plans/finora-remaining-work-plan.md`.
+
 ## Danh sách task
 
 | Task | Phạm vi | Backend | Trạng thái | Đặc tả |
@@ -20,6 +25,10 @@ DRAFT -> APPROVED -> IN_PROGRESS -> READY_FOR_REVIEW -> ACCEPTED
 | WEB-LOAN-002 | Listing và theo dõi gọi vốn | LN-009–LN-010 | `BACKLOG` | Chưa tạo |
 | WEB-LOAN-003 | Giải ngân, servicing, repayment, overdue | LN-011–LN-017 | `READY_FOR_REVIEW` | [Plan](plans/WEB-LOAN-003-servicing-operations.md) |
 | WEB-UI-001 | Giao diện mềm theo finora-web-mockup, dữ liệu thật (toàn bộ trang quản trị) | API hiện có | `IN_PROGRESS` (chờ Thái xem) | [Plan](plans/WEB-UI-001-giao-dien-mem.md) |
+
+Cập nhật 2026-10-17 (contract `LoanFundingCancelled` v1, Hải review trước merge): trang chi tiết gọi vốn hiển
+thị listing `CANCELLED` sau khi đã đủ vốn bằng `cancellationReason`/`cancelledAt` của Investment — dừng ở bước
+khóa vốn, ghi lý do (hợp đồng bị từ chối/hết hạn ký, giải ngân thất bại) và việc tiền giữ được trả lại ví.
 
 ## Quy tắc đồng bộ về sau
 

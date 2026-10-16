@@ -47,11 +47,13 @@ const steps = (...states: StageState[]): StageState[] => states;
 /**
  * @param investors  danh sách phần vốn từ endpoint quản trị; `undefined` khi chưa tải
  * @param notesIssued phần vốn đã có Note chưa; `undefined` khi chưa tải hoặc chưa cần biết
+ * @param cancelledAfterFunding listing bị hủy sau khi đã đủ vốn (có `cancellationReason` từ finora-loan)
  */
 export function resolveListingStage(
   status: ListingStatus,
   investors: ListingInvestor[] | undefined,
   notesIssued: boolean | undefined,
+  cancelledAfterFunding = false,
 ): ListingStageView {
   switch (status) {
     case 'DRAFT':
@@ -77,7 +79,10 @@ export function resolveListingStage(
       };
     case 'CANCELLED':
       return {
-        steps: steps('done', 'todo', 'todo', 'todo', 'todo'),
+        // Hủy sau khi đủ vốn thì gọi vốn đã hoàn tất; chỉ bước khóa vốn/giải ngân không xảy ra.
+        steps: cancelledAfterFunding
+          ? steps('done', 'done', 'done', 'todo', 'todo')
+          : steps('done', 'todo', 'todo', 'todo', 'todo'),
         nextAction: null,
         terminal: 'CANCELLED',
         pending: false,

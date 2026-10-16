@@ -4,6 +4,7 @@ import { formatNumber } from '@/utils';
 import type { FundingActionKind } from '../../hooks/useFundingActions';
 import { FUNDING_STAGES, STAGE_INDEX, describeFundingWindow, isOverdue, type ListingStageView } from '../../stage';
 import type { ApproveListingRequest, FundingProgress, InvestmentNote, ListingInvestor, MarketListing } from '../../types';
+import { LISTING_CANCELLATION_LABEL } from '../../constants';
 import { formatDateTime } from '../../formatters';
 import { ApproveForm } from './ApproveForm';
 
@@ -67,7 +68,20 @@ function StepButton({ kind, label, busyLabel, tone = 'primary', hint, props }: {
 export function FundingFlow(props: Props) {
   const { listing, stage, investors, progress, probeNotes } = props;
   const overdue = isOverdue(listing);
-  const stopAt = stage.terminal === 'CLOSED' ? STAGE_INDEX.FUNDED : stage.terminal === 'CANCELLED' ? STAGE_INDEX.OPEN : -1;
+  // Hủy sau khi đủ vốn (finora-loan gửi lý do) dừng ở bước khóa vốn; hủy không lý do giữ hành vi cũ ở bước gọi vốn.
+  const cancelledAfterFunding = listing.cancellationReason != null;
+  const stopAt = stage.terminal === 'CLOSED'
+    ? STAGE_INDEX.FUNDED
+    : stage.terminal === 'CANCELLED'
+      ? (cancelledAfterFunding ? STAGE_INDEX.FINALIZED : STAGE_INDEX.OPEN)
+      : -1;
+  const cancelledDetail = cancelledAfterFunding
+    ? [
+        LISTING_CANCELLATION_LABEL[listing.cancellationReason ?? ''] ?? listing.cancellationReason,
+        listing.cancelledAt ? formatDateTime(listing.cancelledAt) : null,
+        'tiền giữ được trả lại ví nhà đầu tư',
+      ].filter(Boolean).join(' · ')
+    : 'Khoản vay đã bị rút khỏi sàn';
   const liveNotes = investors.filter((item) => item.status !== 'CANCELLED').reduce((sum, item) => sum + item.noteCount, 0);
 
   const stepTime = (index: number): ReactNode => {
@@ -139,11 +153,13 @@ export function FundingFlow(props: Props) {
               <li key={step.key} className="stop" aria-current="step">
                 <span className="dot"><CrossIcon /></span>
                 <div className="fd-step-body">
-                  <span className="fd-step-name">{stage.terminal === 'CLOSED' ? 'Đã đóng vì hết hạn' : 'Đã hủy'}</span>
+                  <span className="fd-step-name">
+                    {stage.terminal === 'CLOSED' ? 'Đã đóng vì hết hạn' : cancelledAfterFunding ? 'Đã hủy, không giải ngân' : 'Đã hủy'}
+                  </span>
                   <span className="fd-step-time">
                     {stage.terminal === 'CLOSED'
                       ? `Hạn ${formatDateTime(listing.fundingClosesAt)}, chưa gọi đủ vốn`
-                      : 'Khoản vay đã bị rút khỏi sàn'}
+                      : cancelledDetail}
                   </span>
                 </div>
               </li>
