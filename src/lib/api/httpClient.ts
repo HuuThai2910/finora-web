@@ -48,8 +48,23 @@ export function renewSession(startedAt: number): Promise<boolean> {
   return refreshSession();
 }
 
+/**
+ * Gửi request kèm cookie phiên; gặp 401 thì làm mới phiên rồi gửi lại đúng một lần.
+ * Dùng chung cho `apiFetch` (JSON) và `apiFetchBlob` (tệp nhị phân) để hai đường đi cùng một cơ chế.
+ */
+async function sendWithReauth(path: string, send: () => Promise<Response>): Promise<Response> {
+  const startedAt = Date.now();
+  const response = await send();
+
+  // Các endpoint /auth/* tự xử lý phiên (đăng nhập, làm mới, đăng xuất) nên không thử lại.
+  if (response.status === 401 && !path.includes('/auth/') && (await renewSession(startedAt))) {
+    return send();
+  }
+  return response;
+}
+
 export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
-  const send = () =>
+  const response = await sendWithReauth(path, () =>
     fetch(path, {
       credentials: 'include',
       ...init,
@@ -57,15 +72,8 @@ export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> 
         'Content-Type': 'application/json',
         ...init?.headers,
       },
-    });
-
-  const startedAt = Date.now();
-  let response = await send();
-
-  // Các endpoint /auth/* tự xử lý phiên (đăng nhập, làm mới, đăng xuất) nên không thử lại.
-  if (response.status === 401 && !path.includes('/auth/') && (await renewSession(startedAt))) {
-    response = await send();
-  }
+    }),
+  );
 
   if (!response.ok) {
     return handleError(response);
@@ -77,6 +85,23 @@ export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> 
   }
 
   return response.json();
+}
+
+/**
+ * Tải tệp nhị phân (ảnh, video bằng chứng eKYC) bằng cùng cookie phiên như `apiFetch`.
+ *
+ * Xác thực chỉ đi qua cookie, không bao giờ gắn token vào URL. Không đặt `Content-Type` JSON vì
+ * request đọc không có body. Lỗi vẫn ném `ApiError` (đọc body `{code, message, traceId}` nếu có)
+ * để `toUiApiError` lấy được mã như `EVIDENCE_DELETED`.
+ */
+export async function apiFetchBlob(path: string, init?: RequestInit): Promise<Blob> {
+  const response = await sendWithReauth(path, () => fetch(path, { credentials: 'include', ...init }));
+
+  if (!response.ok) {
+    return handleError(response);
+  }
+
+  return response.blob();
 }
 
 async function handleError(res: Response): Promise<never> {

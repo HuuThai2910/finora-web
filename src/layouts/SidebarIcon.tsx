@@ -16,6 +16,8 @@ const ICON_PATHS: Record<SidebarIconName, string[]> = {
   scan: ['M3 7V3h4', 'M17 3h4v4', 'M21 17v4h-4', 'M7 21H3v-4', 'M8 12h8'],
   chain: ['M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7', 'M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7'],
   download: ['M12 3v12', 'M7 10l5 5 5-5', 'M5 21h14'],
+  // Khung quét + khuôn mặt: duyệt eKYC (ảnh thẻ và kiểm tra khuôn mặt).
+  faceScan: ['M3 7V3h4', 'M17 3h4v4', 'M21 17v4h-4', 'M7 21H3v-4', 'M9 9.5v1', 'M15 9.5v1', 'M9 15c1.7 1.3 4.3 1.3 6 0'],
 };
 
 export function SidebarIcon({ name }: { name: SidebarIconName }) {

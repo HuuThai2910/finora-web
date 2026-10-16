@@ -20,6 +20,7 @@ DRAFT -> APPROVED -> IN_PROGRESS -> READY_FOR_REVIEW -> ACCEPTED
 | WEB-LOAN-002 | Listing và theo dõi gọi vốn | LN-009–LN-010 | `BACKLOG` | Chưa tạo |
 | WEB-LOAN-003 | Giải ngân, servicing, repayment, overdue | LN-011–LN-017 | `IN_PROGRESS` | [Plan](plans/WEB-LOAN-003-servicing-operations.md) |
 | WEB-UI-001 | Giao diện mềm theo finora-web-mockup, dữ liệu thật (toàn bộ trang quản trị) | API hiện có | `IN_PROGRESS` (chờ Thái xem) | [Plan](plans/WEB-UI-001-giao-dien-mem.md) |
+| WEB-EKYC-002 | Duyệt eKYC: hàng chờ duyệt tay, xem ảnh/video bằng chứng, duyệt/từ chối có ghi chú | EKYC-002 §3.7 (finora-user) | `IN_PROGRESS` (code xong, chờ chạy với backend thật) | [Plan](plans/WEB-EKYC-002-duyet-ekyc.md) |
 
 ## Quy tắc đồng bộ về sau
 
