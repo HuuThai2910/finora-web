@@ -2,8 +2,9 @@
 task_id: WEB-LOAN-003
 title: Vận hành trả nợ, quá hạn, cơ cấu và đối soát
 owner: Thai
-status: IN_PROGRESS
+status: READY_FOR_REVIEW
 approved_at: 2026-10-04
+updated_at: 2026-10-16
 ---
 
 # WEB-LOAN-003 — Vận hành servicing
@@ -20,5 +21,6 @@ Không tính lại tiền/lịch/DPD ở browser. Backend tiếp tục quyết �
 
 - Loading, empty, error và success có nội dung rõ ràng.
 - Danh sách phân trang, không tải không giới hạn.
-- Admin duyệt/từ chối cơ cấu với idempotency key; reconcile/replay không gửi lặp khi nút đang chạy.
+- Admin **thẩm định đạt** hoặc từ chối cơ cấu với idempotency key. Thẩm định đạt chỉ chuyển sang chờ
+  toàn bộ nhà đầu tư đồng ý, chưa gọi Fineract; reconcile/replay không gửi lặp khi nút đang chạy.
 - Build TypeScript/Vite xanh.

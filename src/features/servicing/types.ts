@@ -21,6 +21,8 @@ export type CollectionActionType =
 /** Khớp LoanRescheduleStatus ở Loan Service; không gửi status tự suy đoán lên API. */
 export type RescheduleStatus =
   | 'PENDING_REVIEW'
+  | 'PENDING_INVESTOR_CONSENT'
+  | 'INVESTOR_REJECTED'
   | 'REJECTED'
   | 'CREATE_PENDING'
   | 'CREATING'
