@@ -1,0 +1,220 @@
+/* Màn đánh thức hệ thống: cùng nền và thẻ với màn chờ xác thực (ProtectedRoute.css), tiền tố wake-. */
+.wake-screen {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 24px 16px;
+  background: var(--content-bg);
+}
+
+.wake-card {
+  width: 100%;
+  max-width: 520px;
+  padding: 28px 24px 24px;
+  border-radius: 16px;
+  background: var(--card-bg);
+  box-shadow: var(--shadow-card);
+}
+
+.wake-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.wake-logo {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-md);
+  background: var(--brand);
+  color: #fff;
+}
+
+.wake-logo svg {
+  width: 20px;
+  height: 20px;
+}
+
+.wake-wordmark {
+  color: var(--text-primary);
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+.wake-title {
+  margin-bottom: 6px;
+  color: var(--text-primary);
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.wake-text {
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.wake-checking {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.wake-spinner {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  border: 3px solid var(--brand-50);
+  border-top-color: var(--brand);
+  border-radius: 50%;
+  animation: wake-spin 0.8s linear infinite;
+}
+
+@keyframes wake-spin {
+  to { transform: rotate(360deg); }
+}
+
+.wake-progress {
+  overflow: hidden;
+  height: 8px;
+  margin: 18px 0 8px;
+  border-radius: 999px;
+  background: var(--surface-muted);
+}
+
+.wake-progress span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--brand);
+  transition: width 0.4s var(--ease);
+}
+
+/* Chưa có số liệu dịch vụ: thanh chạy qua lại để báo vẫn đang làm việc. */
+.wake-progress span[data-indeterminate] {
+  width: 35%;
+  animation: wake-slide 1.4s ease-in-out infinite;
+}
+
+@keyframes wake-slide {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(300%); }
+}
+
+.wake-meta {
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.wake-services {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px 16px;
+  margin: 16px 0 0;
+  padding: 12px 0 0;
+  border-top: 1px solid var(--row-divider);
+  list-style: none;
+}
+
+.wake-services li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.wake-services li > span:first-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wake-note {
+  margin-top: 16px;
+  color: var(--text-muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.wake-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 18px;
+}
+
+.wake-label {
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.wake-input {
+  height: 40px;
+  padding: 0 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  background: #fff;
+  color: var(--text-primary);
+  font-size: 14px;
+}
+
+.wake-input:focus {
+  outline: none;
+  border-color: var(--brand);
+  box-shadow: 0 0 0 3px var(--brand-50);
+}
+
+.wake-input[aria-invalid='true'] {
+  border-color: var(--danger);
+}
+
+.wake-error {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 4px 0;
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  background: var(--danger-bg);
+  color: var(--danger);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.wake-error svg {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  margin-top: 1px;
+}
+
+.wake-submit {
+  align-self: flex-start;
+  height: 38px;
+  margin-top: 8px;
+  padding: 0 16px;
+  font-size: 14px;
+}
+
+@media (max-width: 480px) {
+  .wake-card {
+    padding: 22px 18px 18px;
+  }
+
+  .wake-services {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .wake-submit {
+    align-self: stretch;
+  }
+}

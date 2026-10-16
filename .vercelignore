@@ -1,0 +1,10 @@
+# Vercel tự build lại từ mã nguồn; không tải bản build cũ, tài liệu hay biến môi trường của máy dev.
+# Biến môi trường của bản trên Vercel đặt trong Project Settings (xem finora-platform/deploy/README.md).
+dist
+node_modules
+.env
+.env.*
+.agents
+docs
+plans
+*.tsbuildinfo
