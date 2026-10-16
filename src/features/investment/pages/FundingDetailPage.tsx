@@ -5,7 +5,6 @@ import { StatusPill } from '@/components/StatusPill';
 import { Toast } from '@/components/Toast';
 import {
   useGetFundingProgressQuery,
-  useGetFundingSettingsQuery,
   useGetMarketListingQuery,
 } from '../api/investmentApi';
 import { FundingFlow } from '../components/detail/FundingFlow';
@@ -14,7 +13,6 @@ import { InvestorTable } from '../components/detail/InvestorTable';
 import { NoteTable } from '../components/detail/NoteTable';
 import { ProgressMeter } from '../components/detail/ProgressMeter';
 import { TermsCard } from '../components/detail/TermsCard';
-import { DEFAULT_FUNDING_DAYS } from '../constants';
 import { useFundingActions } from '../hooks/useFundingActions';
 import { useInvestorNames } from '../hooks/useInvestorNames';
 import { useListingStage } from '../hooks/useListingStage';
@@ -45,7 +43,6 @@ export default function FundingDetailPage() {
   const listingQuery = useGetMarketListingQuery(listingId, { skip: !validId });
   const listing = listingQuery.data;
   const progress = useGetFundingProgressQuery(listingId, { skip: !validId || !listing || listing.status === 'DRAFT' });
-  const settings = useGetFundingSettingsQuery(undefined, { skip: listing?.status !== 'DRAFT' });
   const { stage, investors, investorsLoaded, investorsLoading, investorsError, refetchInvestors, probeNotes } =
     useListingStage(listing);
   const { names, isLoading: namesLoading } = useInvestorNames(investors.map((item) => item.investorId));
@@ -161,10 +158,8 @@ export default function FundingDetailPage() {
           onRetryInvestors={refetchInvestors}
           progress={progress.data}
           probeNotes={probeNotes}
-          defaultFundingDays={settings.data?.fundingDays ?? DEFAULT_FUNDING_DAYS}
           busy={actions.busy}
           errorOf={actions.errorOf}
-          onApprove={(request) => void actions.approve(request)}
           onFinalize={() => void actions.finalize()}
           onActivate={() => void actions.activate()}
           onCloseExpired={() => void actions.closeExpired()}

@@ -32,6 +32,8 @@ export interface MarketListing {
   cancelledAt?: string | null;
   /** `CONTRACT_DECLINED`, `CONTRACT_EXPIRED` hoặc `DISBURSEMENT_FAILED`; mã lạ hiện nguyên văn. */
   cancellationReason?: string | null;
+  /** Có khi finora-loan đã xác nhận giải ngân (LoanDisbursed); trước đó tiền nhà đầu tư mới chỉ được giữ. */
+  disbursedAt?: string | null;
 }
 
 export interface FundingProgress {
@@ -46,14 +48,6 @@ export interface FundingProgress {
   status: ListingStatus;
   fundingClosesAt: string;
   fullyFundedAt: string | null;
-}
-
-/** Duyệt khoản vay đang chờ lên sàn, với mệnh giá Note do quản trị chốt. */
-export interface ApproveListingRequest {
-  targetAmount: string;
-  noteDenomination: string;
-  minInvestmentAmount: string;
-  fundingDays: number;
 }
 
 /**

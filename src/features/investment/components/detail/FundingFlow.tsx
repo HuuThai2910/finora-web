@@ -3,10 +3,9 @@ import { ErrorNotice } from '@/components/ErrorNotice';
 import { formatNumber } from '@/utils';
 import type { FundingActionKind } from '../../hooks/useFundingActions';
 import { FUNDING_STAGES, STAGE_INDEX, describeFundingWindow, isOverdue, type ListingStageView } from '../../stage';
-import type { ApproveListingRequest, FundingProgress, InvestmentNote, ListingInvestor, MarketListing } from '../../types';
+import type { FundingProgress, InvestmentNote, ListingInvestor, MarketListing } from '../../types';
 import { LISTING_CANCELLATION_LABEL } from '../../constants';
 import { formatDateTime } from '../../formatters';
-import { ApproveForm } from './ApproveForm';
 
 interface Props {
   listing: MarketListing;
@@ -16,10 +15,8 @@ interface Props {
   onRetryInvestors: () => void;
   progress: FundingProgress | undefined;
   probeNotes: InvestmentNote[] | undefined;
-  defaultFundingDays: number;
   busy: FundingActionKind | null;
   errorOf: (kind: FundingActionKind) => unknown;
-  onApprove: (request: ApproveListingRequest) => void;
   onFinalize: () => void;
   onActivate: () => void;
   onCloseExpired: () => void;
@@ -95,17 +92,11 @@ export function FundingFlow(props: Props) {
   };
 
   const stepWork = (index: number): ReactNode => {
-    if (index === STAGE_INDEX.DRAFT && stage.nextAction === 'APPROVE') {
+    if (index === STAGE_INDEX.DRAFT && listing.status === 'DRAFT') {
       return (
-        <ApproveForm
-          key={props.defaultFundingDays}
-          listing={listing}
-          defaultFundingDays={props.defaultFundingDays}
-          submitting={props.busy === 'approve'}
-          disabled={props.busy !== null}
-          error={props.errorOf('approve')}
-          onSubmit={props.onApprove}
-        />
+        <p className="fd-hint">
+          Bản nháp từ luồng cũ. Luồng hiện hành mở gọi vốn ngay khi finora-loan gửi yêu cầu, không duyệt trên web.
+        </p>
       );
     }
     if (index === STAGE_INDEX.OPEN && overdue) {
@@ -122,11 +113,19 @@ export function FundingFlow(props: Props) {
       if (listing.status === 'FULLY_FUNDED' && stage.pending && stage.steps[index] !== 'done') {
         return <p className="fd-hint" aria-busy="true">Đang kiểm tra phần vốn...</p>;
       }
+      if (stage.awaitingDisbursement) {
+        return (
+          <p className="fd-hint">
+            Chờ hợp đồng có hiệu lực và giải ngân. Hệ thống tự khóa vốn và phát hành Note khi finora-loan xác nhận đã
+            giải ngân; đến lúc đó tiền nhà đầu tư vẫn chỉ được giữ trong ví.
+          </p>
+        );
+      }
       if (stage.nextAction === 'FINALIZE') {
         return (
           <StepButton
-            kind="finalize" label="Khóa vốn" busyLabel="Đang khóa vốn..."
-            hint="Sau bước này nhà đầu tư không hủy lệnh được nữa."
+            kind="finalize" label="Khóa vốn (sửa lỗi)" busyLabel="Đang khóa vốn..."
+            hint="Chỉ dùng khi khoản vay đã giải ngân mà phần vốn chưa được khóa tự động."
             props={{ ...props, onClick: props.onFinalize }}
           />
         );
@@ -135,7 +134,7 @@ export function FundingFlow(props: Props) {
     if (index === STAGE_INDEX.NOTES_ISSUED && stage.nextAction === 'ACTIVATE_NOTES') {
       return (
         <StepButton
-          kind="activate" label={`Phát hành ${formatNumber(liveNotes)} Note`} busyLabel="Đang phát hành..."
+          kind="activate" label={`Phát hành ${formatNumber(liveNotes)} Note (sửa lỗi)`} busyLabel="Đang phát hành..."
           props={{ ...props, onClick: props.onActivate }}
         />
       );

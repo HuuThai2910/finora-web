@@ -1,6 +1,5 @@
 import { investmentApi } from '@/lib/api/investmentApi';
 import type {
-  ApproveListingRequest,
   FundingProgress,
   FundingSettings,
   InvestmentNote,
@@ -43,23 +42,6 @@ export const investmentEndpoints = investmentApi.injectEndpoints({
     getFundingProgress: builder.query<FundingProgress, number>({
       query: (listingId) => `/market/listings/${listingId}/progress`,
       providesTags: (_result, _error, listingId) => [{ type: 'FundingProgress', id: listingId }],
-    }),
-
-    /** Duyệt khoản vay đang chờ lên sàn, chốt mệnh giá Note. */
-    approveListing: builder.mutation<
-      MarketListing,
-      { listingId: number; body: ApproveListingRequest }
-    >({
-      query: ({ listingId, body }) => ({
-        url: `/investments/admin/listings/${listingId}/approve`,
-        method: 'POST',
-        body,
-      }),
-      invalidatesTags: (_result, _error, { listingId }) => [
-        { type: 'MarketListingList', id: 'ALL' },
-        { type: 'MarketListing', id: listingId },
-        { type: 'FundingProgress', id: listingId },
-      ],
     }),
 
     /** Ai đã góp vốn vào khoản vay này. Chỉ quản trị gọi được. */
@@ -130,7 +112,6 @@ export const {
   useGetMarketListingQuery,
   useGetFundingProgressQuery,
   useGetListingInvestorsQuery,
-  useApproveListingMutation,
   useFinalizeCommitmentsMutation,
   useActivateNotesMutation,
   useGetCommitmentNotesQuery,

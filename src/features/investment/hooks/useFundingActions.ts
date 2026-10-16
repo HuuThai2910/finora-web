@@ -1,17 +1,17 @@
 import { useState } from 'react';
 import {
   useActivateNotesMutation,
-  useApproveListingMutation,
   useCloseExpiredListingsMutation,
   useFinalizeCommitmentsMutation,
 } from '../api/investmentApi';
-import type { ApproveListingRequest, MarketListing } from '../types';
+import type { MarketListing } from '../types';
 import { formatNumber } from '@/utils';
 
-export type FundingActionKind = 'approve' | 'finalize' | 'activate' | 'close';
+export type FundingActionKind = 'finalize' | 'activate' | 'close';
 
 /**
- * Bốn thao tác quản trị trên trang chi tiết một khoản gọi vốn.
+ * Ba thao tác quản trị trên trang chi tiết một khoản gọi vốn. Khóa vốn và phát hành Note chạy tự động khi
+ * finora-loan xác nhận giải ngân; hai nút đó chỉ là thao tác sửa lỗi và backend từ chối nếu chưa giải ngân.
  *
  * Chỉ một thao tác chạy tại một thời điểm (`busy`), để không bấm chồng hai bước của cùng
  * khoản. Lỗi giữ theo đúng thao tác gây ra để hiện ngay dưới nút đó; thành công trả câu
@@ -19,7 +19,6 @@ export type FundingActionKind = 'approve' | 'finalize' | 'activate' | 'close';
  * phải tự tải lại.
  */
 export function useFundingActions(listing: MarketListing | undefined, onSuccess: (message: string) => void) {
-  const [approve] = useApproveListingMutation();
   const [finalize] = useFinalizeCommitmentsMutation();
   const [activate] = useActivateNotesMutation();
   const [closeExpired] = useCloseExpiredListingsMutation();
@@ -42,12 +41,6 @@ export function useFundingActions(listing: MarketListing | undefined, onSuccess:
   return {
     busy,
     errorOf: (kind: FundingActionKind) => (failure?.kind === kind ? failure.error : undefined),
-    approve: (body: ApproveListingRequest) =>
-      listing &&
-      run('approve', async () => {
-        await approve({ listingId: listing.listingId, body }).unwrap();
-        return `Đã duyệt khoản vay #${listing.loanId} lên sàn. Nhà đầu tư có thể đặt lệnh từ bây giờ.`;
-      }),
     finalize: () =>
       listing &&
       run('finalize', async () => {
