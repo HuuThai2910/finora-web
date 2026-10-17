@@ -74,7 +74,7 @@ Cập nhật sau đợt 3: dư nợ quá hạn theo nhóm nợ **6 tháng** (ch�
 ### Việc còn lại / cần Thái xem
 
 - Plan này cần Thái duyệt; §1 của `engineering-rules.md` nên trỏ nguồn giao diện sang `finora-web-mockup`.
-- Ba bản ngăn trượt giống nhau (secondary-market `SideDrawer`, servicing `SideDrawer`, product `ProductDrawer`) nên gộp thành `src/components/Drawer`.
+- Ba bản ngăn trượt giống nhau (secondary-market `SideDrawer`, servicing `SideDrawer`, product `ProductDrawer`) nên gộp thành `src/components/Drawer`. Cập nhật 2026-10-17 (D72): `src/components/Drawer` đã có, trang Bằng chứng blockchain dùng; còn chuyển ba bản cũ sang.
 - `.env` gọi thẳng AI Service (`localhost:8000`) thay vì qua Gateway; vì CORS ở đó không bật `allow_credentials` nên `aiApi` chưa gửi cookie.
 - `toUiApiError` chưa đọc `detail` kiểu FastAPI; feature rule-engine đang có `toAiUiError` riêng.
 - Backend: API duyệt khoản vay lên sàn (`/admin/listings/{id}/approve` chưa có, nút trên web sẽ báo 404); `fundingOpenedAt` trong DTO listing; `borrowerId` cho `/admin/loan-applications` và `LoanRescheduleResponse`; dữ liệu AI còn chữ "—" và "Rule Engine" trong mô tả luật, cảnh báo SHAP.
