@@ -1,0 +1,156 @@
+/*
+ * Bằng chứng blockchain (WEB-BLOCKCHAIN-001). Thành phần chung (bảng, nhãn, tab viên thuốc, phân trang, menu dòng,
+ * ngăn trượt) nằm ở styles/ui.css; ở đây chỉ phần riêng, tiền tố `bc-`.
+ */
+
+.bc-muted { color: var(--text-muted); font-size: 13px; }
+.bc-bad { color: var(--danger); }
+.bc-gap { margin-bottom: 12px; }
+.bc-break { white-space: normal; overflow-wrap: anywhere; }
+
+/* Giới hạn của bằng chứng: luôn hiện dưới tiêu đề trang */
+.bc-note {
+  padding: 10px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: var(--card-bg);
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+/* ---------- Danh sách ---------- */
+.bc-list { padding: 14px 14px 12px; }
+
+.bc-list-bar {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.ui-tabs .n.bc-hot {
+  color: var(--danger);
+  font-weight: 700;
+  opacity: 1;
+}
+
+.ui-tabs button[aria-selected='true'] .n.bc-hot { color: #fff; }
+
+.bc-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.bc-input {
+  width: 240px;
+  height: 34px;
+  padding: 0 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  background: #fff;
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 14px;
+}
+
+.bc-input:focus,
+.bc-textarea:focus {
+  outline: 0;
+  border-color: var(--brand);
+  box-shadow: 0 0 0 3px rgba(29, 86, 196, 0.15);
+}
+
+.bc-input[aria-invalid='true'],
+.bc-textarea[aria-invalid='true'] { border-color: var(--danger); }
+
+.bc-err { flex-basis: 100%; color: var(--danger); font-size: 12px; }
+
+.bc-scope {
+  margin: 0 2px 12px;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.bc-table tbody tr.is-open td { background: var(--brand-50); }
+.bc-table td.act { width: 1%; }
+
+/* ---------- Ngăn chi tiết ---------- */
+.bc-callout {
+  padding: 8px 10px;
+  border-radius: var(--radius-md);
+  background: var(--brand-50);
+  color: var(--brand);
+  font-size: 13px;
+}
+
+.bc-callout.warning { background: var(--warning-bg); color: var(--warning); font-weight: 500; }
+
+.bc-rows { margin-top: 4px; }
+
+/* Giá trị dài (hash, mã giao dịch) nằm dưới nhãn và xuống dòng ở bất kỳ ký tự nào */
+.ui-rows div.bc-stack {
+  display: grid;
+  justify-content: stretch;
+  gap: 4px;
+}
+
+.ui-rows .bc-stack dd { text-align: left; font-weight: 400; }
+
+.bc-hash {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+}
+
+.bc-plain { color: var(--text-secondary); }
+
+.bc-verify { display: grid; gap: 12px; }
+.bc-verify form { display: grid; gap: 8px; justify-items: start; }
+.bc-label { color: var(--text-primary); font-size: 13px; font-weight: 500; }
+
+.bc-textarea {
+  width: 100%;
+  min-height: 120px;
+  padding: 8px 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  background: #fff;
+  color: var(--text-primary);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
+  line-height: 1.5;
+  resize: vertical;
+}
+
+.bc-results { display: grid; gap: 12px; }
+
+.bc-result {
+  padding: 12px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  background: var(--surface-muted);
+}
+
+.bc-result-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+}
+
+.bc-result-head h4 { font-size: 13px; font-weight: 600; }
+
+@media (max-width: 760px) {
+  .bc-search,
+  .bc-search label { width: 100%; }
+
+  .bc-search .bc-input,
+  .bc-search .ui-select { width: 100%; }
+}

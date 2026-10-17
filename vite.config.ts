@@ -52,6 +52,12 @@ export default defineConfig({
         target: 'http://localhost:8080',
         changeOrigin: true,
       },
+      // Bằng chứng blockchain (R6, W3D) cũng đi qua Gateway (route blockchain-service); Blockchain đọc cookie phiên
+      // và chỉ mở explorer cho ADMIN (B54).
+      '/api/v1/blockchain': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+      },
       '/api/v1/market': {
         target: 'http://localhost:8084',
         changeOrigin: true,
