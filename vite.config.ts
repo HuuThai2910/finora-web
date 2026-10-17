@@ -41,8 +41,10 @@ export default defineConfig({
         target: 'http://localhost:8081',
         changeOrigin: true,
       },
+      // AI đi qua Gateway (route ai-service) để giữ cùng đường với môi trường tích hợp; Gateway gọi AI
+      // bằng HTTP/1.1 (B43) và AI kiểm cookie phiên (W3A).
       '/api/v1/ai': {
-        target: 'http://localhost:8000',
+        target: 'http://localhost:8080',
         changeOrigin: true,
       },
       '/api/v1/market': {
