@@ -1,8 +1,8 @@
 import { loanApi } from '@/lib/api/loanApi';
 import type {
   CollectionAction, CollectionCase, CollectionCaseStatus, CollectionStage, CreateCollectionActionRequest,
-  PageResponse, QuarantinedRepaymentEvent, ReconciliationIncident, RescheduleDecision, RescheduleRequest,
-  RescheduleStatus, StaleLoan,
+  DisbursementSagaRepair, PageResponse, QuarantinedRepaymentEvent, ReconciliationIncident, RescheduleDecision,
+  RescheduleRequest, RescheduleStatus, StaleLoan,
 } from '../types';
 
 export interface PageArgs { page: number; size: number }
@@ -67,6 +67,16 @@ export const servicingApi = loanApi.injectEndpoints({
       query: (eventId) => ({ url: `/admin/repayment-event-quarantine/${eventId}/replay`, method: 'POST' }),
       invalidatesTags: [tag('QUARANTINE'), tag('COLLECTION')],
     }),
+    // Saga giải ngân hết lượt ghi Fineract tự động (R2): tiền đã giải ngân, khoản vay chưa có ở hệ thống lõi.
+    repairSagas: builder.query<PageResponse<DisbursementSagaRepair>, PageArgs>({
+      query: (params) => ({ url: '/admin/disbursement-sagas', params: { ...params, status: 'REPAIR_REQUIRED' } }),
+      providesTags: [tag('SAGA_REPAIR')],
+    }),
+    // Chỉ đưa bước ghi Fineract về hàng chờ; booking đối chiếu theo số hợp đồng nên không tạo khoản vay thứ hai.
+    requeueSaga: builder.mutation<DisbursementSagaRepair, { sagaId: string; note: string }>({
+      query: ({ sagaId, note }) => ({ url: `/admin/disbursement-sagas/${sagaId}/requeue`, method: 'POST', body: { note } }),
+      invalidatesTags: [tag('SAGA_REPAIR')],
+    }),
   }),
 });
 
@@ -75,4 +85,5 @@ export const {
   useRescheduleRequestsQuery, useDecideRescheduleMutation,
   useStaleLoansQuery, useReconciliationIncidentsQuery, useReconcileLoanMutation,
   useQuarantinedEventsQuery, useReplayQuarantineMutation,
+  useRepairSagasQuery, useRequeueSagaMutation,
 } = servicingApi;

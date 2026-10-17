@@ -83,3 +83,63 @@ export interface QuarantinedRepaymentEvent {
   eventId: string; loanApplicationId: number; repaymentId: string; status: 'PENDING' | 'RESOLVED';
   reasonCode: string; attemptCount: number; receivedAt: string; lastAttemptAt: string | null; resolvedAt: string | null;
 }
+
+/** Saga giải ngân của Loan Service (`DisbursementSagaStatus`). Màn sự cố chỉ đọc `REPAIR_REQUIRED`. */
+export type DisbursementSagaStatus =
+  | 'WAITING_PAYMENT'
+  | 'CORE_BOOKING_PENDING'
+  | 'CORE_BOOKING'
+  | 'RETRY_PENDING'
+  | 'REPAIR_REQUIRED'
+  | 'COMPLETED';
+
+/** `AdminDisbursementSagaResponse` (R2): tiền đã giải ngân, Fineract chưa ghi nhận khoản vay. */
+export interface DisbursementSagaRepair {
+  sagaId: string; loanApplicationId: number; contractNumber: string; status: DisbursementSagaStatus;
+  amount: number; currency: string; paymentReference: string | null; fineractLoanId: number | null;
+  attemptCount: number; attemptsSinceRepair: number; repairCount: number; nextRetryAt: string | null;
+  lastErrorCode: string | null; lastErrorDetail: string | null; lastRepairBy: string | null;
+  lastRepairAt: string | null; lastRepairNote: string | null; createdAt: string; updatedAt: string;
+}
+
+/**
+ * `PageResponse` chung của finora-common mà Payment Service trả: danh sách nằm ở `content` (khác bản
+ * riêng của Loan dùng `data`), trang tính từ 0.
+ */
+export interface PaymentPage<T> {
+  content: T[]; page: number; size: number; totalElements: number; totalPages: number; last: boolean;
+}
+
+export type RepaymentType = 'SCHEDULED' | 'OVERDUE_CURE' | 'PARTIAL_PREPAYMENT' | 'EARLY_SETTLEMENT';
+
+/** Payment chỉ trả ba trạng thái này cho hàng đợi sự cố trả nợ. */
+export type RepaymentIncidentStatus = 'CORE_POSTING' | 'RECONCILIATION_REQUIRED' | 'FAILED';
+
+/**
+ * `RepaymentReconciliationResponse`: tiền đã trừ ví người vay, việc ghi Fineract chưa xong hoặc bị từ chối.
+ * `corePostingDate` là ngày sẽ gửi Fineract nếu ghi lại; `coreRepostAvailableAt` là lúc sớm nhất được ghi lại (B32),
+ * `null` khi không chờ đối soát.
+ */
+export interface RepaymentIncident {
+  repaymentId: string; loanApplicationId: number; borrowerId: string; fineractLoanId: number;
+  repaymentType: RepaymentType; status: RepaymentIncidentStatus; amount: number; currency: string;
+  transactionDate: string; walletLedgerTransactionId: string | null; fineractTransactionId: number | null;
+  attemptCount: number; errorCode: string | null; errorDetail: string | null; updatedAt: string;
+  corePostingDate: string; coreRepostCount: number; lastCoreRepostBy: string | null; lastCoreRepostAt: string | null;
+  coreRepostAvailableAt: string | null;
+}
+
+/** Payment chỉ trả các lệnh giải ngân chưa kết thúc. */
+export type DisbursementIncidentStatus = 'PROCESSING' | 'RETRY_PENDING' | 'RECONCILIATION_REQUIRED';
+
+/**
+ * `DisbursementReconciliationResponse` (R2). `nextAttemptAt = null` ở `RECONCILIATION_REQUIRED` nghĩa là
+ * đã hết lượt tra cứu tự động và đang chờ vận hành.
+ */
+export interface DisbursementIncident {
+  sagaId: string; loanApplicationId: number; contractNumber: string; amount: number; currency: string;
+  provider: string; providerReference: string | null; status: DisbursementIncidentStatus; attemptCount: number;
+  reconciliationAttemptCount: number; nextAttemptAt: string | null; errorCode: string | null;
+  errorDetail: string | null; manualRecheckCount: number; lastManualRecheckBy: string | null;
+  lastManualRecheckAt: string | null; createdAt: string; updatedAt: string;
+}

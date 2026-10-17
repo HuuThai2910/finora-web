@@ -28,6 +28,15 @@ export default defineConfig({
         target: 'http://localhost:8081',
         changeOrigin: true,
       },
+      // Hàng đợi sự cố tiền của Payment Service; phải đứng trước `/api/v1/admin` (mặc định về Loan).
+      '/api/v1/admin/repayment-reconciliation': {
+        target: 'http://localhost:8082',
+        changeOrigin: true,
+      },
+      '/api/v1/admin/disbursement-reconciliation': {
+        target: 'http://localhost:8082',
+        changeOrigin: true,
+      },
       '/api/v1/admin': {
         target: 'http://localhost:8081',
         changeOrigin: true,

@@ -4,8 +4,10 @@ import type { AppDispatch } from '@/app/store';
 import { Icon } from '@/components/Icon';
 import { Toast } from '@/components/Toast';
 import { loanApi } from '@/lib/api/loanApi';
+import { paymentApi } from '@/lib/api/paymentApi';
 import { CollectionCaseDrawer } from '../components/CollectionCaseDrawer';
 import { CollectionPanel } from '../components/CollectionPanel';
+import { IncidentsPanel } from '../components/IncidentsPanel';
 import { OpenCasesCard } from '../components/OpenCasesCard';
 import { OverdueByGroupCard } from '../components/OverdueByGroupCard';
 import { QuarantinePanel } from '../components/QuarantinePanel';
@@ -28,7 +30,8 @@ function updatedLabel(timestamp: number): string {
 }
 
 /**
- * Vận hành khoản vay (WEB-LOAN-003): bốn hàng đợi thu hồi, cơ cấu, đối soát và sự kiện trả nợ chờ ghép.
+ * Vận hành khoản vay (WEB-LOAN-003): các hàng đợi thu hồi, cơ cấu, đối soát, sự kiện trả nợ chờ ghép và sự cố
+ * giao dịch (R2, gồm hàng đợi của Payment Service).
  *
  * Trang chỉ điều phối: tab và trang trên URL, số đếm, ngăn hồ sơ thu hồi và thông báo. Mỗi hàng đợi tự
  * tải dữ liệu và xử lý thao tác của mình. "Dư nợ quá hạn theo nhóm nợ" chỉ có số hiện tại (summary thống kê
@@ -42,8 +45,11 @@ export default function ServicingOperationsPage() {
   const [toast, setToast] = useState('');
   const dismissToast = useCallback(() => setToast(''), []);
 
-  // Mọi hàng đợi, số đếm và lịch sử thu hồi dùng chung tag này, nên một lần làm mới là đủ.
-  const refresh = () => dispatch(loanApi.util.invalidateTags(['ServicingOperations']));
+  // Hàng đợi của Loan dùng chung một tag; sự cố tiền của Payment nằm ở slice riêng nên làm mới cả hai.
+  const refresh = () => {
+    dispatch(loanApi.util.invalidateTags(['ServicingOperations']));
+    dispatch(paymentApi.util.invalidateTags(['PaymentIncidents']));
+  };
 
   return (
     <section className="ui-page">
@@ -103,6 +109,7 @@ export default function ServicingOperationsPage() {
           {tab === 'reschedule' && <ReschedulePanel page={page} onPage={setPage} onDone={setToast} />}
           {tab === 'reconciliation' && <ReconciliationPanel page={page} onPage={setPage} onDone={setToast} />}
           {tab === 'quarantine' && <QuarantinePanel page={page} onPage={setPage} onDone={setToast} />}
+          {tab === 'incidents' && <IncidentsPanel page={page} onPage={setPage} onDone={setToast} />}
         </div>
       </section>
 
