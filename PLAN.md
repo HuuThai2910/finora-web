@@ -20,6 +20,7 @@ DRAFT -> APPROVED -> IN_PROGRESS -> READY_FOR_REVIEW -> ACCEPTED
 | WEB-LOAN-002 | Listing và theo dõi gọi vốn | LN-009–LN-010 | `BACKLOG` | Chưa tạo |
 | WEB-LOAN-003 | Giải ngân, servicing, repayment, overdue | LN-011–LN-017 | `IN_PROGRESS` | [Plan](plans/WEB-LOAN-003-servicing-operations.md) |
 | WEB-UI-001 | Giao diện mềm theo finora-web-mockup, dữ liệu thật (toàn bộ trang quản trị) | API hiện có | `IN_PROGRESS` (chờ Thái xem) | [Plan](plans/WEB-UI-001-giao-dien-mem.md) |
+| WEB-AI-CHAT-001 | Ngăn chat Trợ lý FINORA cho quản trị: nút ở header, ngăn trượt bên phải, nút "Tóm tắt hồ sơ này" ở trang thẩm định, điều hướng bằng nút do server trả | finora-ai `/api/v1/ai/assistant/*` (AI-CHAT-001) | `IN_PROGRESS` | [Spec](../finora-platform/docs/superpowers/specs/2026-10-15-tro-ly-finora-design.md) · [Plan](../finora-platform/docs/superpowers/plans/2026-10-15-tro-ly-finora.md) |
 
 ## Quy tắc đồng bộ về sau
 

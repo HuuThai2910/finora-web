@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { ErrorNotice } from '@/components/ErrorNotice';
 import { Toast } from '@/components/Toast';
+import { AskAssistantButton, REVIEW_SUMMARY_SUGGESTION } from '@/features/assistant';
 import { toUiApiError } from '@/lib/api/errors';
 import { useGetReviewDetailQuery } from '../api/loanReviewApi';
 import { DecisionTray } from '../components/review/DecisionTray';
@@ -85,7 +86,13 @@ function LoanReviewView({ applicationNumber }: { applicationNumber: string }) {
 
   return (
     <section className="ui-page lr-page">
-      <ReviewHeader application={application} borrowerName={displayName(application.borrowerId)} onCopied={setCopyMessage} />
+      <ReviewHeader
+        application={application}
+        borrowerName={displayName(application.borrowerId)}
+        onCopied={setCopyMessage}
+        // Mở trợ lý và gửi gợi ý "Tóm tắt hồ sơ này"; mã hồ sơ đi theo ngữ cảnh URL, trợ lý tắt thì nút tự ẩn.
+        actions={<AskAssistantButton suggestion={REVIEW_SUMMARY_SUGGESTION} />}
+      />
 
       {decision.notice ? <div className="lr-notice" role="status">{decision.notice}</div> : null}
 

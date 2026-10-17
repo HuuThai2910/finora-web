@@ -1,0 +1,44 @@
+/* Nút mở Trợ lý FINORA trong header: viên thuốc cao 32px như `.ui-btn`; màn hẹp chỉ còn biểu tượng. */
+.as-launcher {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 600;
+  transition: border-color 0.15s var(--ease), color 0.15s var(--ease);
+}
+
+.as-launcher svg {
+  width: 16px;
+  height: 16px;
+  color: var(--brand);
+}
+
+.as-launcher:hover,
+.as-launcher[aria-expanded='true'] {
+  border-color: #b9cbef;
+  color: var(--brand);
+}
+
+@media (max-width: 760px) {
+  .as-launcher {
+    width: 32px;
+    padding: 0;
+    justify-content: center;
+  }
+
+  .as-launcher-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+}

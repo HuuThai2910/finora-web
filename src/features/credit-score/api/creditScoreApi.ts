@@ -12,10 +12,9 @@ import type { CreditExplainResponse, CreditScoreRequest } from '../types';
  * finora-ai không còn POST /credit/score; /explain tự chấm lại rồi trả cả hai nửa
  * của quyết định trong một lần gọi.
  *
- * NỢ KỸ THUẬT: gọi qua `aiApi` (VITE_AI_API_URL). Ngày 2026-09-03 Gateway
- * spring-cloud-gateway-mvc không chuyển tiếp body của POST tới finora-ai (422
- * "Field required"), nên .env đang trỏ thẳng cổng 8000. Khi Gateway chuyển tiếp
- * được body, chỉ cần đổi VITE_AI_API_URL sang Gateway, không phải sửa code.
+ * Gọi qua `aiApi` (cùng origin, kèm cookie): finora-ai chỉ nhận /explain từ admin hoặc từ
+ * Loan (mã nội bộ). Lỗi Gateway làm mất body POST tới finora-ai (ghi nhận 2026-09-03, do
+ * client HTTP/2 xin `Upgrade: h2c`) đã sửa bằng `ProxyHttpClientConfig` ở finora-gateway.
  */
 const creditScoreApi = aiApi.injectEndpoints({
   endpoints: (builder) => ({

@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import type { AppDispatch } from '@/app/store';
 import { checkAuthSession, clearAuth, LoginPage, ProtectedRoute } from '@/features/auth';
+import { AssistantProvider } from '@/features/assistant';
 import AdminLayout from '@/layouts/AdminLayout';
 
 /*
@@ -50,7 +51,11 @@ export default function App() {
         <Route
           element={
             <ProtectedRoute requiredRole="ADMIN">
-              <AdminLayout />
+              {/* Trợ lý bọc khung trang: nút ở header và nút trong trang mở cùng một ngăn chat, hội
+                  thoại giữ khi chuyển trang. Nằm sau ProtectedRoute nên chỉ gọi finora-ai khi đã là admin. */}
+              <AssistantProvider>
+                <AdminLayout />
+              </AssistantProvider>
             </ProtectedRoute>
           }
         >

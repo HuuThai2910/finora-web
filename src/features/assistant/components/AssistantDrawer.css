@@ -1,0 +1,445 @@
+/*
+ * Ngăn chat Trợ lý FINORA (lớp `as-*`). Cùng bộ với ngăn trượt của trang Vận hành (`svc-dr-*`): nền
+ * trắng, bóng `--shadow`, rộng tối đa 480px. Không mascot (quy ước web). Màu chỉ để mang nghĩa: xanh
+ * cho câu hỏi của người dùng và nút, cam cho "chưa xác minh"/chế độ rút gọn, đỏ cho lỗi.
+ * z-index trên header (40) và ngăn Vận hành (900/901), dưới thông báo ngắn (1100).
+ */
+
+.as-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 920;
+  background: rgba(12, 29, 67, 0.3);
+  animation: as-fade 0.2s var(--ease) both;
+}
+
+.as-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 921;
+  display: flex;
+  flex-direction: column;
+  width: min(480px, 100%);
+  background: #fff;
+  box-shadow: var(--shadow);
+  animation: as-in 0.2s var(--ease) both;
+}
+
+/* ---------- Đầu ngăn ---------- */
+.as-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.as-head-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.as-head h2 {
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.as-head p {
+  overflow: hidden;
+  color: var(--text-muted);
+  font-size: 12.5px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.as-close {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+}
+
+.as-close:hover {
+  background: var(--surface-muted);
+  color: var(--text-primary);
+}
+
+.as-close svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* ---------- Thân: hội thoại + gợi ý ---------- */
+.as-body {
+  flex: 1;
+  display: grid;
+  align-content: start;
+  gap: 12px;
+  overflow-y: auto;
+  padding: 14px 16px 18px;
+  background: var(--surface-muted);
+}
+
+.as-intro {
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.as-log {
+  display: grid;
+  gap: 10px;
+}
+
+.as-msg {
+  max-width: 100%;
+  border-radius: var(--radius-lg);
+  font-size: 13.5px;
+  line-height: 1.55;
+}
+
+.as-user {
+  justify-self: end;
+  max-width: 85%;
+  padding: 8px 12px;
+  background: var(--brand);
+  color: #fff;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
+.as-user.failed {
+  background: var(--brand-50);
+  color: var(--text-primary);
+}
+
+.as-bot {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--border-color);
+  background: #fff;
+  box-shadow: var(--shadow-card);
+}
+
+.as-answer {
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
+.as-mode,
+.as-disclaimer {
+  padding: 6px 10px;
+  border-radius: var(--radius-md);
+  font-size: 12.5px;
+}
+
+.as-mode {
+  background: var(--warning-bg);
+  color: var(--warning);
+}
+
+.as-disclaimer {
+  background: var(--surface-muted);
+  color: var(--text-secondary);
+}
+
+.as-error small {
+  display: block;
+}
+
+.as-typing {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.as-dots {
+  display: inline-flex;
+  gap: 3px;
+}
+
+.as-dots i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--text-muted);
+  animation: as-blink 1s ease-in-out infinite;
+}
+
+.as-dots i:nth-child(2) { animation-delay: 0.15s; }
+.as-dots i:nth-child(3) { animation-delay: 0.3s; }
+
+/* ---------- Thẻ số liệu ---------- */
+.as-card {
+  padding: 10px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+}
+
+.as-card h3,
+.as-cite h3 {
+  margin-bottom: 4px;
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.as-card .ui-rows div {
+  padding: 6px 0;
+}
+
+/*
+ * Con của lưới (`.as-body`, `.as-bot`) mặc định `min-width: auto`: bảng có ô không xuống dòng (tên luật dài
+ * ở "Điểm theo luật") kéo cả câu trả lời rộng quá ngăn, giá trị của thẻ cặp nhãn–giá trị bị đẩy ra ngoài mép
+ * phải (thấy khi chạy thật ở Task 21). `min-width: 0` giữ chúng trong ngăn; bảng rộng thì cuộn ngang trong thẻ.
+ */
+.as-log,
+.as-msg,
+.as-card {
+  min-width: 0;
+}
+
+.as-table-wrap {
+  overflow-x: auto;
+}
+
+.as-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12.5px;
+}
+
+.as-table th,
+.as-table td {
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--row-divider);
+  text-align: left;
+  white-space: nowrap;
+}
+
+/* Cột đầu là chữ (tên luật, tên sản phẩm) nên được xuống dòng; các cột số/tiền vẫn giữ một dòng. */
+.as-table td:first-child {
+  min-width: 10em;
+  white-space: normal;
+}
+
+.as-table th {
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.as-progress p {
+  margin-top: 4px;
+  color: var(--text-secondary);
+  font-size: 12.5px;
+}
+
+.as-progress-track {
+  height: 8px;
+  overflow: hidden;
+  border-radius: 99px;
+  background: var(--brand-50);
+}
+
+.as-progress-track span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--brand);
+}
+
+/* ---------- Nút điều hướng, căn cứ, đánh giá ---------- */
+.as-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.as-cite ul {
+  display: grid;
+  gap: 6px;
+}
+
+.as-cite li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 8px;
+  font-size: 12.5px;
+}
+
+.as-cite a {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.as-cite a svg {
+  width: 12px;
+  height: 12px;
+}
+
+.as-cite small {
+  color: var(--text-muted);
+}
+
+.as-cite-kind {
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--brand-50);
+  color: var(--brand);
+  font-size: 11.5px;
+  font-weight: 600;
+}
+
+.as-cite-kind.warn {
+  background: var(--warning-bg);
+  color: var(--warning);
+}
+
+.as-feedback {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.as-feedback button {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+}
+
+.as-feedback button:hover:not(:disabled) {
+  background: var(--surface-muted);
+  color: var(--brand);
+}
+
+.as-feedback button[aria-pressed='true'] {
+  color: var(--brand);
+}
+
+.as-feedback button:disabled {
+  cursor: default;
+}
+
+.as-feedback svg {
+  width: 14px;
+  height: 14px;
+}
+
+.as-feedback-error {
+  color: var(--danger);
+}
+
+/* ---------- Gợi ý ---------- */
+.as-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.as-chip {
+  padding: 5px 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--text-primary);
+  font-size: 12.5px;
+  text-align: left;
+}
+
+.as-chip:hover {
+  border-color: #b9cbef;
+  color: var(--brand);
+}
+
+/* ---------- Chân ngăn: thông báo AI hoặc ô nhập ---------- */
+.as-foot {
+  padding: 12px 16px 14px;
+  border-top: 1px solid var(--border-color);
+}
+
+.as-notice h3 {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.as-notice ul {
+  display: grid;
+  gap: 4px;
+  margin: 8px 0 12px;
+  padding-left: 18px;
+  list-style: disc;
+  color: var(--text-secondary);
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+
+.as-composer {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 6px 8px;
+  align-items: end;
+}
+
+.as-composer textarea {
+  width: 100%;
+  min-height: 44px;
+  max-height: 160px;
+  padding: 8px 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  background: #fff;
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 13.5px;
+  resize: vertical;
+}
+
+.as-composer textarea:focus {
+  border-color: var(--brand);
+  outline: none;
+  box-shadow: 0 0 0 3px var(--brand-50);
+}
+
+.as-send {
+  width: 40px;
+  height: 40px;
+  padding: 0;
+}
+
+.as-send svg {
+  width: 16px;
+  height: 16px;
+}
+
+.as-hint {
+  grid-column: 1 / -1;
+  color: var(--text-muted);
+  font-size: 11.5px;
+}
+
+@keyframes as-in { from { transform: translateX(16px); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes as-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes as-blink { 50% { opacity: 0.3; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .as-scrim,
+  .as-panel,
+  .as-dots i {
+    animation: none;
+  }
+}

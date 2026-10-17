@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { StatusPill } from '@/components/StatusPill';
 import { APPLICATION_STATUS_LABELS, formatDateTime } from '../../formatters';
 import { applicationStatusTone } from '../../mappers/applicationListDisplay';
@@ -8,6 +9,8 @@ interface ReviewHeaderProps {
   application: AdminLoanReviewDetail;
   borrowerName: string;
   onCopied: (message: string) => void;
+  /** Nút phụ cạnh bộ chuyển hàng chờ (trang truyền vào, ví dụ "Tóm tắt hồ sơ này" của trợ lý). */
+  actions?: ReactNode;
 }
 
 function CopyIcon() {
@@ -20,7 +23,7 @@ function CopyIcon() {
 }
 
 /** Đầu trang: chỉ định danh hồ sơ (người vay, trạng thái, mã, ngày nộp); điều khoản nằm ở thẻ Khoản vay. */
-export function ReviewHeader({ application, borrowerName, onCopied }: ReviewHeaderProps) {
+export function ReviewHeader({ application, borrowerName, onCopied, actions }: ReviewHeaderProps) {
   const copy = async () => {
     try {
       await navigator.clipboard.writeText(application.applicationNumber);
@@ -49,7 +52,10 @@ export function ReviewHeader({ application, borrowerName, onCopied }: ReviewHead
           Nộp {formatDateTime(application.submittedAt)}
         </p>
       </div>
-      <PendingQueueNav applicationNumber={application.applicationNumber} />
+      <div className="lr-heading-side">
+        {actions}
+        <PendingQueueNav applicationNumber={application.applicationNumber} />
+      </div>
     </header>
   );
 }

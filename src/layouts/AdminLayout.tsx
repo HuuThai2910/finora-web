@@ -3,6 +3,7 @@ import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-do
 import { useDispatch, useSelector } from 'react-redux';
 import type { AppDispatch, RootState } from '@/app/store';
 import { logoutUser } from '@/features/auth';
+import { AssistantLauncher } from '@/features/assistant';
 import { Icon } from '@/components/Icon';
 import { RowMenu } from '@/components/RowMenu';
 import { initials } from '@/components/Avatar';
@@ -123,6 +124,8 @@ export default function AdminLayout() {
             <span className="current" aria-current="page">{breadcrumb.current}</span>
           </nav>
           <div className="header-actions">
+            {/* Trợ lý FINORA (AI-CHAT-001): tự ẩn khi finora-ai tắt trợ lý hoặc GET /suggestions lỗi. */}
+            <AssistantLauncher />
             {/* Menu tài khoản như mockup (soft.js): bấm tên mở danh sách; hiện chỉ có Đăng xuất. */}
             <RowMenu
               label={`Tài khoản ${displayName}`}
