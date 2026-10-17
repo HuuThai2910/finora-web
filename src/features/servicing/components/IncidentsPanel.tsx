@@ -4,17 +4,21 @@ import { RowMenu } from '@/components/RowMenu';
 import { StatusPill } from '@/components/StatusPill';
 import { formatDate, formatDateTime } from '@/utils';
 import {
-  useDisbursementIncidentsQuery, useRecheckDisbursementMutation, useReconcileRepaymentMutation,
-  useRepaymentIncidentsQuery,
+  useDisbursementIncidentsQuery, useRecheckDisbursementMutation, useRecheckWithdrawalMutation,
+  useReconcileRepaymentMutation, useRepaymentIncidentsQuery,
 } from '../api/paymentIncidentApi';
 import { useOrderIncidentsQuery, useRetryOrderIncidentMutation } from '../api/investmentIncidentApi';
 import { useRepairSagasQuery } from '../api/servicingApi';
 import { REPAYMENT_TYPE_LABEL, SERVICING_PAGE_SIZE } from '../constant';
 import { money } from '../formatters';
-import type { DisbursementIncident, DisbursementSagaRepair, OrderIncident, RepaymentIncident } from '../types';
+import type {
+  DisbursementIncident, DisbursementSagaRepair, OrderIncident, RepaymentIncident, WithdrawalIncident,
+} from '../types';
+import { ErrorCell } from './ErrorCell';
 import { QueueBody } from './QueueBody';
 import { RepaymentRepostModal } from './RepaymentRepostModal';
 import { SagaRequeueModal } from './SagaRequeueModal';
+import { WithdrawalIncidentsSection } from './WithdrawalIncidentsSection';
 
 interface Props {
   page: number;
@@ -49,22 +53,14 @@ function OrderIncidentIssue({ item }: { item: OrderIncident }) {
   return <StatusPill tone="info">Chưa rõ đã giữ tiền</StatusPill>;
 }
 
-function ErrorCell({ code, detail }: { code: string | null; detail: string | null }) {
-  if (!code) return <td className="svc-muted">Không có</td>;
-  return (
-    <td className="svc-wrap">
-      <span className="ui-mono">{code}</span>
-      {detail && <span className="ui-sub">{detail}</span>}
-    </td>
-  );
-}
-
 /**
- * Sự cố giao dịch (R2): tiền đã đi nhưng một bên chưa ghi xong. Ba hàng đợi, đều chỉ tra cứu hoặc chạy lại đúng
+ * Sự cố giao dịch (R2): tiền đã đi nhưng một bên chưa ghi xong. Các hàng đợi đều chỉ tra cứu hoặc chạy lại đúng
  * bước còn dở theo mã tham chiếu đã gửi, không bao giờ trừ tiền hay chuyển tiền lần hai:
  * - trả nợ đã trừ ví người vay, Fineract chưa ghi xong (Payment): "Đối soát" đọc Fineract theo mã giao dịch; "Ghi lại"
  *   (B32) dành cho khoản Fineract chưa từng nhận, tra cứu trước rồi ghi với đúng mã nên không thành hai giao dịch;
  * - lệnh giải ngân chưa có kết quả cuối từ đối tác chuyển tiền (Payment): "Tra cứu lại" hẹn lượt hỏi đối tác;
+ * - lệnh rút tiền đã trừ ví nhưng chưa có kết quả cuối từ provider (Payment, R4): "Tra cứu lại" chỉ dành cho lệnh đã
+ *   hết lượt tra cứu tự động, hẹn worker hỏi provider theo mã lệnh, không gửi lệnh chi mới;
  * - giải ngân xong nhưng Fineract chưa ghi khoản vay (Loan): "Ghi lại" đưa bước ghi lõi về hàng chờ, kèm ghi chú;
  * - lệnh góp vốn chưa khớp với ví (Investment, R3): "Thử lại" hẹn worker làm tiếp ngay sau khi đã xử lý nguyên nhân.
  * Một thao tác chạy tại một thời điểm để không gửi chồng.
@@ -80,6 +76,7 @@ export function IncidentsPanel({ page, onPage, onDone }: Props) {
   const [retryOrder] = useRetryOrderIncidentMutation();
   const [reconcile] = useReconcileRepaymentMutation();
   const [recheck] = useRecheckDisbursementMutation();
+  const [recheckWithdrawal] = useRecheckWithdrawalMutation();
   const [running, setRunning] = useState<string | null>(null);
   const [failed, setFailed] = useState<{ retry: () => void; error: unknown } | null>(null);
   const [requeueing, setRequeueing] = useState<DisbursementSagaRepair | null>(null);
@@ -115,6 +112,11 @@ export function IncidentsPanel({ page, onPage, onDone }: Props) {
   const recheckDisbursement = (item: DisbursementIncident) => run(item.sagaId, async () => {
     await recheck(item.sagaId).unwrap();
     return `Đã hẹn tra cứu lại lệnh giải ngân của hợp đồng ${item.contractNumber} với đối tác chuyển tiền.`;
+  });
+
+  const recheckWithdrawalIncident = (item: WithdrawalIncident) => run(item.withdrawalId, async () => {
+    await recheckWithdrawal(item.withdrawalId).unwrap();
+    return `Đã hẹn tra cứu lại lệnh rút ${item.withdrawalId} với nhà cung cấp; kết quả cập nhật sau lượt xử lý kế tiếp.`;
   });
 
   return (
@@ -265,6 +267,8 @@ export function IncidentsPanel({ page, onPage, onDone }: Props) {
           </table>
         </div>
       </QueueBody>
+
+      <WithdrawalIncidentsSection running={running} onRecheck={recheckWithdrawalIncident} />
 
       <div className="svc-subhead">
         <h2>Đã giải ngân, hệ thống lõi chưa ghi khoản vay</h2>

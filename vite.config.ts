@@ -37,6 +37,11 @@ export default defineConfig({
         target: 'http://localhost:8082',
         changeOrigin: true,
       },
+      // Hàng đợi lệnh rút tiền chờ đối soát (R4) cũng thuộc Payment.
+      '/api/v1/admin/withdrawals': {
+        target: 'http://localhost:8082',
+        changeOrigin: true,
+      },
       '/api/v1/admin': {
         target: 'http://localhost:8081',
         changeOrigin: true,

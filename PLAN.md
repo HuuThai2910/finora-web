@@ -30,6 +30,11 @@ Cập nhật 2026-10-17 (contract `LoanFundingCancelled` v1, Hải review trư�
 thị listing `CANCELLED` sau khi đã đủ vốn bằng `cancellationReason`/`cancelledAt` của Investment — dừng ở bước
 khóa vốn, ghi lý do (hợp đồng bị từ chối/hết hạn ký, giải ngân thất bại) và việc tiền giữ được trả lại ví.
 
+Cập nhật 2026-10-17 (W3B/R4, [plan](../finora-platform/.agents/plans/W3B-wallet-withdrawal-mock-payout.md)): tab "Sự cố
+giao dịch" có thêm hàng đợi "Lệnh rút tiền chờ đối soát" của Payment (`/api/v1/admin/withdrawals`). "Tra cứu lại" chỉ bật
+cho lệnh `RECONCILIATION_REQUIRED` đã hết lượt tra cứu tự động (`nextAttemptAt = null`) và chỉ hẹn tra cứu provider, không
+chi lại; số đếm của tab gồm cả hàng đợi này.
+
 ## Quy tắc đồng bộ về sau
 
 Sau WEB-LOAN-001, không đợi toàn bộ Loan Service hoàn thành. Mỗi nhóm 1–2 LN backend liên quan đã sẵn sàng sẽ được lập plan, tích hợp web/mobile và kiểm thử end-to-end trước khi chuyển nhóm tiếp theo.

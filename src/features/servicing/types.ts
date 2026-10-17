@@ -144,6 +144,26 @@ export interface DisbursementIncident {
   lastManualRecheckAt: string | null; createdAt: string; updatedAt: string;
 }
 
+/** Payment chỉ trả các lệnh rút chưa có kết quả cuối cho hàng đợi sự cố (R4). */
+export type WithdrawalIncidentStatus = 'PROCESSING' | 'PROVIDER_PENDING' | 'RECONCILIATION_REQUIRED';
+
+/** Chủ ví của lệnh rút (`WalletOwnerType` của Payment). */
+export type WalletOwnerType = 'BORROWER' | 'INVESTOR' | 'PLATFORM';
+
+/**
+ * `AdminWithdrawalResponse` (R4, W3B): lệnh rút tiền về ngân hàng đã trừ ví nhưng chưa có kết quả cuối từ provider.
+ * `nextAttemptAt = null` ở `RECONCILIATION_REQUIRED` là đã hết lượt tra cứu tự động và đang chờ vận hành;
+ * `attemptCount` là số lần gửi provider, `reconciliationAttemptCount` là số lần tra cứu chưa ra kết quả cuối.
+ * Số tài khoản chỉ ở dạng che.
+ */
+export interface WithdrawalIncident {
+  withdrawalId: string; ownerType: WalletOwnerType; ownerId: string; amount: number; currency: string;
+  status: WithdrawalIncidentStatus; bankCode: string; accountNumberMasked: string; provider: string;
+  providerReference: string | null; attemptCount: number; reconciliationAttemptCount: number;
+  nextAttemptAt: string | null; errorCode: string | null; errorDetail: string | null; manualRecheckCount: number;
+  lastManualRecheckBy: string | null; lastManualRecheckAt: string | null; createdAt: string; updatedAt: string;
+}
+
 /**
  * `OrderIncidentResponse` của Investment (R3): lệnh góp vốn chưa khớp với ví ở Payment.
  * `HOLD_PENDING`: chưa biết tiền đã giữ hay chưa; `RELEASE_RETRYING`: đang thử nhả tiền giữ;

@@ -1,6 +1,7 @@
 import type { PillTone } from '@/components/StatusPill';
 import type {
   CollectionActionType, CollectionStage, FinoraLoanStatus, ReconciliationIncidentType, RepaymentType, RescheduleType,
+  WalletOwnerType,
 } from './types';
 
 /** Bảng danh sách quản trị: 10 dòng mỗi trang. */
@@ -98,4 +99,11 @@ export const REPAYMENT_TYPE_LABEL: Record<RepaymentType, string> = {
   OVERDUE_CURE: 'Trả nợ quá hạn',
   PARTIAL_PREPAYMENT: 'Trả trước một phần',
   EARLY_SETTLEMENT: 'Tất toán sớm',
+};
+
+/** Vai trò chủ ví của lệnh rút; mã lạ (backend thêm loại ví) giữ nguyên để tra nhật ký. */
+export const WALLET_OWNER_LABEL: Record<WalletOwnerType, string> = {
+  BORROWER: 'Người vay',
+  INVESTOR: 'Nhà đầu tư',
+  PLATFORM: 'Ví nền tảng',
 };

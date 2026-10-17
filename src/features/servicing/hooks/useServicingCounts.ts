@@ -1,6 +1,8 @@
 import { useGetLoanStatisticsSummaryQuery } from '@/features/statistics';
 import { useOrderIncidentsQuery } from '../api/investmentIncidentApi';
-import { useDisbursementIncidentsQuery, useRepaymentIncidentsQuery } from '../api/paymentIncidentApi';
+import {
+  useDisbursementIncidentsQuery, useRepaymentIncidentsQuery, useWithdrawalIncidentsQuery,
+} from '../api/paymentIncidentApi';
 import { useQuarantinedEventsQuery, useRepairSagasQuery, useStaleLoansQuery } from '../api/servicingApi';
 import { COLLECTION_STAGES, type ServicingTab } from '../constant';
 import type { CollectionStage } from '../types';
@@ -20,9 +22,10 @@ export interface StageCount {
  * Số việc trên từng tab, số hồ sơ thu hồi đang mở theo mức độ và danh mục dư nợ theo nhóm nợ.
  *
  * Thu hồi, cơ cấu, sai lệch đối soát và nhóm nợ lấy từ summary thống kê của Loan (một lời gọi, đếm ở DB).
- * Khoản cần đối soát, sự kiện trả nợ chờ ghép và bốn hàng đợi sự cố giao dịch chưa có trong summary nên vẫn đọc
- * `totalElements` của lời gọi `size=1`. Summary cung cấp cùng id tag với các hàng đợi, nên tự làm mới sau mutation
- * hoặc khi bấm "Làm mới". Số sự cố chỉ hiện khi đọc được cả bốn hàng đợi, để không báo thiếu khi một service lỗi.
+ * Khoản cần đối soát, sự kiện trả nợ chờ ghép và năm hàng đợi sự cố giao dịch (gồm lệnh rút tiền chờ đối soát, R4)
+ * chưa có trong summary nên vẫn đọc `totalElements` của lời gọi `size=1`. Summary cung cấp cùng id tag với các hàng
+ * đợi, nên tự làm mới sau mutation hoặc khi bấm "Làm mới". Số sự cố chỉ hiện khi đọc được cả năm hàng đợi, để không
+ * báo thiếu khi một service lỗi.
  */
 export function useServicingCounts() {
   const summary = useGetLoanStatisticsSummaryQuery();
@@ -32,6 +35,7 @@ export function useServicingCounts() {
   const disbursementIncidents = useDisbursementIncidentsQuery(COUNT);
   const repairSagas = useRepairSagasQuery(COUNT);
   const orderIncidents = useOrderIncidentsQuery(COUNT);
+  const withdrawalIncidents = useWithdrawalIncidentsQuery(COUNT);
   const data = summary.data;
 
   // Backend trả đủ mọi mức thu hồi (kể cả 0); khóa thiếu vẫn coi là 0 để an toàn khi enum đổi.
@@ -47,9 +51,10 @@ export function useServicingCounts() {
 
   const incidents = data ? data.reconciliationIncidents.byStatus.OPEN ?? 0 : undefined;
   const reconciliation = stale.data && incidents != null ? stale.data.totalElements + incidents : undefined;
-  const transactionIncidents = repaymentIncidents.data && disbursementIncidents.data && repairSagas.data && orderIncidents.data
+  const transactionIncidents = repaymentIncidents.data && disbursementIncidents.data && repairSagas.data
+    && orderIncidents.data && withdrawalIncidents.data
     ? repaymentIncidents.data.totalElements + disbursementIncidents.data.totalElements + repairSagas.data.totalElements
-      + orderIncidents.data.totalElements
+      + orderIncidents.data.totalElements + withdrawalIncidents.data.totalElements
     : undefined;
 
   const tabs: Record<ServicingTab, number | undefined> = {
