@@ -7,10 +7,11 @@ import {
   useDisbursementIncidentsQuery, useRecheckDisbursementMutation, useReconcileRepaymentMutation,
   useRepaymentIncidentsQuery,
 } from '../api/paymentIncidentApi';
+import { useOrderIncidentsQuery, useRetryOrderIncidentMutation } from '../api/investmentIncidentApi';
 import { useRepairSagasQuery } from '../api/servicingApi';
 import { REPAYMENT_TYPE_LABEL, SERVICING_PAGE_SIZE } from '../constant';
 import { money } from '../formatters';
-import type { DisbursementIncident, DisbursementSagaRepair, RepaymentIncident } from '../types';
+import type { DisbursementIncident, DisbursementSagaRepair, OrderIncident, RepaymentIncident } from '../types';
 import { QueueBody } from './QueueBody';
 import { RepaymentRepostModal } from './RepaymentRepostModal';
 import { SagaRequeueModal } from './SagaRequeueModal';
@@ -42,6 +43,12 @@ function DisbursementStatus({ item }: { item: DisbursementIncident }) {
     : <StatusPill tone="warning">Đang tra cứu lại</StatusPill>;
 }
 
+function OrderIncidentIssue({ item }: { item: OrderIncident }) {
+  if (item.issue === 'RELEASE_BLOCKED') return <StatusPill tone="danger">Dừng nhả tiền giữ</StatusPill>;
+  if (item.issue === 'RELEASE_RETRYING') return <StatusPill tone="warning">Đang thử nhả tiền giữ</StatusPill>;
+  return <StatusPill tone="info">Chưa rõ đã giữ tiền</StatusPill>;
+}
+
 function ErrorCell({ code, detail }: { code: string | null; detail: string | null }) {
   if (!code) return <td className="svc-muted">Không có</td>;
   return (
@@ -58,7 +65,8 @@ function ErrorCell({ code, detail }: { code: string | null; detail: string | nul
  * - trả nợ đã trừ ví người vay, Fineract chưa ghi xong (Payment): "Đối soát" đọc Fineract theo mã giao dịch; "Ghi lại"
  *   (B32) dành cho khoản Fineract chưa từng nhận, tra cứu trước rồi ghi với đúng mã nên không thành hai giao dịch;
  * - lệnh giải ngân chưa có kết quả cuối từ đối tác chuyển tiền (Payment): "Tra cứu lại" hẹn lượt hỏi đối tác;
- * - giải ngân xong nhưng Fineract chưa ghi khoản vay (Loan): "Ghi lại" đưa bước ghi lõi về hàng chờ, kèm ghi chú.
+ * - giải ngân xong nhưng Fineract chưa ghi khoản vay (Loan): "Ghi lại" đưa bước ghi lõi về hàng chờ, kèm ghi chú;
+ * - lệnh góp vốn chưa khớp với ví (Investment, R3): "Thử lại" hẹn worker làm tiếp ngay sau khi đã xử lý nguyên nhân.
  * Một thao tác chạy tại một thời điểm để không gửi chồng.
  */
 export function IncidentsPanel({ page, onPage, onDone }: Props) {
@@ -67,6 +75,9 @@ export function IncidentsPanel({ page, onPage, onDone }: Props) {
   const disbursements = useDisbursementIncidentsQuery({ page: disbursementPage, size: SERVICING_PAGE_SIZE });
   const [sagaPage, setSagaPage] = useState(0);
   const sagas = useRepairSagasQuery({ page: sagaPage, size: SERVICING_PAGE_SIZE });
+  const [orderPage, setOrderPage] = useState(0);
+  const orders = useOrderIncidentsQuery({ page: orderPage, size: SERVICING_PAGE_SIZE });
+  const [retryOrder] = useRetryOrderIncidentMutation();
   const [reconcile] = useReconcileRepaymentMutation();
   const [recheck] = useRecheckDisbursementMutation();
   const [running, setRunning] = useState<string | null>(null);
@@ -94,6 +105,11 @@ export function IncidentsPanel({ page, onPage, onDone }: Props) {
     return result.status === 'RECONCILIATION_REQUIRED'
       ? `Hệ thống lõi chưa có giao dịch ${item.repaymentId}; giao dịch vẫn chờ đối soát.`
       : `Hệ thống lõi đã ghi nhận giao dịch ${item.repaymentId}; tiền sẽ được chia cho nhà đầu tư ở lượt xử lý kế tiếp.`;
+  });
+
+  const retryOrderIncident = (item: OrderIncident) => run(item.orderReference, async () => {
+    await retryOrder(item.orderReference).unwrap();
+    return `Đã hẹn thử lại lệnh ${item.orderReference}; kết quả cập nhật sau lượt xử lý kế tiếp của hệ thống.`;
   });
 
   const recheckDisbursement = (item: DisbursementIncident) => run(item.sagaId, async () => {
@@ -301,6 +317,68 @@ export function IncidentsPanel({ page, onPage, onDone }: Props) {
                       onClick={() => setRequeueing(item)}
                     >
                       Ghi lại
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </QueueBody>
+
+      <div className="svc-subhead">
+        <h2>Lệnh góp vốn chưa khớp với ví</h2>
+        {orders.data && orders.data.totalElements > 0 && <span>Tiền giữ của nhà đầu tư chưa xử lý xong</span>}
+      </div>
+      <QueueBody
+        error={orders.error}
+        isLoading={orders.isLoading}
+        isFetching={orders.isFetching}
+        onRetry={orders.refetch}
+        total={orders.data?.totalElements ?? 0}
+        emptyText="Không có lệnh góp vốn cần xử lý."
+        page={orderPage}
+        unit="lệnh"
+        onPage={setOrderPage}
+      >
+        <div className="ui-table-wrap">
+          <table className="ui-table list svc-table">
+            <thead>
+              <tr>
+                <th>Lệnh góp vốn</th>
+                <th>Nhà đầu tư</th>
+                <th className="num">Số tiền</th>
+                <th>Lỗi gần nhất</th>
+                <th className="num">Lần thử</th>
+                <th>Tình trạng</th>
+                <th className="act"><span className="ui-sr-only">Thao tác</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              {(orders.data?.content ?? []).map((item) => (
+                <tr key={item.orderReference}>
+                  <td>
+                    <span className="ui-mono">{item.orderReference}</span>
+                    <span className="ui-sub">Khoản vay trên sàn #{item.listingId}</span>
+                  </td>
+                  <td><span className="ui-mono">{item.investorId}</span></td>
+                  <td className="num">{money(item.amount)}</td>
+                  <ErrorCell code={item.releaseErrorCode ?? item.rejectedReasonCode} detail={null} />
+                  <td className="num">{item.issue === 'HOLD_PENDING' ? item.pendingAttemptCount : item.releaseAttemptCount}</td>
+                  <td>
+                    <OrderIncidentIssue item={item} />
+                    {(item.releaseNextAttemptAt ?? item.pendingNextAttemptAt) && item.issue !== 'RELEASE_BLOCKED' && (
+                      <span className="ui-sub">Lượt sau {formatDateTime(item.releaseNextAttemptAt ?? item.pendingNextAttemptAt)}</span>
+                    )}
+                  </td>
+                  <td className="act">
+                    <button
+                      type="button"
+                      className="ui-btn soft"
+                      disabled={running != null}
+                      onClick={() => retryOrderIncident(item)}
+                    >
+                      {running === item.orderReference ? 'Đang gửi...' : 'Thử lại'}
                     </button>
                   </td>
                 </tr>

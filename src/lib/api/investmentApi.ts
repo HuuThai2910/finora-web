@@ -31,6 +31,8 @@ export const investmentApi = createApi({
     'OrderBooks',
     // API thống kê (STATS-001): summary và series của gọi vốn, chợ Notes, Auto-Invest.
     'InvestmentStatistics',
+    // R3: lệnh góp vốn chưa khớp với ví ở Payment (tab Sự cố giao dịch).
+    'OrderIncidents',
   ],
   endpoints: () => ({}),
 });

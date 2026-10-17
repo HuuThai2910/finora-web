@@ -1,5 +1,5 @@
 import { paymentApi } from '@/lib/api/paymentApi';
-import type { DisbursementIncident, PaymentPage, RepaymentIncident } from '../types';
+import type { DisbursementIncident, CommonPage, RepaymentIncident } from '../types';
 import type { PageArgs } from './servicingApi';
 
 const tag = (id: string) => ({ type: 'PaymentIncidents' as const, id });
@@ -17,7 +17,7 @@ const OPEN_REPAYMENT_STATUSES = 'CORE_POSTING,RECONCILIATION_REQUIRED';
  */
 export const paymentIncidentApi = paymentApi.injectEndpoints({
   endpoints: (builder) => ({
-    repaymentIncidents: builder.query<PaymentPage<RepaymentIncident>, PageArgs>({
+    repaymentIncidents: builder.query<CommonPage<RepaymentIncident>, PageArgs>({
       query: (params) => ({ url: '/admin/repayment-reconciliation', params: { ...params, status: OPEN_REPAYMENT_STATUSES } }),
       providesTags: [tag('REPAYMENTS')],
     }),
@@ -29,7 +29,7 @@ export const paymentIncidentApi = paymentApi.injectEndpoints({
       query: (repaymentId) => ({ url: `/admin/repayment-reconciliation/${repaymentId}/repost`, method: 'POST' }),
       invalidatesTags: [tag('REPAYMENTS')],
     }),
-    disbursementIncidents: builder.query<PaymentPage<DisbursementIncident>, PageArgs>({
+    disbursementIncidents: builder.query<CommonPage<DisbursementIncident>, PageArgs>({
       query: (params) => ({ url: '/admin/disbursement-reconciliation', params }),
       providesTags: [tag('DISBURSEMENTS')],
     }),

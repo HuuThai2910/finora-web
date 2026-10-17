@@ -103,10 +103,10 @@ export interface DisbursementSagaRepair {
 }
 
 /**
- * `PageResponse` chung của finora-common mà Payment Service trả: danh sách nằm ở `content` (khác bản
+ * `PageResponse` chung của finora-common mà Payment và Investment trả: danh sách nằm ở `content` (khác bản
  * riêng của Loan dùng `data`), trang tính từ 0.
  */
-export interface PaymentPage<T> {
+export interface CommonPage<T> {
   content: T[]; page: number; size: number; totalElements: number; totalPages: number; last: boolean;
 }
 
@@ -142,4 +142,19 @@ export interface DisbursementIncident {
   reconciliationAttemptCount: number; nextAttemptAt: string | null; errorCode: string | null;
   errorDetail: string | null; manualRecheckCount: number; lastManualRecheckBy: string | null;
   lastManualRecheckAt: string | null; createdAt: string; updatedAt: string;
+}
+
+/**
+ * `OrderIncidentResponse` của Investment (R3): lệnh góp vốn chưa khớp với ví ở Payment.
+ * `HOLD_PENDING`: chưa biết tiền đã giữ hay chưa; `RELEASE_RETRYING`: đang thử nhả tiền giữ;
+ * `RELEASE_BLOCKED`: Payment trả lỗi chắc chắn, worker đã dừng.
+ */
+export type OrderIncidentIssue = 'HOLD_PENDING' | 'RELEASE_RETRYING' | 'RELEASE_BLOCKED';
+
+export interface OrderIncident {
+  orderReference: string; listingId: number; investorId: string; amount: number; status: string;
+  issue: OrderIncidentIssue; paymentHoldReference: string | null; rejectedReasonCode: string | null;
+  releaseErrorCode: string | null; releaseAttemptCount: number; releaseNextAttemptAt: string | null;
+  releaseBlockedAt: string | null; pendingAttemptCount: number; pendingNextAttemptAt: string | null;
+  createdAt: string; updatedAt: string;
 }

@@ -1,4 +1,5 @@
 import { useGetLoanStatisticsSummaryQuery } from '@/features/statistics';
+import { useOrderIncidentsQuery } from '../api/investmentIncidentApi';
 import { useDisbursementIncidentsQuery, useRepaymentIncidentsQuery } from '../api/paymentIncidentApi';
 import { useQuarantinedEventsQuery, useRepairSagasQuery, useStaleLoansQuery } from '../api/servicingApi';
 import { COLLECTION_STAGES, type ServicingTab } from '../constant';
@@ -19,9 +20,9 @@ export interface StageCount {
  * Số việc trên từng tab, số hồ sơ thu hồi đang mở theo mức độ và danh mục dư nợ theo nhóm nợ.
  *
  * Thu hồi, cơ cấu, sai lệch đối soát và nhóm nợ lấy từ summary thống kê của Loan (một lời gọi, đếm ở DB).
- * Khoản cần đối soát, sự kiện trả nợ chờ ghép và ba hàng đợi sự cố giao dịch chưa có trong summary nên vẫn đọc
+ * Khoản cần đối soát, sự kiện trả nợ chờ ghép và bốn hàng đợi sự cố giao dịch chưa có trong summary nên vẫn đọc
  * `totalElements` của lời gọi `size=1`. Summary cung cấp cùng id tag với các hàng đợi, nên tự làm mới sau mutation
- * hoặc khi bấm "Làm mới". Số sự cố chỉ hiện khi đọc được cả ba hàng đợi, để không báo thiếu khi một service lỗi.
+ * hoặc khi bấm "Làm mới". Số sự cố chỉ hiện khi đọc được cả bốn hàng đợi, để không báo thiếu khi một service lỗi.
  */
 export function useServicingCounts() {
   const summary = useGetLoanStatisticsSummaryQuery();
@@ -30,6 +31,7 @@ export function useServicingCounts() {
   const repaymentIncidents = useRepaymentIncidentsQuery(COUNT);
   const disbursementIncidents = useDisbursementIncidentsQuery(COUNT);
   const repairSagas = useRepairSagasQuery(COUNT);
+  const orderIncidents = useOrderIncidentsQuery(COUNT);
   const data = summary.data;
 
   // Backend trả đủ mọi mức thu hồi (kể cả 0); khóa thiếu vẫn coi là 0 để an toàn khi enum đổi.
@@ -45,8 +47,9 @@ export function useServicingCounts() {
 
   const incidents = data ? data.reconciliationIncidents.byStatus.OPEN ?? 0 : undefined;
   const reconciliation = stale.data && incidents != null ? stale.data.totalElements + incidents : undefined;
-  const transactionIncidents = repaymentIncidents.data && disbursementIncidents.data && repairSagas.data
+  const transactionIncidents = repaymentIncidents.data && disbursementIncidents.data && repairSagas.data && orderIncidents.data
     ? repaymentIncidents.data.totalElements + disbursementIncidents.data.totalElements + repairSagas.data.totalElements
+      + orderIncidents.data.totalElements
     : undefined;
 
   const tabs: Record<ServicingTab, number | undefined> = {

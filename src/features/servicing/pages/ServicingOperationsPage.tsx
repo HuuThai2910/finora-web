@@ -3,6 +3,7 @@ import { useDispatch } from 'react-redux';
 import type { AppDispatch } from '@/app/store';
 import { Icon } from '@/components/Icon';
 import { Toast } from '@/components/Toast';
+import { investmentApi } from '@/lib/api/investmentApi';
 import { loanApi } from '@/lib/api/loanApi';
 import { paymentApi } from '@/lib/api/paymentApi';
 import { CollectionCaseDrawer } from '../components/CollectionCaseDrawer';
@@ -45,10 +46,11 @@ export default function ServicingOperationsPage() {
   const [toast, setToast] = useState('');
   const dismissToast = useCallback(() => setToast(''), []);
 
-  // Hàng đợi của Loan dùng chung một tag; sự cố tiền của Payment nằm ở slice riêng nên làm mới cả hai.
+  // Hàng đợi của Loan dùng chung một tag; sự cố tiền của Payment và lệnh góp vốn của Investment nằm ở slice riêng.
   const refresh = () => {
     dispatch(loanApi.util.invalidateTags(['ServicingOperations']));
     dispatch(paymentApi.util.invalidateTags(['PaymentIncidents']));
+    dispatch(investmentApi.util.invalidateTags(['OrderIncidents']));
   };
 
   return (
