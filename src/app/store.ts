@@ -1,6 +1,7 @@
 import { configureStore } from '@reduxjs/toolkit';
 import { loanApi } from '@/lib/api/loanApi';
 import { aiApi } from '@/lib/api/aiApi';
+import { blockchainApi } from '@/lib/api/blockchainApi';
 import { investmentApi } from '@/lib/api/investmentApi';
 import { paymentApi } from '@/lib/api/paymentApi';
 import { userServiceApi } from '@/lib/api/userServiceApi';
@@ -11,6 +12,7 @@ export const store = configureStore({
     auth: authReducer,
     [loanApi.reducerPath]: loanApi.reducer,
     [aiApi.reducerPath]: aiApi.reducer,
+    [blockchainApi.reducerPath]: blockchainApi.reducer,
     [investmentApi.reducerPath]: investmentApi.reducer,
     [paymentApi.reducerPath]: paymentApi.reducer,
     [userServiceApi.reducerPath]: userServiceApi.reducer,
@@ -19,6 +21,7 @@ export const store = configureStore({
     getDefaultMiddleware().concat(
       loanApi.middleware,
       aiApi.middleware,
+      blockchainApi.middleware,
       investmentApi.middleware,
       paymentApi.middleware,
       userServiceApi.middleware,

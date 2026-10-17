@@ -102,7 +102,18 @@ export default function FundingDetailPage() {
             {listing.creditScore != null ? `, điểm ${listing.creditScore}` : ''}, {listing.region}
           </p>
         </div>
-        <Link className="ui-btn ghost" to={LIST_PATH}>Về danh sách</Link>
+        <div className="fu-head-actions">
+          {/* `loanId` của listing là ID hồ sơ vay bên Loan; proof chỉ có từ khi khoản vay đã có hợp đồng (W3D). */}
+          {listing.contractNumber && (
+            <Link
+              className="ui-btn ghost"
+              to={`/blockchain/proofs?referenceType=LOAN_APPLICATION&referenceId=${listing.loanId}`}
+            >
+              Bằng chứng blockchain
+            </Link>
+          )}
+          <Link className="ui-btn ghost" to={LIST_PATH}>Về danh sách</Link>
+        </div>
       </header>
 
       <div className="fd-layout">

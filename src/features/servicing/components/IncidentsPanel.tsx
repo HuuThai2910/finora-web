@@ -15,6 +15,7 @@ import type {
   DisbursementIncident, DisbursementSagaRepair, OrderIncident, RepaymentIncident, WithdrawalIncident,
 } from '../types';
 import { ErrorCell } from './ErrorCell';
+import { LoanProofsLink } from './LoanProofsLink';
 import { QueueBody } from './QueueBody';
 import { RepaymentRepostModal } from './RepaymentRepostModal';
 import { SagaRequeueModal } from './SagaRequeueModal';
@@ -166,7 +167,10 @@ export function IncidentsPanel({ page, onPage, onDone }: Props) {
                     <span className="ui-mono">{item.repaymentId}</span>
                     <span className="ui-sub">{REPAYMENT_TYPE_LABEL[item.repaymentType] ?? item.repaymentType}</span>
                   </td>
-                  <td>Hồ sơ #{item.loanApplicationId}</td>
+                  <td>
+                    Hồ sơ #{item.loanApplicationId}
+                    <span className="ui-sub"><LoanProofsLink loanApplicationId={item.loanApplicationId} /></span>
+                  </td>
                   <td className="num">{money(item.amount)}</td>
                   <td>{formatDate(item.transactionDate)}</td>
                   <ErrorCell code={item.errorCode} detail={item.errorDetail} />
@@ -233,7 +237,9 @@ export function IncidentsPanel({ page, onPage, onDone }: Props) {
                 <tr key={item.sagaId}>
                   <td>
                     <span className="ui-code">{item.contractNumber}</span>
-                    <span className="ui-sub">Hồ sơ #{item.loanApplicationId}</span>
+                    <span className="ui-sub">
+                      Hồ sơ #{item.loanApplicationId} · <LoanProofsLink loanApplicationId={item.loanApplicationId} />
+                    </span>
                   </td>
                   <td className="num">{money(item.amount)}</td>
                   <td>
@@ -303,7 +309,9 @@ export function IncidentsPanel({ page, onPage, onDone }: Props) {
                 <tr key={item.sagaId}>
                   <td>
                     <span className="ui-code">{item.contractNumber}</span>
-                    <span className="ui-sub">Hồ sơ #{item.loanApplicationId}</span>
+                    <span className="ui-sub">
+                      Hồ sơ #{item.loanApplicationId} · <LoanProofsLink loanApplicationId={item.loanApplicationId} />
+                    </span>
                   </td>
                   <td className="num">{money(item.amount)}</td>
                   <td>{item.paymentReference ? <span className="ui-mono">{item.paymentReference}</span> : <span className="svc-muted">Không có</span>}</td>
