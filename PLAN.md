@@ -49,9 +49,13 @@ R5/[W3C](../finora-platform/.agents/plans/W3C-pades-contract-signing.md); Thái 
   màn tài liệu hợp đồng và Loan không có API quản trị cho tài liệu nên không thêm `SIGNED_PDF`/biên nhận chữ ký trên web.
 - D72: thêm `src/components/Drawer` dùng chung (cùng hành vi, kích thước với `SideDrawer` của Vận hành khoản vay); hai bản
   `SideDrawer` cũ của servicing và secondary-market chuyển sang component này ở việc gộp của WEB-UI-001.
-- B73 (backend, P3): `GET /admin/loan-applications/{n}/review` không trả ID số của hồ sơ vay (cũng không có số hợp đồng)
-  nên trang chi tiết hồ sơ vay chưa link được tới proof; explorer lại chỉ tra hồ sơ vay theo ID số. Đề xuất Loan thêm
-  `id` và `contractNumber` vào `AdminLoanReviewDetailResponse`.
+
+Cập nhật 2026-10-17 (B73 đã sửa): `GET /admin/loan-applications/{n}/review` trả `id` số của hồ sơ và `contractNumber`
+(null khi chưa lập hợp đồng).
+
+- D80: đầu trang chi tiết hồ sơ vay có nút "Bằng chứng blockchain" mở `/blockchain/proofs` lọc `LOAN_APPLICATION` theo
+  `id`; nút chỉ bật khi có `id`. Khác nút ở trang chi tiết gọi vốn, nút không ẩn khi hồ sơ chưa có hợp đồng: explorer khi
+  đó báo chưa có proof và nói rõ proof chỉ có sau các mốc hợp đồng, giải ngân, trả nợ, Note.
 
 ## Quy tắc đồng bộ về sau
 

@@ -76,6 +76,14 @@
   height: 13px;
 }
 
+/* Nút Bằng chứng blockchain và bộ chuyển hàng chờ cùng một cụm bên phải đầu trang. */
+.lr-head-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
 .lr-queue {
   display: flex;
   align-items: center;

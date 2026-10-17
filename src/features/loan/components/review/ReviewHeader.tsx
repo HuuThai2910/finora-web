@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { StatusPill } from '@/components/StatusPill';
 import { APPLICATION_STATUS_LABELS, formatDateTime } from '../../formatters';
 import { applicationStatusTone } from '../../mappers/applicationListDisplay';
@@ -19,7 +20,10 @@ function CopyIcon() {
   );
 }
 
-/** Đầu trang: chỉ định danh hồ sơ (người vay, trạng thái, mã, ngày nộp); điều khoản nằm ở thẻ Khoản vay. */
+/**
+ * Đầu trang: chỉ định danh hồ sơ (người vay, trạng thái, mã, ngày nộp) và lối sang Bằng chứng blockchain;
+ * điều khoản nằm ở thẻ Khoản vay.
+ */
 export function ReviewHeader({ application, borrowerName, onCopied }: ReviewHeaderProps) {
   const copy = async () => {
     try {
@@ -49,7 +53,22 @@ export function ReviewHeader({ application, borrowerName, onCopied }: ReviewHead
           Nộp {formatDateTime(application.submittedAt)}
         </p>
       </div>
-      <PendingQueueNav applicationNumber={application.applicationNumber} />
+      <div className="lr-head-actions">
+        {/* Explorer tra `LOAN_APPLICATION` theo ID số của hồ sơ; Loan trước B73 không trả `id` nên khóa nút thay vì dựng link sai. */}
+        {application.id ? (
+          <Link
+            className="ui-btn ghost"
+            to={`/blockchain/proofs?referenceType=LOAN_APPLICATION&referenceId=${application.id}`}
+          >
+            Bằng chứng blockchain
+          </Link>
+        ) : (
+          <button type="button" className="ui-btn ghost" disabled title="Máy chủ chưa trả ID hồ sơ nên chưa mở được bằng chứng.">
+            Bằng chứng blockchain
+          </button>
+        )}
+        <PendingQueueNav applicationNumber={application.applicationNumber} />
+      </div>
     </header>
   );
 }
