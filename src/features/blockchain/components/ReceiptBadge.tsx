@@ -19,7 +19,7 @@ export function ReceiptBadge({ proof }: { proof: Proof }) {
 /** Dòng phụ dưới nhãn biên nhận trong bảng: kết quả đối chiếu sổ cái, cảnh báo demo hoặc sổ cái sẽ ghi. */
 export function ReceiptHint({ proof }: { proof: Proof }) {
   const view = receiptView(proof);
-  if (view.kind === 'mock') return <span className="ui-sub">Dữ liệu demo, chưa ghi lên Hyperledger Fabric</span>;
+  if (view.kind === 'mock') return <span className="ui-sub">Dữ liệu demo, không ghi lên Hyperledger Fabric</span>;
   if (view.kind === 'fabric') {
     if (!proof.chainCheck) return <span className="ui-sub">Chưa đối chiếu với sổ cái</span>;
     const check = chainResultInfo(proof.chainCheck.status);
