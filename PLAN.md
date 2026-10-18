@@ -42,7 +42,7 @@ R5/[W3C](../finora-platform/.agents/plans/W3C-pades-contract-signing.md); Thái 
 - D71: trang `/blockchain/proofs` (nhóm menu mới "Kiểm toán", feature `src/features/blockchain`, slice RTK Query
   `blockchainApi`, proxy Vite `/api/v1/blockchain` qua Gateway). Bộ lọc và proof đang mở nằm trên URL; tra theo tham chiếu
   và lọc trạng thái loại trừ nhau vì backend từ chối gộp (`PROOF_FILTER_UNSUPPORTED`); tab "Dừng gửi" có số đếm từ một lời
-  gọi `size=1`. Chỉ biên nhận `FABRIC_ON_CHAIN` mới hiện mã giao dịch và block; biên nhận MOCK luôn có nhãn "MOCK, không
+  gọi `size=1`. Chỉ biên nhận `FABRIC_ON_CHAIN` mới hiện mã giao dịch và block; biên nhận MOCK luôn có nhãn "MOCK, không có
   trên Fabric" và câu cảnh báo của backend. Kiểm toàn vẹn nhận dữ liệu gốc tùy chọn (kiểm JSON object ở trình duyệt) và
   hiện tách hai kết quả. "Đưa lại hàng đợi gửi" chỉ bật cho DEAD_LETTER. Lối vào: nút ở trang chi tiết gọi vốn (`loanId`
   của listing là ID hồ sơ vay, chỉ hiện khi đã có hợp đồng) và link "Bằng chứng" ở hàng đợi Sự cố giao dịch. Web không có
@@ -56,6 +56,11 @@ Cập nhật 2026-10-17 (B73 đã sửa): `GET /admin/loan-applications/{n}/revi
 - D80: đầu trang chi tiết hồ sơ vay có nút "Bằng chứng blockchain" mở `/blockchain/proofs` lọc `LOAN_APPLICATION` theo
   `id`; nút chỉ bật khi có `id`. Khác nút ở trang chi tiết gọi vốn, nút không ẩn khi hồ sơ chưa có hợp đồng: explorer khi
   đó báo chưa có proof và nói rõ proof chỉ có sau các mốc hợp đồng, giải ngân, trả nợ, Note.
+
+Cập nhật 2026-10-18 (sửa lỗi nhỏ theo `../finora-platform/docs/testing/UI-MANUAL-TEST-GUIDE.md`):
+
+- BC-N10: badge biên nhận và kết quả đối chiếu sổ cái của proof MOCK dùng chung một nhãn `MOCK_RECEIPT_TAG` "MOCK,
+  không có trên Fabric" (trước đó badge ghi "MOCK, không trên Fabric").
 
 ## Quy tắc đồng bộ về sau
 

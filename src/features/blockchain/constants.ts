@@ -77,11 +77,17 @@ export const PROVIDER_LABEL: Record<ProofProvider, string> = {
   HYPERLEDGER_FABRIC: 'Hyperledger Fabric',
 };
 
+/**
+ * Nhãn duy nhất của proof MOCK, dùng chung cho badge biên nhận và kết quả đối chiếu sổ cái (BC-N10): dữ liệu demo,
+ * không ghi lên Hyperledger Fabric. Khác chữ và khác màu với nhãn "Trên Fabric" (B50, LEGAL-DATA-01).
+ */
+export const MOCK_RECEIPT_TAG: Tagged = { label: 'MOCK, không có trên Fabric', tone: 'warning' };
+
 export const CHAIN_RESULT_INFO: Record<ChainResult, Tagged> = {
   MATCHED: { label: 'Khớp sổ cái', tone: 'success' },
   MISMATCHED: { label: 'Lệch với sổ cái', tone: 'danger' },
   MISSING_ON_CHAIN: { label: 'Không có trên sổ cái', tone: 'danger' },
-  NOT_ON_CHAIN_MOCK: { label: 'MOCK, không có trên Fabric', tone: 'warning' },
+  NOT_ON_CHAIN_MOCK: MOCK_RECEIPT_TAG,
   NOT_CONFIRMED: { label: 'Chưa được Fabric xác nhận', tone: 'neutral' },
   LEDGER_UNAVAILABLE: { label: 'Không đọc được Fabric', tone: 'warning' },
 };

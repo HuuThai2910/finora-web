@@ -1,5 +1,6 @@
 import { StatusPill } from '@/components/StatusPill';
 import { formatDateTime } from '@/utils';
+import { MOCK_RECEIPT_TAG } from '../constants';
 import { chainResultInfo, providerLabel, receiptView } from '../mappers/proofDisplay';
 import type { Proof } from '../types';
 
@@ -10,7 +11,7 @@ import type { Proof } from '../types';
 export function ReceiptBadge({ proof }: { proof: Proof }) {
   const view = receiptView(proof);
   if (view.kind === 'fabric') return <StatusPill tone="success">Trên Fabric</StatusPill>;
-  if (view.kind === 'mock') return <StatusPill tone="warning">MOCK, không trên Fabric</StatusPill>;
+  if (view.kind === 'mock') return <StatusPill tone={MOCK_RECEIPT_TAG.tone}>{MOCK_RECEIPT_TAG.label}</StatusPill>;
   if (view.kind === 'unknown') return <StatusPill tone="neutral">{view.label}</StatusPill>;
   return <StatusPill tone="neutral">Chưa có biên nhận</StatusPill>;
 }
