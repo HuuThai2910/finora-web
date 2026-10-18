@@ -8,7 +8,7 @@ import { DecisionTray } from '../components/review/DecisionTray';
 import { HistoryTab } from '../components/review/HistoryTab';
 import { ReviewHeader } from '../components/review/ReviewHeader';
 import { ReviewOverviewTab } from '../components/review/ReviewOverviewTab';
-import { isReviewTab, REVIEW_TABS, type ReviewTabId } from '../mappers/reviewDisplay';
+import { isReviewTab, REVIEW_TABS, scoringRetryBlockedReason, type ReviewTabId } from '../mappers/reviewDisplay';
 import { ScoreSlip } from '../components/review/ScoreSlip';
 import { ScoringDetailTab } from '../components/review/ScoringDetailTab';
 import { useAssessmentExplanation } from '../hooks/useAssessmentExplanation';
@@ -81,7 +81,9 @@ function LoanReviewView({ applicationNumber }: { applicationNumber: string }) {
 
   const assessmentStatus = application.assessment?.status;
   const canDecide = application.status === 'PENDING_REVIEW' && assessmentStatus === 'SUCCEEDED';
-  const canRetry = assessmentStatus === 'FAILED' || assessmentStatus === 'RETRY_PENDING';
+  // Nút chấm lại hiện khi lần chấm gần nhất lỗi hoặc đang chờ thử lại, nhưng chỉ bật ở trạng thái Loan nhận yêu cầu.
+  const showRetry = assessmentStatus === 'FAILED' || assessmentStatus === 'RETRY_PENDING';
+  const retryBlockedReason = scoringRetryBlockedReason(application);
 
   return (
     <section className="ui-page lr-page">
@@ -116,7 +118,13 @@ function LoanReviewView({ applicationNumber }: { applicationNumber: string }) {
         </div>
 
         <aside className="lr-slip" aria-label="Kết luận thẩm định">
-          <ScoreSlip application={application} canRetry={canRetry} retrying={decision.retrying} onRetry={decision.retry} />
+          <ScoreSlip
+            application={application}
+            showRetry={showRetry}
+            retryBlockedReason={retryBlockedReason}
+            retrying={decision.retrying}
+            onRetry={decision.retry}
+          />
           {decision.retryError ? <div className="lr-slip-error"><ErrorNotice error={decision.retryError} /></div> : null}
           <DecisionTray
             application={application}

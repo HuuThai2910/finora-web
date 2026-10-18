@@ -61,6 +61,9 @@ Cập nhật 2026-10-18 (sửa lỗi nhỏ theo `../finora-platform/docs/testing
 
 - BC-N10: badge biên nhận và kết quả đối chiếu sổ cái của proof MOCK dùng chung một nhãn `MOCK_RECEIPT_TAG` "MOCK,
   không có trên Fabric" (trước đó badge ghi "MOCK, không trên Fabric").
+- ADM-N02b: "Yêu cầu chấm lại" chỉ bật khi lần chấm mới nhất `FAILED` và hồ sơ `PENDING_REVIEW`, đúng điều kiện Loan
+  nhận (`CreditScoringAdminStateService.retry`, `LoanApplication.reopenScoring`). Assessment `RETRY_PENDING` hoặc hồ sơ
+  không còn chờ thẩm định thì nút vẫn hiện nhưng bị khóa, lý do ở tooltip.
 
 ## Quy tắc đồng bộ về sau
 

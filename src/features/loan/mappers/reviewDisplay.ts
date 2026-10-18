@@ -1,5 +1,5 @@
 import { formatBusinessLabel, findBusinessLabel, formatPercent } from '../formatters';
-import type { RuleTraceItem, YeuToGop } from '../types';
+import type { AdminLoanReviewDetail, RuleTraceItem, YeuToGop } from '../types';
 
 /** Tab của trang chi tiết hồ sơ; giá trị nằm trên URL (`?tab=`) để chia sẻ đúng màn đang xem. */
 export type ReviewTabId = 'review' | 'model' | 'history';
@@ -28,6 +28,19 @@ export const REJECT_DETAIL_MAX = 1000;
 
 export function reasonLabel(code: string | null | undefined): string {
   return REJECT_REASONS.find((item) => item.code === code)?.label ?? formatBusinessLabel(code);
+}
+
+/**
+ * Lý do khóa nút "Yêu cầu chấm lại", hoặc `null` khi bấm được. Theo đúng điều kiện Loan Service nhận yêu cầu
+ * (`CreditScoringAdminStateService.retry`, `LoanApplication.reopenScoring`): lần chấm mới nhất `FAILED` và hồ sơ
+ * đang `PENDING_REVIEW`. Trạng thái khác backend trả `409` (ADM-N02b).
+ */
+export function scoringRetryBlockedReason(application: AdminLoanReviewDetail): string | null {
+  const status = application.assessment?.status;
+  if (status === 'RETRY_PENDING') return 'Hệ thống đang tự chấm lại, chưa cần yêu cầu thêm.';
+  if (status !== 'FAILED') return 'Chỉ lần chấm điểm không thành công mới yêu cầu chấm lại được.';
+  if (application.status !== 'PENDING_REVIEW') return 'Chỉ hồ sơ chờ thẩm định mới yêu cầu chấm lại được.';
+  return null;
 }
 
 /**
