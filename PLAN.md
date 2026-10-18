@@ -64,6 +64,8 @@ Cập nhật 2026-10-18 (sửa lỗi nhỏ theo `../finora-platform/docs/testing
 - ADM-N02b: "Yêu cầu chấm lại" chỉ bật khi lần chấm mới nhất `FAILED` và hồ sơ `PENDING_REVIEW`, đúng điều kiện Loan
   nhận (`CreditScoringAdminStateService.retry`, `LoanApplication.reopenScoring`). Assessment `RETRY_PENDING` hoặc hồ sơ
   không còn chờ thẩm định thì nút vẫn hiện nhưng bị khóa, lý do ở tooltip.
+- Yêu cầu chấm lại gửi `version` của hồ sơ thay cho version của lần chấm: Loan so `version` trong body với version hồ sơ
+  (`LoanApplication.reopenScoring`), gửi version lần chấm thì gần như luôn bị `409 LOAN_APPLICATION_VERSION_CONFLICT`.
 
 ## Quy tắc đồng bộ về sau
 
