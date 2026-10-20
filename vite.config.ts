@@ -28,12 +28,34 @@ export default defineConfig({
         target: 'http://localhost:8081',
         changeOrigin: true,
       },
+      // Hàng đợi sự cố tiền của Payment Service; phải đứng trước `/api/v1/admin` (mặc định về Loan).
+      '/api/v1/admin/repayment-reconciliation': {
+        target: 'http://localhost:8082',
+        changeOrigin: true,
+      },
+      '/api/v1/admin/disbursement-reconciliation': {
+        target: 'http://localhost:8082',
+        changeOrigin: true,
+      },
+      // Hàng đợi lệnh rút tiền chờ đối soát (R4) cũng thuộc Payment.
+      '/api/v1/admin/withdrawals': {
+        target: 'http://localhost:8082',
+        changeOrigin: true,
+      },
       '/api/v1/admin': {
         target: 'http://localhost:8081',
         changeOrigin: true,
       },
+      // AI đi qua Gateway (route ai-service) để giữ cùng đường với môi trường tích hợp; Gateway gọi AI
+      // bằng HTTP/1.1 (B43) và AI kiểm cookie phiên (W3A).
       '/api/v1/ai': {
-        target: 'http://localhost:8000',
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+      },
+      // Bằng chứng blockchain (R6, W3D) cũng đi qua Gateway (route blockchain-service); Blockchain đọc cookie phiên
+      // và chỉ mở explorer cho ADMIN (B54).
+      '/api/v1/blockchain': {
+        target: 'http://localhost:8080',
         changeOrigin: true,
       },
       '/api/v1/market': {

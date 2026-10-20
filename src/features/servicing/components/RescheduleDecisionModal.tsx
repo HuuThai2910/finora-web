@@ -50,12 +50,12 @@ export function RescheduleDecisionModal({ request, decision, onClose, onDone }: 
     }
     onDone(isReject
       ? `Đã từ chối yêu cầu cơ cấu của khoản vay ${request.loanNumber}.`
-      : `Đã duyệt yêu cầu của khoản vay ${request.loanNumber}. Lịch trả nợ mới đang được lập.`);
+      : `Đã thẩm định đạt yêu cầu của khoản vay ${request.loanNumber}. Đang chờ toàn bộ nhà đầu tư đồng ý.`);
   };
 
   return (
     <Modal
-      title={isReject ? 'Từ chối yêu cầu cơ cấu' : 'Duyệt yêu cầu cơ cấu'}
+      title={isReject ? 'Từ chối yêu cầu cơ cấu' : 'Xác nhận thẩm định đạt'}
       subtitle={`Khoản vay ${request.loanNumber}, ${typeLabel.toLowerCase()}`}
       onClose={onClose}
       busy={state.isLoading}
@@ -63,14 +63,14 @@ export function RescheduleDecisionModal({ request, decision, onClose, onDone }: 
         <>
           <button type="button" className="ui-btn ghost" onClick={onClose} disabled={state.isLoading}>Hủy</button>
           <button type="button" className={isReject ? 'ui-btn danger' : 'ui-btn primary'} onClick={submit} disabled={state.isLoading}>
-            {state.isLoading ? 'Đang gửi...' : isReject ? 'Từ chối yêu cầu' : 'Duyệt yêu cầu'}
+            {state.isLoading ? 'Đang gửi...' : isReject ? 'Từ chối yêu cầu' : 'Chuyển nhà đầu tư đồng ý'}
           </button>
         </>
       )}
     >
       <div className="svc-modal-body">
         {!isReject && (
-          <p>Sau khi duyệt, hệ thống lập lịch trả nợ mới theo đề nghị của người vay; yêu cầu rời khỏi hàng chờ.</p>
+          <p>FINORA chỉ xác nhận đề nghị đạt điều kiện. Lịch cũ vẫn có hiệu lực; hệ thống chỉ gửi sang Fineract sau khi toàn bộ nhà đầu tư còn nắm dư nợ đồng ý.</p>
         )}
         <div>
           <label className="svc-label" htmlFor={fieldId}>{isReject ? 'Lý do từ chối' : 'Ghi chú (không bắt buộc)'}</label>

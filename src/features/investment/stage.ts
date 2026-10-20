@@ -29,7 +29,8 @@ export const STAGE_INDEX: Record<FundingStageKey, number> = {
 
 export type StageState = 'done' | 'current' | 'todo';
 
-export type NextAction = 'APPROVE' | 'FINALIZE' | 'ACTIVATE_NOTES';
+/** Hai thao tác sửa lỗi sau giải ngân; luồng chuẩn tự khóa vốn và phát hành Note khi nhận LoanDisbursed. */
+export type NextAction = 'FINALIZE' | 'ACTIVATE_NOTES';
 
 export interface ListingStageView {
   /** Trạng thái từng bước, cùng thứ tự với `FUNDING_STAGES`. */
@@ -40,6 +41,8 @@ export interface ListingStageView {
   terminal: 'CLOSED' | 'CANCELLED' | null;
   /** Còn thiếu dữ liệu (đang tải phần vốn hoặc Note) nên chưa kết luận được bước sau. */
   pending: boolean;
+  /** Đã đủ vốn nhưng Loan chưa xác nhận giải ngân: khóa vốn/phát hành Note sẽ tự chạy, quản trị không cần làm gì. */
+  awaitingDisbursement?: boolean;
 }
 
 const steps = (...states: StageState[]): StageState[] => states;
@@ -47,17 +50,22 @@ const steps = (...states: StageState[]): StageState[] => states;
 /**
  * @param investors  danh sách phần vốn từ endpoint quản trị; `undefined` khi chưa tải
  * @param notesIssued phần vốn đã có Note chưa; `undefined` khi chưa tải hoặc chưa cần biết
+ * @param cancelledAfterFunding listing bị hủy sau khi đã đủ vốn (có `cancellationReason` từ finora-loan)
+ * @param disbursed finora-loan đã xác nhận giải ngân (listing có `disbursedAt`)
  */
 export function resolveListingStage(
   status: ListingStatus,
   investors: ListingInvestor[] | undefined,
   notesIssued: boolean | undefined,
+  cancelledAfterFunding = false,
+  disbursed = false,
 ): ListingStageView {
   switch (status) {
     case 'DRAFT':
       return {
         steps: steps('current', 'todo', 'todo', 'todo', 'todo'),
-        nextAction: 'APPROVE',
+        // Listing nháp chỉ còn ở dữ liệu cũ: luồng hiện hành mở listing OPEN ngay khi Loan gửi yêu cầu gọi vốn.
+        nextAction: null,
         terminal: null,
         pending: false,
       };
@@ -77,19 +85,23 @@ export function resolveListingStage(
       };
     case 'CANCELLED':
       return {
-        steps: steps('done', 'todo', 'todo', 'todo', 'todo'),
+        // Hủy sau khi đủ vốn thì gọi vốn đã hoàn tất; chỉ bước khóa vốn/giải ngân không xảy ra.
+        steps: cancelledAfterFunding
+          ? steps('done', 'done', 'done', 'todo', 'todo')
+          : steps('done', 'todo', 'todo', 'todo', 'todo'),
         nextAction: null,
         terminal: 'CANCELLED',
         pending: false,
       };
     case 'FULLY_FUNDED':
-      return resolveFundedStage(investors, notesIssued);
+      return resolveFundedStage(investors, notesIssued, disbursed);
   }
 }
 
 function resolveFundedStage(
   investors: ListingInvestor[] | undefined,
   notesIssued: boolean | undefined,
+  disbursed: boolean,
 ): ListingStageView {
   if (investors === undefined) {
     return {
@@ -107,9 +119,11 @@ function resolveFundedStage(
   if (!allFinalized) {
     return {
       steps: steps('done', 'done', 'done', 'current', 'todo'),
-      nextAction: 'FINALIZE',
+      // Trước giải ngân tiền mới được giữ: khóa vốn lúc này sẽ chặn bù trừ khi hợp đồng bị từ chối.
+      nextAction: disbursed ? 'FINALIZE' : null,
       terminal: null,
       pending: false,
+      awaitingDisbursement: !disbursed,
     };
   }
 
@@ -125,9 +139,10 @@ function resolveFundedStage(
   if (!notesIssued) {
     return {
       steps: steps('done', 'done', 'done', 'done', 'current'),
-      nextAction: 'ACTIVATE_NOTES',
+      nextAction: disbursed ? 'ACTIVATE_NOTES' : null,
       terminal: null,
       pending: false,
+      awaitingDisbursement: !disbursed,
     };
   }
 

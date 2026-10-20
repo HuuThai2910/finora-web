@@ -2,7 +2,6 @@ import { useRef, useState } from 'react';
 import { createIdempotencyKey } from '@/lib/api/idempotency';
 import {
   useApproveApplicationMutation,
-  useLazyGetAssessmentDetailQuery,
   useRejectApplicationMutation,
   useRetryScoringMutation,
 } from '../api/loanReviewApi';
@@ -32,8 +31,9 @@ function keyFor(ref: { current: IntentKey | null }, prefix: string, version: num
  *   dùng lại đúng khóa để backend trả kết quả cũ thay vì tạo hợp đồng thứ hai; thành công, hoặc dữ
  *   liệu đã tải lại sang version khác, thì sinh khóa mới. Tách khóa theo ý định để đổi từ duyệt sang
  *   từ chối không gửi cùng khóa với nội dung khác.
- * - Version: gửi đúng `version` của hồ sơ (và của lần chấm khi chấm lại) mà backend vừa trả; frontend
- *   không tự tăng. Mutation thành công invalidate cache chi tiết và danh sách (xem loanReviewApi).
+ * - Version: gửi đúng `version` của hồ sơ mà backend vừa trả, kể cả khi chấm lại (Loan kiểm version hồ sơ
+ *   ở `LoanApplication.reopenScoring`, không phải version của lần chấm); frontend không tự tăng. Mutation
+ *   thành công invalidate cache chi tiết và danh sách (xem loanReviewApi).
  * - Chấm lại trả 202: chỉ là đã tiếp nhận, không phải kết quả chấm mới.
  *
  * @returns trạng thái chạy của từng thao tác, thông báo thành công và lỗi gần nhất (giữ mã lỗi, traceId).
@@ -42,7 +42,6 @@ export function useReviewDecision(application: AdminLoanReviewDetail | undefined
   const [approve, approveState] = useApproveApplicationMutation();
   const [reject, rejectState] = useRejectApplicationMutation();
   const [retryScoring, retryState] = useRetryScoringMutation();
-  const [getAssessmentDetail, assessmentDetailState] = useLazyGetAssessmentDetailQuery();
   const [notice, setNotice] = useState('');
   const [decisionError, setDecisionError] = useState<unknown>(null);
   const [retryError, setRetryError] = useState<unknown>(null);
@@ -91,20 +90,15 @@ export function useReviewDecision(application: AdminLoanReviewDetail | undefined
     }
   }
 
-  /** Lấy version mới nhất của lần chấm (không có trong chi tiết hồ sơ) rồi mới gửi yêu cầu chấm lại. */
+  /** Gửi yêu cầu chấm lại kèm `version` của hồ sơ: Loan so với version hồ sơ, không phải version lần chấm. */
   async function handleRetry() {
-    const assessmentId = application?.assessment?.assessmentId;
-    if (!application || assessmentId == null) return;
+    if (!application || application.assessment == null) return;
     setRetryError(null);
     try {
-      const detail = await getAssessmentDetail({
-        applicationNumber: application.applicationNumber,
-        assessmentId,
-      }).unwrap();
       const accepted = await retryScoring({
         applicationNumber: application.applicationNumber,
-        version: detail.version,
-        idempotencyKey: keyFor(retryKey, 'scoring-retry', detail.version),
+        version: application.version,
+        idempotencyKey: keyFor(retryKey, 'scoring-retry', application.version),
       }).unwrap();
       setNotice(accepted.message || 'Đã gửi yêu cầu chấm lại. Kết quả sẽ cập nhật khi hệ thống chấm xong.');
       retryKey.current = null;
@@ -121,7 +115,7 @@ export function useReviewDecision(application: AdminLoanReviewDetail | undefined
     retryError,
     approving: approveState.isLoading,
     rejecting: rejectState.isLoading,
-    retrying: retryState.isLoading || assessmentDetailState.isFetching,
+    retrying: retryState.isLoading,
     approve: handleApprove,
     reject: handleReject,
     retry: handleRetry,

@@ -122,6 +122,10 @@ export interface AdminLoanReviewSummary {
 }
 
 export interface AdminLoanReviewDetail extends AdminLoanReviewSummary {
+  /** ID số của hồ sơ vay: trang Bằng chứng blockchain tra `LOAN_APPLICATION` theo ID này (B73). */
+  id: number;
+  /** Số hợp đồng; null cho tới khi hợp đồng được lập (sau khi khoản vay đủ vốn). */
+  contractNumber: string | null;
   purposeDetail: string | null;
   pricingPolicyVersion: string | null;
   financialInformation: ApplicantFinancialInformation;
