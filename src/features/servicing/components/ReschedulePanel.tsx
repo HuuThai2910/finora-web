@@ -82,7 +82,7 @@ export function ReschedulePanel({ page, onPage, onDone }: Props) {
                     <RowMenu
                       label={`Thao tác với yêu cầu cơ cấu khoản vay ${item.loanNumber}`}
                       items={[
-                        { key: 'approve', label: 'Duyệt', icon: 'checkCircle', onSelect: () => setPending({ request: item, decision: 'approve' }) },
+                        { key: 'approve', label: 'Thẩm định đạt', icon: 'checkCircle', onSelect: () => setPending({ request: item, decision: 'approve' }) },
                         { key: 'reject', label: 'Từ chối', icon: 'xCircle', danger: true, separatorBefore: true, onSelect: () => setPending({ request: item, decision: 'reject' }) },
                       ]}
                     />

@@ -49,6 +49,13 @@ export const LISTING_TABS: ReadonlyArray<{ value: ListingTab; label: string }> =
 export const isListingTab = (value: string | null): value is ListingTab =>
   LISTING_TABS.some((tab) => tab.value === value);
 
+/** Lý do finora-loan hủy đợt gọi vốn đã đủ vốn; cả ba trường hợp đều không giải ngân và nhả tiền giữ. */
+export const LISTING_CANCELLATION_LABEL: Record<string, string> = {
+  CONTRACT_DECLINED: 'Hợp đồng bị từ chối ký',
+  CONTRACT_EXPIRED: 'Hợp đồng hết hạn ký',
+  DISBURSEMENT_FAILED: 'Giải ngân thất bại',
+};
+
 /** Nhãn và tông màu cho trạng thái phần vốn của một nhà đầu tư. */
 export const COMMITMENT_LABEL: Record<CommitmentStatus, string> = {
   ACTIVE: 'Đang giữ chỗ',

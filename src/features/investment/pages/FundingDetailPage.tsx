@@ -5,7 +5,6 @@ import { StatusPill } from '@/components/StatusPill';
 import { Toast } from '@/components/Toast';
 import {
   useGetFundingProgressQuery,
-  useGetFundingSettingsQuery,
   useGetMarketListingQuery,
 } from '../api/investmentApi';
 import { FundingFlow } from '../components/detail/FundingFlow';
@@ -14,7 +13,6 @@ import { InvestorTable } from '../components/detail/InvestorTable';
 import { NoteTable } from '../components/detail/NoteTable';
 import { ProgressMeter } from '../components/detail/ProgressMeter';
 import { TermsCard } from '../components/detail/TermsCard';
-import { DEFAULT_FUNDING_DAYS } from '../constants';
 import { useFundingActions } from '../hooks/useFundingActions';
 import { useInvestorNames } from '../hooks/useInvestorNames';
 import { useListingStage } from '../hooks/useListingStage';
@@ -45,7 +43,6 @@ export default function FundingDetailPage() {
   const listingQuery = useGetMarketListingQuery(listingId, { skip: !validId });
   const listing = listingQuery.data;
   const progress = useGetFundingProgressQuery(listingId, { skip: !validId || !listing || listing.status === 'DRAFT' });
-  const settings = useGetFundingSettingsQuery(undefined, { skip: listing?.status !== 'DRAFT' });
   const { stage, investors, investorsLoaded, investorsLoading, investorsError, refetchInvestors, probeNotes } =
     useListingStage(listing);
   const { names, isLoading: namesLoading } = useInvestorNames(investors.map((item) => item.investorId));
@@ -105,7 +102,18 @@ export default function FundingDetailPage() {
             {listing.creditScore != null ? `, điểm ${listing.creditScore}` : ''}, {listing.region}
           </p>
         </div>
-        <Link className="ui-btn ghost" to={LIST_PATH}>Về danh sách</Link>
+        <div className="fu-head-actions">
+          {/* `loanId` của listing là ID hồ sơ vay bên Loan; proof chỉ có từ khi khoản vay đã có hợp đồng (W3D). */}
+          {listing.contractNumber && (
+            <Link
+              className="ui-btn ghost"
+              to={`/blockchain/proofs?referenceType=LOAN_APPLICATION&referenceId=${listing.loanId}`}
+            >
+              Bằng chứng blockchain
+            </Link>
+          )}
+          <Link className="ui-btn ghost" to={LIST_PATH}>Về danh sách</Link>
+        </div>
       </header>
 
       <div className="fd-layout">
@@ -161,10 +169,8 @@ export default function FundingDetailPage() {
           onRetryInvestors={refetchInvestors}
           progress={progress.data}
           probeNotes={probeNotes}
-          defaultFundingDays={settings.data?.fundingDays ?? DEFAULT_FUNDING_DAYS}
           busy={actions.busy}
           errorOf={actions.errorOf}
-          onApprove={(request) => void actions.approve(request)}
           onFinalize={() => void actions.finalize()}
           onActivate={() => void actions.activate()}
           onCloseExpired={() => void actions.closeExpired()}

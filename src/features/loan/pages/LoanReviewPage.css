@@ -76,11 +76,11 @@
   height: 13px;
 }
 
-.lr-heading-side {
+/* Nút phụ của trang (hỏi trợ lý), nút Bằng chứng blockchain và bộ chuyển hàng chờ cùng một cụm bên phải đầu trang. */
+.lr-head-actions {
   display: flex;
   align-items: center;
   gap: 8px;
-  flex: none;
   flex-wrap: wrap;
 }
 

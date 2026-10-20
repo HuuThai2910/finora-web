@@ -5,7 +5,10 @@ import type { AdminLoanReviewDetail } from '../../types';
 
 interface ScoreSlipProps {
   application: AdminLoanReviewDetail;
-  canRetry: boolean;
+  /** Hiện nút "Yêu cầu chấm lại": lần chấm gần nhất lỗi hoặc đang chờ thử lại. */
+  showRetry: boolean;
+  /** Lý do khóa nút, hiện ở tooltip; `null` khi Loan nhận yêu cầu ở trạng thái hiện tại. */
+  retryBlockedReason: string | null;
   retrying: boolean;
   onRetry: () => void;
 }
@@ -27,7 +30,7 @@ function unscoredReason(application: AdminLoanReviewDetail): string {
  * trang không vẽ thang ngưỡng điểm vì ngưỡng là cấu hình chính sách tại thời điểm chấm, không có
  * trong dữ liệu hồ sơ.
  */
-export function ScoreSlip({ application, canRetry, retrying, onRetry }: ScoreSlipProps) {
+export function ScoreSlip({ application, showRetry, retryBlockedReason, retrying, onRetry }: ScoreSlipProps) {
   const assessment = application.assessment;
   const scored = assessment?.status === 'SUCCEEDED' && assessment.evaluationScore != null;
 
@@ -75,8 +78,14 @@ export function ScoreSlip({ application, canRetry, retrying, onRetry }: ScoreSli
       ) : (
         <>
           <p className="lr-slip-note">{unscoredReason(application)}</p>
-          {canRetry ? (
-            <button type="button" className="ui-btn ghost lr-slip-retry" disabled={retrying} onClick={onRetry}>
+          {showRetry ? (
+            <button
+              type="button"
+              className="ui-btn ghost lr-slip-retry"
+              disabled={retrying || retryBlockedReason != null}
+              title={retryBlockedReason ?? undefined}
+              onClick={onRetry}
+            >
               {retrying ? <><span className="lr-spinner" aria-hidden="true" />Đang gửi yêu cầu...</> : 'Yêu cầu chấm lại'}
             </button>
           ) : null}

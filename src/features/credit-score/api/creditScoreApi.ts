@@ -12,9 +12,9 @@ import type { CreditExplainResponse, CreditScoreRequest } from '../types';
  * finora-ai không còn POST /credit/score; /explain tự chấm lại rồi trả cả hai nửa
  * của quyết định trong một lần gọi.
  *
- * Gọi qua `aiApi` (cùng origin, kèm cookie): finora-ai chỉ nhận /explain từ admin hoặc từ
- * Loan (mã nội bộ). Lỗi Gateway làm mất body POST tới finora-ai (ghi nhận 2026-09-03, do
- * client HTTP/2 xin `Upgrade: h2c`) đã sửa bằng `ProxyHttpClientConfig` ở finora-gateway.
+ * Đi qua Gateway cùng cookie phiên của quản trị viên (W3A). Trước đây Gateway gọi
+ * finora-ai bằng HTTP/2 kèm `Upgrade: h2c` nên uvicorn bỏ body và trả 422 (B43);
+ * Gateway nay gọi upstream bằng HTTP/1.1.
  */
 const creditScoreApi = aiApi.injectEndpoints({
   endpoints: (builder) => ({

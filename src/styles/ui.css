@@ -972,3 +972,106 @@
   color: var(--text-secondary);
   font-size: 13px;
 }
+
+/* ---------- Ngăn trượt (Drawer), cùng kích thước với ngăn của Vận hành khoản vay ---------- */
+.ui-drawer-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 900;
+  background: rgba(12, 29, 67, 0.3);
+  animation: ui-drawer-fade 0.2s var(--ease) both;
+}
+
+.ui-drawer-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 901;
+  display: flex;
+  flex-direction: column;
+  width: min(540px, 100%);
+  background: #fff;
+  box-shadow: var(--shadow);
+  animation: ui-drawer-in 0.2s var(--ease) both;
+}
+
+.ui-drawer-panel.narrow {
+  width: min(440px, 100%);
+}
+
+.ui-drawer-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 18px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.ui-drawer-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.ui-drawer-title h2 {
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.ui-drawer-head p {
+  margin-top: 2px;
+}
+
+.ui-drawer-close {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+}
+
+.ui-drawer-close:hover {
+  background: var(--surface-muted);
+  color: var(--text-primary);
+}
+
+.ui-drawer-close svg {
+  width: 16px;
+  height: 16px;
+}
+
+.ui-drawer-body {
+  flex: 1;
+  display: grid;
+  align-content: start;
+  gap: 20px;
+  overflow-y: auto;
+  padding: 14px 18px 24px;
+}
+
+.ui-drawer-body h3 {
+  margin-bottom: 8px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+@keyframes ui-drawer-in {
+  from { transform: translateX(16px); opacity: 0; }
+  to { transform: none; opacity: 1; }
+}
+
+@keyframes ui-drawer-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ui-drawer-scrim,
+  .ui-drawer-panel { animation: none; }
+}

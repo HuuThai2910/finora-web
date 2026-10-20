@@ -26,6 +26,7 @@ const FundingPage = page(() => import('@/features/investment'), 'FundingPage');
 const FundingDetailPage = page(() => import('@/features/investment'), 'FundingDetailPage');
 const SecondaryMarketPage = page(() => import('@/features/secondary-market'), 'SecondaryMarketPage');
 const ServicingOperationsPage = page(() => import('@/features/servicing'), 'ServicingOperationsPage');
+const BlockchainProofsPage = page(() => import('@/features/blockchain'), 'BlockchainProofsPage');
 
 export default function App() {
   const dispatch = useDispatch<AppDispatch>();
@@ -78,6 +79,8 @@ export default function App() {
           <Route path="customers/kyc" element={<CustomerKycPage />} />
           <Route path="customers/kyc/:id" element={<CustomerDetailPage />} />
           <Route path="reconciliation" element={<ServicingOperationsPage />} />
+          <Route path="blockchain" element={<Navigate to="/blockchain/proofs" replace />} />
+          <Route path="blockchain/proofs" element={<BlockchainProofsPage />} />
         </Route>
 
         <Route path="*" element={<Navigate to="/dashboard" replace />} />

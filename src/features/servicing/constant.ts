@@ -1,6 +1,7 @@
 import type { PillTone } from '@/components/StatusPill';
 import type {
-  CollectionActionType, CollectionStage, FinoraLoanStatus, ReconciliationIncidentType, RescheduleType,
+  CollectionActionType, CollectionStage, FinoraLoanStatus, ReconciliationIncidentType, RepaymentType, RescheduleType,
+  WalletOwnerType,
 } from './types';
 
 /** Bảng danh sách quản trị: 10 dòng mỗi trang. */
@@ -9,13 +10,14 @@ export const SERVICING_PAGE_SIZE = 10;
 /** Lịch sử xử lý trong ngăn hồ sơ: số lần ghi nhận gần nhất tải một lần. */
 export const ACTION_HISTORY_SIZE = 20;
 
-export type ServicingTab = 'collection' | 'reschedule' | 'reconciliation' | 'quarantine';
+export type ServicingTab = 'collection' | 'reschedule' | 'reconciliation' | 'quarantine' | 'incidents';
 
 export const SERVICING_TABS: ReadonlyArray<{ key: ServicingTab; label: string }> = [
   { key: 'collection', label: 'Quá hạn & thu hồi' },
   { key: 'reschedule', label: 'Yêu cầu cơ cấu' },
   { key: 'reconciliation', label: 'Đối soát' },
   { key: 'quarantine', label: 'Sự kiện trả nợ chờ ghép' },
+  { key: 'incidents', label: 'Sự cố giao dịch' },
 ];
 
 export const isServicingTab = (value: string | null): value is ServicingTab =>
@@ -91,3 +93,17 @@ const QUARANTINE_REASON_LABEL: Record<string, string> = {
 };
 
 export const quarantineReasonLabel = (code: string) => QUARANTINE_REASON_LABEL[code] ?? code;
+
+export const REPAYMENT_TYPE_LABEL: Record<RepaymentType, string> = {
+  SCHEDULED: 'Trả kỳ',
+  OVERDUE_CURE: 'Trả nợ quá hạn',
+  PARTIAL_PREPAYMENT: 'Trả trước một phần',
+  EARLY_SETTLEMENT: 'Tất toán sớm',
+};
+
+/** Vai trò chủ ví của lệnh rút; mã lạ (backend thêm loại ví) giữ nguyên để tra nhật ký. */
+export const WALLET_OWNER_LABEL: Record<WalletOwnerType, string> = {
+  BORROWER: 'Người vay',
+  INVESTOR: 'Nhà đầu tư',
+  PLATFORM: 'Ví nền tảng',
+};
