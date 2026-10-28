@@ -1,5 +1,6 @@
 import { useId, useState, type FormEvent } from 'react';
 import { ErrorNotice } from '@/components/ErrorNotice';
+import { Icon } from '@/components/Icon';
 import { useVerifyProofMutation } from '../api/proofApi';
 import { parseArtifact } from '../schemas/proofInputs';
 import { VerifyResults } from './VerifyResults';
@@ -18,7 +19,13 @@ export function VerifyPanel({ proofId }: { proofId: string }) {
   const hintId = useId();
   const errorId = useId();
 
-  const submit = async (event: FormEvent<HTMLFormElement>) => {
+  const verifyAutomatically = async () => {
+    if (state.isLoading) return;
+    setInputError(null);
+    await verifyProof({ proofId });
+  };
+
+  const submitArtifact = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (state.isLoading) return;
     const input = parseArtifact(text);
@@ -33,31 +40,48 @@ export function VerifyPanel({ proofId }: { proofId: string }) {
 
   return (
     <div className="bc-verify">
-      <form onSubmit={submit} noValidate>
-        <label className="bc-label" htmlFor={fieldId}>Dữ liệu gốc của event (không bắt buộc)</label>
-        <textarea
-          id={fieldId}
-          className="bc-textarea"
-          value={text}
-          spellCheck={false}
-          placeholder="{ ... }"
-          aria-invalid={inputError ? true : undefined}
-          aria-describedby={inputError ? `${hintId} ${errorId}` : hintId}
-          onChange={(event) => {
-            setText(event.target.value);
-            if (inputError) setInputError(null);
-          }}
-        />
-        <p id={hintId} className="bc-muted">
-          Dán object data của event nguồn (không phải cả envelope). Bỏ trống thì chỉ đối chiếu cơ sở dữ liệu với sổ cái.
-        </p>
-        {inputError && <p id={errorId} className="bc-err" role="alert">{inputError}</p>}
-        <button type="submit" className="ui-btn primary" disabled={state.isLoading}>
-          {state.isLoading ? 'Đang kiểm tra...' : 'Kiểm tra'}
+      <div className="bc-verify-main">
+        <div>
+          <h4>Kiểm tra bằng chứng hiện tại</h4>
+          <p>Hệ thống sẽ tự đối chiếu bản ghi đang lưu với bằng chứng trên sổ cái. Bạn không cần nhập dữ liệu.</p>
+        </div>
+        <button type="button" className="ui-btn primary" disabled={state.isLoading} onClick={() => void verifyAutomatically()}>
+          <Icon name="shieldCheck" />
+          {state.isLoading ? 'Đang kiểm tra...' : 'Kiểm tra lại'}
         </button>
-      </form>
+      </div>
       {state.error && !state.isLoading && <ErrorNotice error={state.error} />}
       {state.data && !state.isLoading && !state.error && <VerifyResults result={state.data} />}
+
+      <details className="bc-audit-tool">
+        <summary>Kiểm tra chuyên sâu bằng dữ liệu nguồn</summary>
+        <div className="bc-audit-tool-body">
+          <p className="bc-muted">
+            Chỉ dành cho kiểm toán kỹ thuật. Cần lấy đúng phần data của sự kiện nguồn; người dùng thông thường không cần thao tác này.
+          </p>
+          <form onSubmit={submitArtifact} noValidate>
+            <label className="bc-label" htmlFor={fieldId}>JSON data của sự kiện nguồn</label>
+            <textarea
+              id={fieldId}
+              className="bc-textarea"
+              value={text}
+              spellCheck={false}
+              placeholder={'{ "loanApplicationId": 123, ... }'}
+              aria-invalid={inputError ? true : undefined}
+              aria-describedby={inputError ? `${hintId} ${errorId}` : hintId}
+              onChange={(event) => {
+                setText(event.target.value);
+                if (inputError) setInputError(null);
+              }}
+            />
+            <p id={hintId} className="bc-muted">Không dán toàn bộ envelope có eventId, version và occurredAt.</p>
+            {inputError && <p id={errorId} className="bc-err" role="alert">{inputError}</p>}
+            <button type="submit" className="ui-btn ghost" disabled={state.isLoading}>
+              {state.isLoading ? 'Đang tính lại hash...' : 'Tính lại hash từ dữ liệu nguồn'}
+            </button>
+          </form>
+        </div>
+      </details>
     </div>
   );
 }

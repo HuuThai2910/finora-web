@@ -103,6 +103,5 @@ export const MOCK_LEDGER_NOTICE =
 
 /** Giới hạn của bằng chứng (W3D mục 12, LEGAL-CONTRACT-01): nói rõ trên trang để không trình bày quá giá trị thật. */
 export const PROOF_LEGAL_NOTE =
-  'Proof là bằng chứng kỹ thuật về toàn vẹn dữ liệu (SHA-256 neo lên sổ cái), không phải chữ ký số và chưa được thẩm '
-  + 'định giá trị pháp lý. Mạng Fabric hiện chạy local trên một máy nên tổ chức kiểm toán chưa độc lập thật. Biên nhận '
-  + 'MOCK là dữ liệu demo, không được ghi lên Hyperledger Fabric.';
+  'Kết quả trên trang này chứng minh tính toàn vẹn kỹ thuật của dữ liệu, không thay thế chữ ký số hoặc kết luận pháp lý. '
+  + 'Mạng Fabric hiện chạy local để phục vụ đồ án; nhãn “Bản demo” nghĩa là dữ liệu chưa được ghi lên Fabric.';

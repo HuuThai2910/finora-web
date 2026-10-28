@@ -67,6 +67,23 @@ Cập nhật 2026-10-18 (sửa lỗi nhỏ theo `../finora-platform/docs/testing
 - Yêu cầu chấm lại gửi `version` của hồ sơ thay cho version của lần chấm: Loan so `version` trong body với version hồ sơ
   (`LoanApplication.reopenScoring`), gửi version lần chấm thì gần như luôn bị `409 LOAN_APPLICATION_VERSION_CONFLICT`.
 
+Cập nhật 2026-10-25 (WEB-BLOCKCHAIN-001, cải thiện khả năng sử dụng):
+
+- Trang đổi cách diễn đạt từ explorer kỹ thuật sang “Xác minh dữ liệu giao dịch”. Danh sách chỉ trình bày nghiệp vụ, mã liên
+  quan, trạng thái ghi nhận và kết quả gần nhất; transaction ID, block, hash, event ID và service nguồn chuyển vào mục
+  “Chi tiết kỹ thuật”.
+- Ngăn chi tiết có kết luận dễ đọc (`Đã xác minh`, `Bản demo`, `Đang xử lý`, `Cần xử lý`) và nút “Kiểm tra lại” tự gọi
+  verify không kèm artifact. Người dùng quản trị không cần biết Kafka/event để thực hiện đối chiếu DB với Fabric.
+- Kiểm tra `data` nguồn vẫn được giữ trong mục “Kiểm tra chuyên sâu bằng dữ liệu nguồn”, ghi rõ chỉ dành cho kiểm toán kỹ
+  thuật. Không đổi API, quyền `ROLE_ADMIN`, hash scheme hoặc ranh giới dữ liệu của Blockchain.
+
+Cập nhật 2026-10-25 (WEB-LOAN-001, form tạo sản phẩm):
+
+- Khi rời ô tên sản phẩm, web tự sinh mã không dấu, phân tách bằng `_` nếu người dùng chưa nhập mã; mã vẫn có thể sửa tay.
+  Khi gửi form, web cũng tự sinh mã nếu thao tác submit xảy ra trước blur. Ví dụ `Vay kinh doanh` → `vay_kinh_doanh`.
+- Dấu `*` của tất cả trường bắt buộc được render riêng bằng màu cảnh báo và input có thuộc tính `required`; không đổi contract
+  tạo Product hoặc validation nguồn chuẩn ở Loan Service.
+
 ## Quy tắc đồng bộ về sau
 
 Sau WEB-LOAN-001, không đợi toàn bộ Loan Service hoàn thành. Mỗi nhóm 1–2 LN backend liên quan đã sẵn sàng sẽ được lập plan, tích hợp web/mobile và kiểm thử end-to-end trước khi chuyển nhóm tiếp theo.

@@ -109,7 +109,7 @@ export default function FundingDetailPage() {
               className="ui-btn ghost"
               to={`/blockchain/proofs?referenceType=LOAN_APPLICATION&referenceId=${listing.loanId}`}
             >
-              Bằng chứng blockchain
+              Xác minh dữ liệu
             </Link>
           )}
           <Link className="ui-btn ghost" to={LIST_PATH}>Về danh sách</Link>

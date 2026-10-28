@@ -70,7 +70,7 @@ export const ADMIN_NAV_SECTIONS: AdminNavigationSection[] = [
     // Explorer proof của Blockchain Service (W3D, D54): đã nối API thật qua Gateway, chỉ ADMIN.
     label: 'Kiểm toán',
     items: [
-      { to: '/blockchain/proofs', label: 'Bằng chứng blockchain', icon: 'chain', matches: (pathname) => pathname === '/blockchain/proofs' },
+      { to: '/blockchain/proofs', label: 'Xác minh giao dịch', icon: 'chain', matches: (pathname) => pathname === '/blockchain/proofs' },
     ],
   },
   {

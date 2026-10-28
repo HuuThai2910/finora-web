@@ -27,6 +27,27 @@ function emptyText(filters: ProofFilters): string {
   return 'Chưa có proof nào.';
 }
 
+/** Giải thích mục đích bằng ngôn ngữ nghiệp vụ; người dùng không cần hiểu event, hash hay Kafka để dùng trang. */
+function ProofExplainer() {
+  return (
+    <section className="bc-explainer" aria-labelledby="bc-explainer-title">
+      <div className="bc-explainer-icon"><Icon name="shieldCheck" /></div>
+      <div>
+        <h2 id="bc-explainer-title">Trang này giúp kiểm tra điều gì?</h2>
+        <p>
+          Mỗi khi hợp đồng, giải ngân, trả nợ hoặc quyền sở hữu khoản đầu tư thay đổi, FINORA tạo một dấu vân tay dữ liệu.
+          Bạn chỉ cần chọn giao dịch và bấm <strong>Kiểm tra lại</strong>; hệ thống tự thực hiện phần kỹ thuật.
+        </p>
+        <ul>
+          <li><strong>Đã xác minh:</strong> dữ liệu hiện tại vẫn khớp với bằng chứng đã ghi.</li>
+          <li><strong>Bản demo:</strong> luồng chạy thử thành công nhưng chưa ghi lên mạng Fabric thật.</li>
+          <li><strong>Cần xử lý:</strong> bằng chứng chưa gửi được hoặc kết quả đối chiếu không khớp.</li>
+        </ul>
+      </div>
+    </section>
+  );
+}
+
 /**
  * Bằng chứng blockchain (WEB-BLOCKCHAIN-001, R6/W3D): explorer proof cho quản trị viên. Tra theo tham chiếu nghiệp vụ
  * hoặc lọc trạng thái gửi, mở ngăn chi tiết để kiểm toàn vẹn, đưa proof dừng gửi về hàng đợi.
@@ -61,8 +82,8 @@ export default function BlockchainProofsPage() {
     <section className="ui-page">
       <header className="ui-page-head">
         <div className="ui-title">
-          <h1>Bằng chứng blockchain</h1>
-          <p>Dấu vân tay SHA-256 của bốn mốc: hợp đồng đủ chữ ký, giải ngân, trả nợ, phát hành và chuyển nhượng Note.</p>
+          <h1>Xác minh dữ liệu giao dịch</h1>
+          <p>Kiểm tra dữ liệu hợp đồng, giải ngân, trả nợ và khoản đầu tư có còn nguyên vẹn hay không.</p>
         </div>
         <button type="button" className="ui-btn ghost" onClick={refresh} disabled={list.isFetching}>
           <Icon name="refresh" />
@@ -70,6 +91,7 @@ export default function BlockchainProofsPage() {
         </button>
       </header>
 
+      <ProofExplainer />
       <p className="bc-note" role="note">{PROOF_LEGAL_NOTE}</p>
 
       <section className="ui-card bc-list" aria-label="Danh sách bằng chứng">

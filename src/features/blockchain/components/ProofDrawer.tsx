@@ -8,6 +8,7 @@ import type { ProofRetryFailure } from '../hooks/useProofRetry';
 import { proofTypeLabel, statusInfo } from '../mappers/proofDisplay';
 import type { Proof } from '../types';
 import { ProofFacts } from './ProofFacts';
+import { ProofSummary } from './ProofSummary';
 import { VerifyPanel } from './VerifyPanel';
 
 interface Props {
@@ -55,11 +56,11 @@ export function ProofDrawer({ proofId, runningId, retryFailure, onRetry, onClose
     <Drawer
       title={(
         <>
-          <h2>{proof ? proofTypeLabel(proof.proofType) : 'Chi tiết proof'}</h2>
+          <h2>{proof ? proofTypeLabel(proof.proofType) : 'Kết quả xác minh'}</h2>
           {status && <StatusPill tone={status.tone}>{status.label}</StatusPill>}
         </>
       )}
-      subtitle={<span className="ui-mono">{proofId}</span>}
+      subtitle={proof ? `Bằng chứng cho ${proof.aggregateId}` : 'Đang tải thông tin bằng chứng'}
       onClose={onClose}
     >
       {detail.error ? (
@@ -73,11 +74,15 @@ export function ProofDrawer({ proofId, runningId, retryFailure, onRetry, onClose
           {proof.provider === 'MOCK' && (
             <p className="bc-callout warning" role="note">{proof.receipt?.notice ?? MOCK_LEDGER_NOTICE}</p>
           )}
-          <ProofFacts proof={proof} />
+          <ProofSummary proof={proof} />
           <section aria-labelledby="bc-verify-title">
-            <h3 id="bc-verify-title">Kiểm tra toàn vẹn</h3>
+            <h3 id="bc-verify-title">Xác minh dữ liệu</h3>
             <VerifyPanel key={proof.proofId} proofId={proof.proofId} />
           </section>
+          <details className="bc-technical">
+            <summary>Xem chi tiết kỹ thuật và nguồn dữ liệu</summary>
+            <div className="bc-technical-body"><ProofFacts proof={proof} /></div>
+          </details>
           {proof.status === 'DEAD_LETTER' && (
             <RetrySection
               proof={proof}

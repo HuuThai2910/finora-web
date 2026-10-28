@@ -372,6 +372,11 @@
   font-weight: 500;
 }
 
+.prod-field .prod-required {
+  color: var(--danger);
+  font-weight: 700;
+}
+
 .prod-in {
   display: flex;
   align-items: center;

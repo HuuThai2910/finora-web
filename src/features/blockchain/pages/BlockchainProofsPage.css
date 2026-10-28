@@ -8,6 +8,36 @@
 .bc-gap { margin-bottom: 12px; }
 .bc-break { white-space: normal; overflow-wrap: anywhere; }
 
+.bc-explainer {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid #c9d8f5;
+  border-radius: var(--radius-lg);
+  background: linear-gradient(135deg, #f4f8ff 0%, #eef9fb 100%);
+  color: var(--text-secondary);
+}
+
+.bc-explainer-icon,
+.bc-summary-icon {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: #fff;
+  color: var(--brand);
+  box-shadow: 0 4px 14px rgba(29, 86, 196, 0.12);
+}
+
+.bc-explainer-icon svg,
+.bc-summary-icon svg { width: 22px; height: 22px; }
+.bc-explainer h2 { color: var(--text-primary); font-size: 15px; font-weight: 700; }
+.bc-explainer p { margin-top: 4px; font-size: 13px; line-height: 1.55; }
+.bc-explainer ul { display: grid; gap: 3px; margin: 8px 0 0 18px; font-size: 12px; }
+
 /* Giới hạn của bằng chứng: luôn hiện dưới tiêu đề trang */
 .bc-note {
   padding: 10px 12px;
@@ -89,6 +119,39 @@
 
 .bc-callout.warning { background: var(--warning-bg); color: var(--warning); font-weight: 500; }
 
+.bc-summary {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  background: var(--surface-muted);
+}
+
+.bc-summary.success { border-color: #b9e4d0; background: #f2fbf7; }
+.bc-summary.warning { border-color: #ead9aa; background: #fffaf0; }
+.bc-summary.danger { border-color: #edc3c9; background: #fff6f7; }
+.bc-summary.info { border-color: #bfd6f8; background: #f4f8ff; }
+.bc-summary.danger .bc-summary-icon { color: var(--danger); }
+.bc-summary.warning .bc-summary-icon { color: var(--warning); }
+
+.bc-summary-copy { min-width: 0; }
+.bc-summary-title-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.bc-summary-title-row h3 { font-size: 15px; font-weight: 700; }
+.bc-summary-copy > p { margin-top: 4px; color: var(--text-secondary); font-size: 13px; line-height: 1.5; }
+
+.bc-summary-facts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.bc-summary-facts div { min-width: 0; }
+.bc-summary-facts dt { color: var(--text-muted); font-size: 11px; }
+.bc-summary-facts dd { margin-top: 2px; color: var(--text-primary); font-size: 12px; font-weight: 600; overflow-wrap: anywhere; }
+
 .bc-rows { margin-top: 4px; }
 
 /* Giá trị dài (hash, mã giao dịch) nằm dưới nhãn và xuống dòng ở bất kỳ ký tự nào */
@@ -112,6 +175,44 @@
 .bc-verify { display: grid; gap: 12px; }
 .bc-verify form { display: grid; gap: 8px; justify-items: start; }
 .bc-label { color: var(--text-primary); font-size: 13px; font-weight: 500; }
+
+.bc-verify-main {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  background: #fff;
+}
+
+.bc-verify-main h4 { font-size: 13px; font-weight: 700; }
+.bc-verify-main p { margin-top: 3px; color: var(--text-secondary); font-size: 12px; line-height: 1.45; }
+
+.bc-technical,
+.bc-audit-tool,
+.bc-result-technical {
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  background: #fff;
+}
+
+.bc-technical > summary,
+.bc-audit-tool > summary,
+.bc-result-technical > summary {
+  padding: 11px 12px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.bc-technical[open] > summary,
+.bc-audit-tool[open] > summary,
+.bc-result-technical[open] > summary { border-bottom: 1px solid var(--border-color); color: var(--text-primary); }
+.bc-technical-body, .bc-audit-tool-body { padding: 12px; }
+.bc-audit-tool-body > p { margin-bottom: 10px; }
 
 .bc-textarea {
   width: 100%;
@@ -146,6 +247,8 @@
 }
 
 .bc-result-head h4 { font-size: 13px; font-weight: 600; }
+.bc-result-description { color: var(--text-secondary); font-size: 13px; line-height: 1.5; }
+.bc-result-technical .bc-rows { padding: 0 12px 12px; }
 
 @media (max-width: 760px) {
   .bc-search,
@@ -153,4 +256,13 @@
 
   .bc-search .bc-input,
   .bc-search .ui-select { width: 100%; }
+
+  .bc-summary-facts { grid-template-columns: 1fr; }
+  .bc-verify-main { align-items: stretch; flex-direction: column; }
+  .bc-verify-main .ui-btn { width: 100%; }
+}
+
+@media (max-width: 520px) {
+  .bc-explainer,
+  .bc-summary { grid-template-columns: 1fr; }
 }

@@ -37,6 +37,22 @@ const INTEGER_FIELDS: ProductTextField[] = ['minAmount', 'maxAmount', 'minTermMo
 const RATE_FIELDS: ProductTextField[] = ['minAnnualInterestRate', 'annualInterestRate', 'maxAnnualInterestRate'];
 const MONEY = new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 0 });
 
+/**
+ * Sinh mã dễ đọc từ tên sản phẩm. Mã chỉ được dùng khi người dùng chưa tự nhập,
+ * nên họ vẫn có thể thay đổi mã sau khi hệ thống gợi ý.
+ */
+export function generateProductCode(name: string): string {
+  return name
+    .trim()
+    .toLowerCase()
+    .replace(/đ/g, 'd')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '')
+    .slice(0, 50);
+}
+
 /** Chuẩn hóa chuỗi gõ vào thành giá trị thô lưu trong form. */
 export function normalizeInput(field: ProductTextField, raw: string): string {
   // Mã sản phẩm theo mẫu backend `[A-Za-z][A-Za-z0-9_]{2,49}`: viết hoa, khoảng trắng thành gạch dưới.

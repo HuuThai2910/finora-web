@@ -60,11 +60,11 @@ export function ReviewHeader({ application, borrowerName, onCopied }: ReviewHead
             className="ui-btn ghost"
             to={`/blockchain/proofs?referenceType=LOAN_APPLICATION&referenceId=${application.id}`}
           >
-            Bằng chứng blockchain
+            Xác minh dữ liệu
           </Link>
         ) : (
           <button type="button" className="ui-btn ghost" disabled title="Máy chủ chưa trả ID hồ sơ nên chưa mở được bằng chứng.">
-            Bằng chứng blockchain
+            Xác minh dữ liệu
           </button>
         )}
         <PendingQueueNav applicationNumber={application.applicationNumber} />

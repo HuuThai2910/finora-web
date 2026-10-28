@@ -6,6 +6,7 @@ import { REPAYMENT_LABELS } from '../mappers/productDisplay';
 import {
   EMPTY_PRODUCT_FORM,
   displayValue,
+  generateProductCode,
   normalizeInput,
   toCreateRequest,
   validateProductForm,
@@ -33,13 +34,18 @@ interface FieldProps {
   unit?: string;
   kind?: 'text' | 'code' | 'integer' | 'decimal';
   placeholder?: string;
+  required?: boolean;
+  onBlur?: () => void;
 }
 
-function Field({ label, field, form, onChange, unit, kind = 'text', placeholder }: FieldProps) {
+function Field({ label, field, form, onChange, unit, kind = 'text', placeholder, required = false, onBlur }: FieldProps) {
   const numeric = kind === 'integer' || kind === 'decimal';
   return (
     <label className="prod-field">
-      <span>{label}</span>
+      <span>
+        {label}
+        {required && <span className="prod-required" aria-hidden="true"> *</span>}
+      </span>
       <div className="prod-in">
         <input
           className={numeric ? 'num' : kind === 'code' ? 'mono' : undefined}
@@ -47,7 +53,9 @@ function Field({ label, field, form, onChange, unit, kind = 'text', placeholder 
           autoCapitalize={kind === 'code' ? 'characters' : undefined}
           value={displayValue(field, form[field])}
           placeholder={placeholder}
+          required={required}
           onChange={(event) => onChange(field, event.target.value)}
+          onBlur={onBlur}
         />
         {unit && <i>{unit}</i>}
       </div>
@@ -64,12 +72,22 @@ export function CreateProductModal({ saving, serverError, onClose, onCreate }: C
     setForm((current) => ({ ...current, [field]: normalizeInput(field, raw) }));
   };
 
+  const fillCodeFromName = () => {
+    setForm((current) => current.code.trim()
+      ? current
+      : { ...current, code: generateProductCode(current.name) });
+  };
+
   const submit = (event: FormEvent) => {
     event.preventDefault();
     if (saving) return;
-    const message = validateProductForm(form);
+    const effectiveForm = form.code.trim()
+      ? form
+      : { ...form, code: generateProductCode(form.name) };
+    if (effectiveForm !== form) setForm(effectiveForm);
+    const message = validateProductForm(effectiveForm);
     setValidationError(message);
-    if (!message) void onCreate(toCreateRequest(form));
+    if (!message) void onCreate(toCreateRequest(effectiveForm));
   };
 
   const fieldProps = { form, onChange: update };
@@ -99,8 +117,8 @@ export function CreateProductModal({ saving, serverError, onClose, onCreate }: C
         <fieldset>
           <legend>Thông tin</legend>
           <div className="prod-row">
-            <Field label="Tên sản phẩm *" field="name" placeholder="Vay tiêu dùng cá nhân" {...fieldProps} />
-            <Field label="Mã sản phẩm *" field="code" kind="code" placeholder="PERSONAL_STANDARD" {...fieldProps} />
+            <Field label="Tên sản phẩm" field="name" placeholder="Vay tiêu dùng cá nhân" required onBlur={fillCodeFromName} {...fieldProps} />
+            <Field label="Mã sản phẩm" field="code" kind="code" placeholder="vay_tieu_dung_ca_nhan" required {...fieldProps} />
           </div>
           <label className="prod-field">
             <span>Mô tả</span>
@@ -114,21 +132,21 @@ export function CreateProductModal({ saving, serverError, onClose, onCreate }: C
         <fieldset>
           <legend>Hạn mức và kỳ hạn</legend>
           <div className="prod-row">
-            <Field label="Hạn mức tối thiểu *" field="minAmount" kind="integer" unit="đ" {...fieldProps} />
-            <Field label="Hạn mức tối đa *" field="maxAmount" kind="integer" unit="đ" {...fieldProps} />
+            <Field label="Hạn mức tối thiểu" field="minAmount" kind="integer" unit="đ" required {...fieldProps} />
+            <Field label="Hạn mức tối đa" field="maxAmount" kind="integer" unit="đ" required {...fieldProps} />
           </div>
           <div className="prod-row">
-            <Field label="Kỳ hạn tối thiểu *" field="minTermMonths" kind="integer" unit="tháng" {...fieldProps} />
-            <Field label="Kỳ hạn tối đa *" field="maxTermMonths" kind="integer" unit="tháng" {...fieldProps} />
+            <Field label="Kỳ hạn tối thiểu" field="minTermMonths" kind="integer" unit="tháng" required {...fieldProps} />
+            <Field label="Kỳ hạn tối đa" field="maxTermMonths" kind="integer" unit="tháng" required {...fieldProps} />
           </div>
           <p className="prod-hint">Kỳ hạn tối đa {MAX_TERM_MONTHS} tháng.</p>
         </fieldset>
         <fieldset>
           <legend>Lãi suất năm</legend>
           <div className="prod-row three">
-            <Field label="Tối thiểu *" field="minAnnualInterestRate" kind="decimal" unit="%" {...fieldProps} />
-            <Field label="Cơ sở *" field="annualInterestRate" kind="decimal" unit="%" {...fieldProps} />
-            <Field label="Tối đa *" field="maxAnnualInterestRate" kind="decimal" unit="%" {...fieldProps} />
+            <Field label="Tối thiểu" field="minAnnualInterestRate" kind="decimal" unit="%" required {...fieldProps} />
+            <Field label="Cơ sở" field="annualInterestRate" kind="decimal" unit="%" required {...fieldProps} />
+            <Field label="Tối đa" field="maxAnnualInterestRate" kind="decimal" unit="%" required {...fieldProps} />
           </div>
           <p className="prod-hint">Lãi cơ sở dùng tính lịch trả ban đầu trước thẩm định. Trần {RATE_CAP_PERCENT}%/năm.</p>
         </fieldset>

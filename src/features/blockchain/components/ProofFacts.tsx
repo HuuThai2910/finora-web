@@ -54,7 +54,7 @@ function SourceFacts({ proof }: { proof: Proof }) {
   const { source } = proof;
   return (
     <>
-      <p className="bc-muted">Lấy object data của event này ở service nguồn để tính lại hash ở phần kiểm tra bên dưới.</p>
+      <p className="bc-muted">Thông tin truy vết dành cho kỹ thuật khi cần tìm lại sự kiện đã tạo bằng chứng.</p>
       <dl className="ui-rows bc-rows">
         <Fact label="Service">{source.service}</Fact>
         <Fact label="Event">
@@ -116,7 +116,10 @@ function ChainCheckFacts({ proof }: { proof: Proof }) {
 export function ProofFacts({ proof }: { proof: Proof }) {
   return (
     <>
-      <section aria-label="Tổng quan proof"><Overview proof={proof} /></section>
+      <section aria-labelledby="bc-overview-title">
+        <h3 id="bc-overview-title">Trạng thái xử lý</h3>
+        <Overview proof={proof} />
+      </section>
       <section aria-labelledby="bc-hash-title">
         <h3 id="bc-hash-title">Hash đã neo</h3>
         <HashFacts proof={proof} />
