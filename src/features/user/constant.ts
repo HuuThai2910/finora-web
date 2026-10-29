@@ -7,6 +7,7 @@ export const USER_LIST_PAGE_SIZE = 10;
 
 export const ROLE_LABELS: Record<RoleType, string> = {
   ADMIN: 'Quản trị viên',
+  STAFF: 'Nhân viên',
   INVESTOR: 'Nhà đầu tư',
   BORROWER: 'Người vay',
 };
@@ -14,11 +15,12 @@ export const ROLE_LABELS: Record<RoleType, string> = {
 export const ROLE_DESCRIPTIONS: Record<RoleType, string> = {
   BORROWER: 'Nộp hồ sơ vay và nhận giải ngân',
   INVESTOR: 'Đầu tư cho vay và quản lý danh mục Note',
+  STAFF: 'Vận hành web quản trị trong phạm vi quyền của vai trò nhân viên',
   ADMIN: 'Toàn quyền quản trị hệ thống FINORA',
 };
 
 /** Thứ tự lựa chọn trong hộp thoại đổi vai trò: quyền tăng dần. */
-export const ASSIGNABLE_ROLES: RoleType[] = ['BORROWER', 'INVESTOR', 'ADMIN'];
+export const ASSIGNABLE_ROLES: RoleType[] = ['BORROWER', 'INVESTOR', 'STAFF', 'ADMIN'];
 
 export const EKYC_DISPLAY: Record<EkycStatusType, { label: string; tone: 'success' | 'warning' | 'danger' }> = {
   VERIFIED: { label: 'Đã xác minh', tone: 'success' },
@@ -31,7 +33,7 @@ export type RoleFilter = RoleType | 'ALL';
 export type EkycFilter = EkycStatusType | 'ALL';
 
 export function isRoleFilter(value: string | null): value is RoleFilter {
-  return value === 'ALL' || value === 'ADMIN' || value === 'INVESTOR' || value === 'BORROWER';
+  return value === 'ALL' || value === 'ADMIN' || value === 'STAFF' || value === 'INVESTOR' || value === 'BORROWER';
 }
 
 export function isEkycFilter(value: string | null): value is EkycFilter {

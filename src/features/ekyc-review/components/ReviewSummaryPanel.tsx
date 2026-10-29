@@ -1,5 +1,6 @@
 import { useId } from 'react';
 import { StatusPill } from '@/components/StatusPill';
+import { usePermission } from '@/features/auth';
 import { EMPTY } from '@/utils';
 import {
   attemptStatusDisplay,
@@ -84,6 +85,8 @@ export function ReviewSummaryPanel({ attempt, refreshing, onDecide }: ReviewSumm
   const zone = attempt.faceMatchZone ?? faceMatchZone(toReasonViews(attempt.livenessReasons));
   const isPending = attempt.status === 'MANUAL_REVIEW';
   const isDecided = attempt.status === 'APPROVED' || attempt.status === 'REJECTED';
+  // Duyệt/Từ chối cần quyền Thao tác "Duyệt eKYC"; chỉ có quyền Xem thì khay chỉ hiện kết quả.
+  const canDecide = usePermission().canAct('ekyc');
 
   return (
     <aside className="ekr-aside" aria-label="Kết quả kiểm tra và quyết định">
@@ -119,27 +122,33 @@ export function ReviewSummaryPanel({ attempt, refreshing, onDecide }: ReviewSumm
       <section className="ui-card ekr-card ekr-decide" aria-labelledby={`${noteId}-decide`}>
         <h2 id={`${noteId}-decide`}>Quyết định</h2>
         {isDecided ? <DecisionOutcome attempt={attempt} /> : null}
-        <p id={noteId} className="ekr-decide-note">{decideNote(attempt.status, isPending, isDecided)}</p>
-        <div className="ekr-decide-row">
-          <button
-            type="button"
-            className="ui-btn ekr-btn-danger-outline"
-            disabled={!isPending || refreshing}
-            aria-describedby={noteId}
-            onClick={() => onDecide('reject')}
-          >
-            Từ chối
-          </button>
-          <button
-            type="button"
-            className="ui-btn primary ekr-grow"
-            disabled={!isPending || refreshing}
-            aria-describedby={noteId}
-            onClick={() => onDecide('approve')}
-          >
-            Duyệt
-          </button>
-        </div>
+        <p id={noteId} className="ekr-decide-note">
+          {isPending && !canDecide
+            ? 'Lượt đang chờ duyệt tay. Vai trò của bạn chỉ được xem; cần quyền Thao tác "Duyệt eKYC" để duyệt hoặc từ chối.'
+            : decideNote(attempt.status, isPending, isDecided)}
+        </p>
+        {canDecide && (
+          <div className="ekr-decide-row">
+            <button
+              type="button"
+              className="ui-btn ekr-btn-danger-outline"
+              disabled={!isPending || refreshing}
+              aria-describedby={noteId}
+              onClick={() => onDecide('reject')}
+            >
+              Từ chối
+            </button>
+            <button
+              type="button"
+              className="ui-btn primary ekr-grow"
+              disabled={!isPending || refreshing}
+              aria-describedby={noteId}
+              onClick={() => onDecide('approve')}
+            >
+              Duyệt
+            </button>
+          </div>
+        )}
       </section>
     </aside>
   );

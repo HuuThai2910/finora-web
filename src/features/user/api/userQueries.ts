@@ -1,5 +1,15 @@
 import { userServiceApi } from '@/lib/api/userServiceApi';
-import type { EkycStatusType, PageResponse, RoleType, UserItem, UserStats } from '../types';
+import type {
+  AssignRoleRequest,
+  EkycStatusType,
+  PageResponse,
+  RoleType,
+  StaffPermissionFunction,
+  StaffRole,
+  StaffRoleRequest,
+  UserItem,
+  UserStats,
+} from '../types';
 import { userApi } from './userApi';
 
 export interface UserListArgs {
@@ -36,15 +46,39 @@ const userQueries = userServiceApi.injectEndpoints({
       queryFn: () => run(() => userApi.getStats()),
       providesTags: ['UserStats'],
     }),
-    // Đổi vai trò làm đổi số đếm theo vai trò, nên làm mới cả danh sách lẫn thống kê.
-    assignUserRole: builder.mutation<void, { id: number; role: RoleType }>({
-      queryFn: ({ id, role }) => run(() => userApi.assignRole(id, role)),
-      invalidatesTags: (_result, _error, { id }) => [{ type: 'UserList', id: 'LIST' }, 'UserStats', { type: 'User', id: String(id) }],
+    // Đổi vai trò làm đổi số đếm theo vai trò và số thành viên của vai trò nhân viên, nên làm mới cả ba.
+    assignUserRole: builder.mutation<void, { id: number } & AssignRoleRequest>({
+      queryFn: ({ id, ...request }) => run(() => userApi.assignRole(id, request)),
+      invalidatesTags: (_result, _error, { id }) => [
+        { type: 'UserList', id: 'LIST' }, 'UserStats', { type: 'User', id: String(id) }, { type: 'StaffRole', id: 'LIST' },
+      ],
     }),
     // Khóa/mở khóa không đổi số đếm, chỉ đổi cờ `locked` trên dòng.
     setUserLocked: builder.mutation<void, { id: number; locked: boolean }>({
       queryFn: ({ id, locked }) => run(() => (locked ? userApi.lockUser(id) : userApi.unlockUser(id))),
       invalidatesTags: (_result, _error, { id }) => [{ type: 'UserList', id: 'LIST' }, { type: 'User', id: String(id) }],
+    }),
+    // Danh mục chức năng cố định trong code backend nên giữ cache lâu.
+    getStaffPermissions: builder.query<StaffPermissionFunction[], void>({
+      queryFn: () => run(() => userApi.getStaffPermissions()),
+      keepUnusedDataFor: 3600,
+    }),
+    getStaffRoles: builder.query<StaffRole[], void>({
+      queryFn: () => run(() => userApi.getStaffRoles()),
+      providesTags: [{ type: 'StaffRole', id: 'LIST' }],
+    }),
+    createStaffRole: builder.mutation<StaffRole, StaffRoleRequest>({
+      queryFn: (request) => run(() => userApi.createStaffRole(request)),
+      invalidatesTags: [{ type: 'StaffRole', id: 'LIST' }],
+    }),
+    // Sửa vai trò đổi tên hiển thị trên dòng người dùng, nên làm mới cả danh sách người dùng.
+    updateStaffRole: builder.mutation<StaffRole, { code: string; request: StaffRoleRequest }>({
+      queryFn: ({ code, request }) => run(() => userApi.updateStaffRole(code, request)),
+      invalidatesTags: [{ type: 'StaffRole', id: 'LIST' }, { type: 'UserList', id: 'LIST' }],
+    }),
+    deleteStaffRole: builder.mutation<void, string>({
+      queryFn: (code) => run(() => userApi.deleteStaffRole(code)),
+      invalidatesTags: [{ type: 'StaffRole', id: 'LIST' }],
     }),
   }),
 });
@@ -55,4 +89,9 @@ export const {
   useGetUserStatsQuery,
   useAssignUserRoleMutation,
   useSetUserLockedMutation,
+  useGetStaffPermissionsQuery,
+  useGetStaffRolesQuery,
+  useCreateStaffRoleMutation,
+  useUpdateStaffRoleMutation,
+  useDeleteStaffRoleMutation,
 } = userQueries;

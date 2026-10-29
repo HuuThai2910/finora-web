@@ -106,3 +106,17 @@
 .auth-denied-btn:hover {
   background: var(--brand-600);
 }
+
+/* Trang trong khung quản trị mà nhân viên chưa có quyền Xem: cùng thẻ, nằm giữa vùng nội dung. */
+.auth-denied.inline {
+  min-height: 420px;
+  padding: 48px 16px;
+  background: transparent;
+}
+
+.auth-denied-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+}

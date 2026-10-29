@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { ErrorNotice } from '@/components/ErrorNotice';
 import { StatusPill } from '@/components/StatusPill';
+import { usePermission } from '@/features/auth';
 import { formatDateTime } from '@/utils';
 import { useReconcileLoanMutation, useReconciliationIncidentsQuery, useStaleLoansQuery } from '../api/servicingApi';
 import { INCIDENT_LABEL, LOAN_STATUS_LABEL, SERVICING_PAGE_SIZE } from '../constant';
@@ -23,6 +24,7 @@ export function ReconciliationPanel({ page, onPage, onDone }: Props) {
   const [incidentPage, setIncidentPage] = useState(0);
   const incidents = useReconciliationIncidentsQuery({ page: incidentPage, size: SERVICING_PAGE_SIZE });
   const [reconcile, state] = useReconcileLoanMutation();
+  const canReconcile = usePermission().canAct('reconciliation');
   const [running, setRunning] = useState<string | null>(null);
   const [failed, setFailed] = useState<{ loanNumber: string; error: unknown } | null>(null);
 
@@ -84,14 +86,16 @@ export function ReconciliationPanel({ page, onPage, onDone }: Props) {
                   <td>{formatDateTime(item.lastSyncedAt)}</td>
                   <td>{item.stale ? <StatusPill tone="warning">Cần đối soát</StatusPill> : <StatusPill tone="success">Đã khớp</StatusPill>}</td>
                   <td className="act">
-                    <button
-                      type="button"
-                      className="ui-btn soft"
-                      disabled={running != null || state.isLoading}
-                      onClick={() => run(item.loanNumber)}
-                    >
-                      {running === item.loanNumber ? 'Đang đối soát...' : 'Đối soát lại'}
-                    </button>
+                    {canReconcile && (
+                      <button
+                        type="button"
+                        className="ui-btn soft"
+                        disabled={running != null || state.isLoading}
+                        onClick={() => run(item.loanNumber)}
+                      >
+                        {running === item.loanNumber ? 'Đang đối soát...' : 'Đối soát lại'}
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))}

@@ -5,6 +5,7 @@ import { ErrorNotice } from '@/components/ErrorNotice';
 import { Icon } from '@/components/Icon';
 import { Pager } from '@/components/Pager';
 import { StatusPill } from '@/components/StatusPill';
+import { usePermission } from '@/features/auth';
 import { changePercent, sumOf } from '@/features/statistics';
 import { EKYC_DISPLAY, ROLE_LABELS, useGetUsersQuery } from '@/features/user';
 import { EMPTY, formatNumber } from '@/utils';
@@ -79,7 +80,13 @@ function SignupSummary({ stats }: { stats: DashboardStatistics }) {
  */
 export function NewAccountsCard({ stats }: { stats: DashboardStatistics }) {
   const [page, setPage] = useState(0);
-  const query = useGetUsersQuery({ page, size: NEW_ACCOUNTS_PAGE_SIZE, role: 'ALL', ekycStatus: 'ALL' });
+  const { canView, isAdmin } = usePermission();
+  // Phần tóm tắt lấy từ API thống kê; bảng tài khoản đọc danh sách người dùng nên cần quyền Xem "Khách hàng".
+  const canList = canView('customer');
+  const query = useGetUsersQuery(
+    { page, size: NEW_ACCOUNTS_PAGE_SIZE, role: 'ALL', ekycStatus: 'ALL' },
+    { skip: !canList },
+  );
   const rows = query.data?.content ?? [];
 
   return (
@@ -88,10 +95,12 @@ export function NewAccountsCard({ stats }: { stats: DashboardStatistics }) {
         id="dashNewUsers"
         icon="userPlus"
         title="Tài khoản mới"
-        aside={<Link className="dash-more" to="/users">Xem tất cả<Icon name="chevronRight" /></Link>}
+        aside={canList && (
+          <Link className="dash-more" to={isAdmin ? '/users' : '/customers/kyc'}>Xem tất cả<Icon name="chevronRight" /></Link>
+        )}
       />
       <SignupSummary stats={stats} />
-      {query.error ? (
+      {!canList ? null : query.error ? (
         <div className="dash-block"><ErrorNotice error={query.error} onRetry={query.refetch} /></div>
       ) : query.isLoading ? (
         <div className="ui-empty" aria-busy="true">Đang tải...</div>

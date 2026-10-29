@@ -31,8 +31,9 @@ export default function LoginPage() {
 
   const { isLoading, error } = useSelector((state: RootState) => state.auth);
 
-  // Trang quay lại sau khi đăng nhập: trang bị chặn trước đó, mặc định danh sách hồ sơ vay.
-  const from = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname || '/dashboard';
+  // Trang quay lại sau khi đăng nhập: trang bị chặn trước đó, mặc định trang đầu tiên tài khoản xem được
+  // (Tổng quan với quản trị viên; nhân viên thiếu quyền Tổng quan được đưa tới mục đầu tiên của menu).
+  const from = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname || '/';
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();

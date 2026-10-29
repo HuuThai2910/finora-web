@@ -1,4 +1,4 @@
-import { RowMenu } from '@/components/RowMenu';
+import { RowMenu, type RowMenuItem } from '@/components/RowMenu';
 import { StatusPill } from '@/components/StatusPill';
 import { formatDateTime } from '@/utils';
 import {
@@ -12,7 +12,8 @@ interface Props {
   /** Proof đang được đưa lại hàng đợi; một thao tác một lúc trên cả trang. */
   runningId: string | null;
   onOpen: (proof: Proof) => void;
-  onRetry: (proof: Proof) => void;
+  /** Bỏ trống khi tài khoản không có quyền Thao tác "Bằng chứng blockchain": menu dòng chỉ còn xem kết quả. */
+  onRetry?: (proof: Proof) => void;
 }
 
 /** Kết quả gần nhất bằng ngôn ngữ nghiệp vụ; mã giao dịch/hash chỉ nằm trong chi tiết kỹ thuật. */
@@ -72,7 +73,7 @@ function ProofRow({ proof, open, runningId, onOpen, onRetry }: Omit<Props, 'proo
           label={`Thao tác với proof ${proof.aggregateId}`}
           items={[
             { key: 'open', label: 'Xem kết quả xác minh', icon: 'eye', onSelect: () => onOpen(proof) },
-            {
+            ...(onRetry ? [{
               key: 'retry',
               label: runningId === proof.proofId ? 'Đang đưa lại...' : 'Đưa lại hàng đợi gửi',
               icon: 'repeat',
@@ -80,7 +81,7 @@ function ProofRow({ proof, open, runningId, onOpen, onRetry }: Omit<Props, 'proo
               disabled: !deadLetter || runningId != null,
               disabledReason: deadLetter ? undefined : 'Chỉ proof dừng gửi (DEAD_LETTER) mới đưa lại hàng đợi được.',
               onSelect: () => onRetry(proof),
-            },
+            } satisfies RowMenuItem] : []),
           ]}
         />
       </td>

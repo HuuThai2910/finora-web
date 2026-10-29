@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { usePermission } from '@/features/auth';
 import { userApi } from '@/features/user/api/userApi';
 
 /** Tên hiển thị của một người thao tác, tra từ finora-user. */
@@ -64,13 +65,15 @@ export function useActorNames(actorIds: readonly (string | null | undefined)[]):
   displayName: (actorId: string | null | undefined) => string;
 } {
   const [names, setNames] = useState<Record<string, ActorName>>({});
+  // Tra hồ sơ người dùng cần quyền Xem "Khách hàng"; nhân viên không có quyền này thấy mã số thay cho tên.
+  const canLookup = usePermission().canView('customer');
 
   // Chuỗi khoá ổn định để effect không chạy lại khi mảng được tạo mới mỗi lần render.
   const key = actorIds.filter(Boolean).join(',');
 
   useEffect(() => {
     const ids = Array.from(new Set(key.split(',').filter(Boolean)));
-    if (ids.length === 0) return;
+    if (ids.length === 0 || !canLookup) return;
 
     let alive = true;
 
@@ -89,7 +92,7 @@ export function useActorNames(actorIds: readonly (string | null | undefined)[]):
     return () => {
       alive = false;
     };
-  }, [key]);
+  }, [key, canLookup]);
 
   const displayName = (actorId: string | null | undefined): string => {
     if (!actorId) return 'Không rõ';

@@ -10,6 +10,8 @@ import { REJECT_DETAIL_MAX, REJECT_REASONS } from '../../mappers/reviewDisplay';
 interface DecisionTrayProps {
   application: AdminLoanReviewDetail;
   canDecide: boolean;
+  /** Có quyền Thao tác "Hồ sơ vay"; không có thì khay chỉ hiện trạng thái, không có nút duyệt/từ chối. */
+  canAct: boolean;
   approving: boolean;
   rejecting: boolean;
   error: unknown;
@@ -57,7 +59,7 @@ function Outcome({ application, displayName }: Pick<DecisionTrayProps, 'applicat
  * cuối hiện kết quả và người quyết định. Form lý do từ chối là state cục bộ của khay.
  */
 export function DecisionTray(props: DecisionTrayProps) {
-  const { application, canDecide, approving, rejecting, error, onApprove, onReject } = props;
+  const { application, canDecide, canAct, approving, rejecting, error, onApprove, onReject } = props;
   const [rejectOpen, setRejectOpen] = useState(false);
   const [reasonCode, setReasonCode] = useState(REJECT_REASONS[0].code);
   const [reasonDetail, setReasonDetail] = useState('');
@@ -65,7 +67,13 @@ export function DecisionTray(props: DecisionTrayProps) {
   const disabled = !canDecide || busy;
 
   let body: ReactNode;
-  if (application.status === 'PENDING_REVIEW' && rejectOpen) {
+  if (application.status === 'PENDING_REVIEW' && !canAct) {
+    body = (
+      <p className="lr-tray-note">
+        Hồ sơ đang chờ thẩm định. Vai trò của bạn chỉ được xem; cần quyền Thao tác "Hồ sơ vay" để duyệt hoặc từ chối.
+      </p>
+    );
+  } else if (application.status === 'PENDING_REVIEW' && rejectOpen) {
     body = (
       <form
         className="lr-reject-form"

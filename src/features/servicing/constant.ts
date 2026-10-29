@@ -1,4 +1,5 @@
 import type { PillTone } from '@/components/StatusPill';
+import type { OpsFunctionCode } from '@/features/auth';
 import type {
   CollectionActionType, CollectionStage, FinoraLoanStatus, ReconciliationIncidentType, RepaymentType, RescheduleType,
   WalletOwnerType,
@@ -12,12 +13,16 @@ export const ACTION_HISTORY_SIZE = 20;
 
 export type ServicingTab = 'collection' | 'reschedule' | 'reconciliation' | 'quarantine' | 'incidents';
 
-export const SERVICING_TABS: ReadonlyArray<{ key: ServicingTab; label: string }> = [
-  { key: 'collection', label: 'Quá hạn & thu hồi' },
-  { key: 'reschedule', label: 'Yêu cầu cơ cấu' },
-  { key: 'reconciliation', label: 'Đối soát' },
-  { key: 'quarantine', label: 'Sự kiện trả nợ chờ ghép' },
-  { key: 'incidents', label: 'Sự cố giao dịch' },
+/**
+ * `functions`: chức năng phân quyền của nhóm việc; nhân viên có quyền Xem một trong số đó mới thấy tab. Sự cố giao dịch
+ * gồm hàng đợi đối soát tiền và lệnh rút tiền chờ đối soát, nên mở cho cả hai quyền (mỗi phần hiện theo quyền riêng).
+ */
+export const SERVICING_TABS: ReadonlyArray<{ key: ServicingTab; label: string; functions: OpsFunctionCode[] }> = [
+  { key: 'collection', label: 'Quá hạn & thu hồi', functions: ['collection'] },
+  { key: 'reschedule', label: 'Yêu cầu cơ cấu', functions: ['reschedule'] },
+  { key: 'reconciliation', label: 'Đối soát', functions: ['reconciliation'] },
+  { key: 'quarantine', label: 'Sự kiện trả nợ chờ ghép', functions: ['reconciliation'] },
+  { key: 'incidents', label: 'Sự cố giao dịch', functions: ['reconciliation', 'withdrawal'] },
 ];
 
 export const isServicingTab = (value: string | null): value is ServicingTab =>

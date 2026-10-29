@@ -5,9 +5,9 @@ import { isServicingTab, type ServicingTab } from '../constant';
  * Ba route cùng mở trang này; route cho biết nhóm việc mặc định khi URL chưa có `?tab=`.
  * `/loans/overdue` vào thẳng thu hồi, `/reconciliation` vào đối soát.
  */
-function defaultTab(pathname: string): ServicingTab {
-  if (pathname.endsWith('/reconciliation')) return 'reconciliation';
-  return 'collection';
+function defaultTab(pathname: string, allowed: ServicingTab[]): ServicingTab {
+  const preferred: ServicingTab = pathname.endsWith('/reconciliation') ? 'reconciliation' : 'collection';
+  return allowed.includes(preferred) ? preferred : allowed[0] ?? preferred;
 }
 
 /** Số trang trên URL tính từ 1; giá trị lạ coi như trang đầu. */
@@ -18,14 +18,15 @@ function readPage(raw: string | null): number {
 
 /**
  * Nhóm việc và trang đang xem nằm trên URL (`?tab=reschedule&page=2`) để chia sẻ đường dẫn hoặc
- * quay lại đúng chỗ. Tab trùng mặc định của route thì không ghi lên URL cho gọn.
+ * quay lại đúng chỗ. Tab trùng mặc định của route thì không ghi lên URL cho gọn. `allowed` là các tab tài khoản
+ * xem được; URL trỏ tới tab ngoài quyền thì về tab mặc định.
  */
-export function useServicingTab() {
+export function useServicingTab(allowed: ServicingTab[]) {
   const { pathname } = useLocation();
   const [params, setParams] = useSearchParams();
-  const fallback = defaultTab(pathname);
+  const fallback = defaultTab(pathname, allowed);
   const requested = params.get('tab');
-  const tab: ServicingTab = isServicingTab(requested) ? requested : fallback;
+  const tab: ServicingTab = isServicingTab(requested) && allowed.includes(requested) ? requested : fallback;
   const page = readPage(params.get('page'));
 
   const write = (nextTab: ServicingTab, nextPage: number) => {

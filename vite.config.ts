@@ -20,6 +20,12 @@ export default defineConfig({
         target: 'http://localhost:8080',
         changeOrigin: true,
       },
+      // Vai trò nhân viên (phân quyền web quản trị) thuộc User Service; đi qua Gateway như /admin/users, phải đứng
+      // trước `/api/v1/admin` (mặc định về Loan). Gateway có route user-admin-service cho đường dẫn này.
+      '/api/v1/admin/staff-roles': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+      },
       '/api/v1/users': {
         target: 'http://localhost:8080',
         changeOrigin: true,

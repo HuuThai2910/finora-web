@@ -1,3 +1,4 @@
+import { usePermission } from '@/features/auth';
 import { useGetLoanStatisticsSummaryQuery } from '@/features/statistics';
 import { useOrderIncidentsQuery } from '../api/investmentIncidentApi';
 import {
@@ -28,14 +29,18 @@ export interface StageCount {
  * báo thiếu khi một service lỗi.
  */
 export function useServicingCounts() {
-  const summary = useGetLoanStatisticsSummaryQuery();
-  const stale = useStaleLoansQuery(COUNT);
-  const quarantine = useQuarantinedEventsQuery(COUNT);
-  const repaymentIncidents = useRepaymentIncidentsQuery(COUNT);
-  const disbursementIncidents = useDisbursementIncidentsQuery(COUNT);
-  const repairSagas = useRepairSagasQuery(COUNT);
-  const orderIncidents = useOrderIncidentsQuery(COUNT);
-  const withdrawalIncidents = useWithdrawalIncidentsQuery(COUNT);
+  const { canView } = usePermission();
+  // Summary thống kê cần quyền Xem "Tổng quan & thống kê"; các hàng đợi cần quyền Xem chức năng của mình. Thiếu quyền thì
+  // không gọi (tránh 403) và số trên tab để trống.
+  const summary = useGetLoanStatisticsSummaryQuery(undefined, { skip: !canView('dashboard') });
+  const noReconciliation = !canView('reconciliation');
+  const stale = useStaleLoansQuery(COUNT, { skip: noReconciliation });
+  const quarantine = useQuarantinedEventsQuery(COUNT, { skip: noReconciliation });
+  const repaymentIncidents = useRepaymentIncidentsQuery(COUNT, { skip: noReconciliation });
+  const disbursementIncidents = useDisbursementIncidentsQuery(COUNT, { skip: noReconciliation });
+  const repairSagas = useRepairSagasQuery(COUNT, { skip: noReconciliation });
+  const orderIncidents = useOrderIncidentsQuery(COUNT, { skip: noReconciliation });
+  const withdrawalIncidents = useWithdrawalIncidentsQuery(COUNT, { skip: !canView('withdrawal') });
   const data = summary.data;
 
   // Backend trả đủ mọi mức thu hồi (kể cả 0); khóa thiếu vẫn coi là 0 để an toàn khi enum đổi.
@@ -51,10 +56,13 @@ export function useServicingCounts() {
 
   const incidents = data ? data.reconciliationIncidents.byStatus.OPEN ?? 0 : undefined;
   const reconciliation = stale.data && incidents != null ? stale.data.totalElements + incidents : undefined;
-  const transactionIncidents = repaymentIncidents.data && disbursementIncidents.data && repairSagas.data
-    && orderIncidents.data && withdrawalIncidents.data
-    ? repaymentIncidents.data.totalElements + disbursementIncidents.data.totalElements + repairSagas.data.totalElements
-      + orderIncidents.data.totalElements + withdrawalIncidents.data.totalElements
+  // Chỉ cộng các hàng đợi tài khoản xem được; số chỉ hiện khi đọc được hết các hàng đợi đó.
+  const incidentCounts = [
+    ...(noReconciliation ? [] : [repaymentIncidents, disbursementIncidents, repairSagas, orderIncidents]),
+    ...(canView('withdrawal') ? [withdrawalIncidents] : []),
+  ].map((query) => query.data?.totalElements);
+  const transactionIncidents = incidentCounts.length > 0 && incidentCounts.every((count) => count != null)
+    ? incidentCounts.reduce<number>((sum, count) => sum + (count ?? 0), 0)
     : undefined;
 
   const tabs: Record<ServicingTab, number | undefined> = {

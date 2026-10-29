@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { ErrorNotice } from '@/components/ErrorNotice';
 import { Modal } from '@/components/Modal';
+import { usePermission } from '@/features/auth';
 import {
   useCloseExpiredListingsMutation,
   useGetFundingSettingsQuery,
@@ -77,6 +78,10 @@ function SettingsEditor({ current, onClose, onNotice }: Props & { current: Fundi
   const [touched, setTouched] = useState(false);
   const [update, updateState] = useUpdateFundingSettingsMutation();
   const [closeExpired, closeState] = useCloseExpiredListingsMutation();
+  const { canAct } = usePermission();
+  // Lưu tham số cần quyền Thao tác "Cấu hình gọi vốn"; đóng khoản quá hạn là thao tác của "Gọi vốn & Notes".
+  const canSave = canAct('funding-settings');
+  const canCloseExpired = canAct('funding');
 
   const errors = validate(form);
   const hasErrors = Object.keys(errors).length > 0;
@@ -90,7 +95,7 @@ function SettingsEditor({ current, onClose, onNotice }: Props & { current: Fundi
 
   const handleSubmit = async () => {
     setTouched(true);
-    if (hasErrors || busy) return;
+    if (hasErrors || busy || !canSave) return;
     const denomination = Number(form.denomination);
     const minimum = Number(form.minimum);
     try {
@@ -127,10 +132,12 @@ function SettingsEditor({ current, onClose, onNotice }: Props & { current: Fundi
       busy={busy}
       footer={(
         <>
-          <button type="button" className="ui-btn ghost" onClick={onClose} disabled={busy}>Hủy</button>
-          <button type="submit" form={FORM_ID} className="ui-btn primary" disabled={busy || (touched && hasErrors)}>
-            {updateState.isLoading ? 'Đang lưu...' : 'Lưu tham số'}
-          </button>
+          <button type="button" className="ui-btn ghost" onClick={onClose} disabled={busy}>{canSave ? 'Hủy' : 'Đóng'}</button>
+          {canSave && (
+            <button type="submit" form={FORM_ID} className="ui-btn primary" disabled={busy || (touched && hasErrors)}>
+              {updateState.isLoading ? 'Đang lưu...' : 'Lưu tham số'}
+            </button>
+          )}
         </>
       )}
     >
@@ -143,66 +150,69 @@ function SettingsEditor({ current, onClose, onNotice }: Props & { current: Fundi
           void handleSubmit();
         }}
       >
-        <fieldset className="fu-field">
-          <legend>Mệnh giá Note mặc định</legend>
-          <div className="fu-chips">
-            {DENOMINATION_OPTIONS.map((option) => (
-              <button
-                key={option}
-                type="button"
-                className="fu-chip"
-                aria-pressed={form.denomination === option}
-                onClick={() => set({ denomination: option })}
-              >
-                {formatMoney(option)}
-              </button>
-            ))}
-            <input
-              className="fu-input fu-denom-input"
-              type="number"
-              inputMode="numeric"
-              min="1000"
-              step="1000"
-              placeholder="Mệnh giá khác"
-              aria-label="Mệnh giá khác (đ)"
-              value={DENOMINATION_OPTIONS.includes(form.denomination) ? '' : form.denomination}
-              aria-invalid={Boolean(show('denomination'))}
-              onChange={(event) => set({ denomination: event.target.value })}
-            />
-          </div>
-          {show('denomination') && <span className="fu-err" role="alert">{errors.denomination}</span>}
-        </fieldset>
+        {/* Chỉ có quyền Xem thì xem được tham số hiện hành, không sửa. */}
+        <fieldset className="fu-settings-fields" disabled={!canSave}>
+          <fieldset className="fu-field">
+            <legend>Mệnh giá Note mặc định</legend>
+            <div className="fu-chips">
+              {DENOMINATION_OPTIONS.map((option) => (
+                <button
+                  key={option}
+                  type="button"
+                  className="fu-chip"
+                  aria-pressed={form.denomination === option}
+                  onClick={() => set({ denomination: option })}
+                >
+                  {formatMoney(option)}
+                </button>
+              ))}
+              <input
+                className="fu-input fu-denom-input"
+                type="number"
+                inputMode="numeric"
+                min="1000"
+                step="1000"
+                placeholder="Mệnh giá khác"
+                aria-label="Mệnh giá khác (đ)"
+                value={DENOMINATION_OPTIONS.includes(form.denomination) ? '' : form.denomination}
+                aria-invalid={Boolean(show('denomination'))}
+                onChange={(event) => set({ denomination: event.target.value })}
+              />
+            </div>
+            {show('denomination') && <span className="fu-err" role="alert">{errors.denomination}</span>}
+          </fieldset>
 
-        <div className="fu-form-2">
-          <label className="fu-field">
-            <span>Góp tối thiểu (đ)</span>
-            <input
-              className="fu-input"
-              type="number"
-              inputMode="numeric"
-              min="1000"
-              step="1000"
-              value={form.minimum}
-              aria-invalid={Boolean(show('minimum'))}
-              onChange={(event) => set({ minimum: event.target.value })}
-            />
-            {show('minimum') && <span className="fu-err" role="alert">{errors.minimum}</span>}
-          </label>
-          <label className="fu-field">
-            <span>Số ngày gọi vốn</span>
-            <input
-              className="fu-input"
-              type="number"
-              inputMode="numeric"
-              min={FUNDING_DAYS_MIN}
-              max={FUNDING_DAYS_MAX}
-              value={form.days}
-              aria-invalid={Boolean(show('days'))}
-              onChange={(event) => set({ days: event.target.value })}
-            />
-            {show('days') && <span className="fu-err" role="alert">{errors.days}</span>}
-          </label>
-        </div>
+          <div className="fu-form-2">
+            <label className="fu-field">
+              <span>Góp tối thiểu (đ)</span>
+              <input
+                className="fu-input"
+                type="number"
+                inputMode="numeric"
+                min="1000"
+                step="1000"
+                value={form.minimum}
+                aria-invalid={Boolean(show('minimum'))}
+                onChange={(event) => set({ minimum: event.target.value })}
+              />
+              {show('minimum') && <span className="fu-err" role="alert">{errors.minimum}</span>}
+            </label>
+            <label className="fu-field">
+              <span>Số ngày gọi vốn</span>
+              <input
+                className="fu-input"
+                type="number"
+                inputMode="numeric"
+                min={FUNDING_DAYS_MIN}
+                max={FUNDING_DAYS_MAX}
+                value={form.days}
+                aria-invalid={Boolean(show('days'))}
+                onChange={(event) => set({ days: event.target.value })}
+              />
+              {show('days') && <span className="fu-err" role="alert">{errors.days}</span>}
+            </label>
+          </div>
+        </fieldset>
 
         <p className="fu-meta">
           Cập nhật lần cuối {formatDateTime(current.updatedAt)}
@@ -211,14 +221,16 @@ function SettingsEditor({ current, onClose, onNotice }: Props & { current: Fundi
 
         {updateState.error ? <ErrorNotice error={updateState.error} /> : null}
 
-        <section className="fu-maintenance" aria-labelledby="fuMaintenanceTitle">
-          <h3 id="fuMaintenanceTitle">Bảo trì</h3>
-          <p>Khoản quá hạn gọi vốn được đóng tự động theo chu kỳ. Bấm để đóng ngay khi cần.</p>
-          <button type="button" className="ui-btn ghost" disabled={busy} onClick={() => void handleCloseExpired()}>
-            {closeState.isLoading ? 'Đang đóng...' : 'Đóng khoản quá hạn'}
-          </button>
-          {closeState.error ? <ErrorNotice error={closeState.error} /> : null}
-        </section>
+        {canCloseExpired && (
+          <section className="fu-maintenance" aria-labelledby="fuMaintenanceTitle">
+            <h3 id="fuMaintenanceTitle">Bảo trì</h3>
+            <p>Khoản quá hạn gọi vốn được đóng tự động theo chu kỳ. Bấm để đóng ngay khi cần.</p>
+            <button type="button" className="ui-btn ghost" disabled={busy} onClick={() => void handleCloseExpired()}>
+              {closeState.isLoading ? 'Đang đóng...' : 'Đóng khoản quá hạn'}
+            </button>
+            {closeState.error ? <ErrorNotice error={closeState.error} /> : null}
+          </section>
+        )}
       </form>
     </Modal>
   );

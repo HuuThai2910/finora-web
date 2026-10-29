@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Icon } from '@/components/Icon';
 import { StatusPill } from '@/components/StatusPill';
+import { usePermission } from '@/features/auth';
 import { toUiApiError } from '@/lib/api/errors';
 import { EMPTY } from '@/utils';
 import { useGetTransferDocumentQuery, useRetryTransferDocumentMutation } from '../api/orderBookApi';
@@ -16,6 +17,7 @@ function errorText(error: unknown): string {
 /** Văn bản đã phát hành: tải PDF đã ký và mở bằng chứng blockchain neo hash của văn bản. */
 function IssuedDocument({ doc }: { doc: TransferDocumentDetail }) {
   const { download, downloading, error } = useTransferDocumentDownload();
+  const canViewProofs = usePermission().canView('blockchain');
   const proofLink = `/blockchain/proofs?referenceType=NOTE_TRANSFER_DOCUMENT&referenceId=${encodeURIComponent(doc.tradeReference)}`;
 
   return (
@@ -31,7 +33,7 @@ function IssuedDocument({ doc }: { doc: TransferDocumentDetail }) {
           <Icon name="file" />
           {downloading ? 'Đang tải...' : 'Tải PDF'}
         </button>
-        <Link className="ui-link" to={proofLink}>Bằng chứng</Link>
+        {canViewProofs && <Link className="ui-link" to={proofLink}>Bằng chứng</Link>}
       </span>
       <span className="ui-sub ui-mono">{doc.documentNumber}</span>
       {error != null && <span className="sm-err" role="alert">{errorText(error)}</span>}
@@ -42,21 +44,25 @@ function IssuedDocument({ doc }: { doc: TransferDocumentDetail }) {
 /** Lập văn bản lỗi: hiện lỗi gần nhất và cho lập lại (chỉ FAILED, backend cũng chặn trạng thái khác). */
 function FailedDocument({ doc }: { doc: TransferDocumentDetail }) {
   const [retry, state] = useRetryTransferDocumentMutation();
+  // Lập lại văn bản cần quyền Thao tác "Chợ thứ cấp"; chỉ có quyền Xem thì chỉ thấy trạng thái lỗi.
+  const canRetry = usePermission().canAct('secondary-market');
 
   return (
     <>
       <span className="sm-doc-actions">
         <StatusPill tone="danger">Lỗi</StatusPill>
-        <button
-          type="button"
-          className="ui-btn soft"
-          disabled={state.isLoading}
-          aria-label={`Lập lại giấy xác nhận của lần khớp ${doc.tradeReference}`}
-          onClick={() => void retry(doc.tradeReference)}
-        >
-          <Icon name="repeat" />
-          {state.isLoading ? 'Đang gửi...' : 'Thử lại'}
-        </button>
+        {canRetry && (
+          <button
+            type="button"
+            className="ui-btn soft"
+            disabled={state.isLoading}
+            aria-label={`Lập lại giấy xác nhận của lần khớp ${doc.tradeReference}`}
+            onClick={() => void retry(doc.tradeReference)}
+          >
+            <Icon name="repeat" />
+            {state.isLoading ? 'Đang gửi...' : 'Thử lại'}
+          </button>
+        )}
       </span>
       <span className="sm-err">
         {`${doc.attempts} lần thử${doc.lastError ? `, ${doc.lastError}` : ''}`}

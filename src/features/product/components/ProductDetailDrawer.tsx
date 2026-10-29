@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { ErrorNotice } from '@/components/ErrorNotice';
 import { StatusPill } from '@/components/StatusPill';
+import { usePermission } from '@/features/auth';
 import { useGetAdminProductQuery } from '../api/productApi';
 import { useProductAction } from '../hooks/useProductAction';
 import { statusLabel, statusTone } from '../mappers/productDisplay';
@@ -30,6 +31,7 @@ interface ProductDetailDrawerProps {
 export function ProductDetailDrawer({ productId, initial, askArchive, onClose, onNotice }: ProductDetailDrawerProps) {
   const detail = useGetAdminProductQuery(productId);
   const action = useProductAction();
+  const { canView, canAct } = usePermission();
   const [confirmArchive, setConfirmArchive] = useState(askArchive);
   const product = detail.data ?? initial;
 
@@ -62,7 +64,8 @@ export function ProductDetailDrawer({ productId, initial, askArchive, onClose, o
           <StatusPill tone={statusTone(product.status)}>{statusLabel(product.status)}</StatusPill>
         </>
       )}
-      footer={(
+      // Đổi trạng thái, đồng bộ lõi, lưu trữ cần quyền Thao tác "Sản phẩm vay"; chỉ có quyền Xem thì ngăn chỉ đọc.
+      footer={canAct('loan-product') ? (
         <ProductDrawerActions
           product={product}
           busy={action.isBusy || detail.isFetching}
@@ -73,13 +76,16 @@ export function ProductDetailDrawer({ productId, initial, askArchive, onClose, o
           }}
           onAction={(kind) => void runAction(kind)}
         />
-      )}
+      ) : undefined}
     >
       {action.error && <div className="prod-dr-alert"><ActionError error={action.error} /></div>}
       {detail.error && !detail.data && (
         <div className="prod-dr-alert"><ErrorNotice error={detail.error} onRetry={detail.refetch} /></div>
       )}
-      <ProductDetailBody product={product} performance={<ProductPerformance productId={product.id} />} />
+      <ProductDetailBody
+        product={product}
+        performance={canView('dashboard') ? <ProductPerformance productId={product.id} /> : undefined}
+      />
     </ProductDrawer>
   );
 }

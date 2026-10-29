@@ -21,11 +21,14 @@ interface ProductTableProps {
   onAskArchive: (product: LoanProduct) => void;
   onAction: (product: LoanProduct, action: Exclude<ProductAction, 'archive'>) => void;
   busy: boolean;
+  /** Có quyền Thao tác "Sản phẩm vay"; không có thì menu dòng chỉ còn "Xem chi tiết". */
+  canAct: boolean;
 }
 
 function menuItems(product: LoanProduct, props: ProductTableProps): RowMenuItem[] {
   const actions = availableActions(product);
   const items: RowMenuItem[] = [{ key: 'open', label: 'Xem chi tiết', icon: 'eye', onSelect: () => props.onOpen(product) }];
+  if (!props.canAct) return items;
   if (actions.syncLabel) {
     items.push({ key: 'sync', label: actions.syncLabel, icon: 'refresh', disabled: props.busy, onSelect: () => props.onAction(product, 'core-sync') });
   }

@@ -1,4 +1,5 @@
 import { StatusPill } from '@/components/StatusPill';
+import { usePermission } from '@/features/auth';
 import { formatDate, formatDateTime } from '@/utils';
 import { useCollectionActionsQuery } from '../api/servicingApi';
 import { ACTION_HISTORY_SIZE, stageInfo } from '../constant';
@@ -26,6 +27,7 @@ function latestPromise(actions: CollectionAction[] | undefined) {
  */
 export function CollectionCaseDrawer({ item, onClose, onRecorded }: Props) {
   const borrower = useUserLabel(item.borrowerId, `Người vay #${item.borrowerId}`);
+  const canRecord = usePermission().canAct('collection');
   const history = useCollectionActionsQuery({ caseId: item.caseId, page: 0, size: ACTION_HISTORY_SIZE });
   const stage = stageInfo(item.stage);
   const promise = latestPromise(history.data?.data);
@@ -65,10 +67,13 @@ export function CollectionCaseDrawer({ item, onClose, onRecorded }: Props) {
         </dl>
       </div>
 
-      <section aria-labelledby="svc-form-title">
-        <h3 id="svc-form-title">Ghi nhận mới</h3>
-        <CollectionActionForm item={item} borrower={borrower} onRecorded={onRecorded} />
-      </section>
+      {/* Ghi nhận thu hồi cần quyền Thao tác "Thu hồi nợ"; chỉ có quyền Xem thì chỉ xem lịch sử. */}
+      {canRecord && (
+        <section aria-labelledby="svc-form-title">
+          <h3 id="svc-form-title">Ghi nhận mới</h3>
+          <CollectionActionForm item={item} borrower={borrower} onRecorded={onRecorded} />
+        </section>
+      )}
 
       <section aria-labelledby="svc-log-title">
         <h3 id="svc-log-title">Lịch sử xử lý</h3>

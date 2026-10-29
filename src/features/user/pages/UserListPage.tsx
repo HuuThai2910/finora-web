@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 import { useSelector } from 'react-redux';
-import { useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import type { RootState } from '@/app/store';
 import { ErrorNotice } from '@/components/ErrorNotice';
 import { Icon } from '@/components/Icon';
@@ -22,7 +22,7 @@ import {
 import type { EkycStatusType, RoleType, UserItem } from '../types';
 import './UserListPage.css';
 
-const ROLE_TABS: RoleFilter[] = ['ALL', 'ADMIN', 'INVESTOR', 'BORROWER'];
+const ROLE_TABS: RoleFilter[] = ['ALL', 'ADMIN', 'STAFF', 'INVESTOR', 'BORROWER'];
 const EKYC_OPTIONS: EkycStatusType[] = ['VERIFIED', 'PENDING', 'MANUAL_REVIEW', 'FAILED'];
 
 type PendingAction = { kind: 'role' | 'lock'; user: UserItem } | null;
@@ -79,20 +79,26 @@ export default function UserListPage() {
       <header className="ui-page-head">
         <div className="ui-title">
           <h1>Người dùng &amp; phân quyền</h1>
-          <p>Xem tài khoản theo vai trò, đổi vai trò và khóa tài khoản khi cần.</p>
+          <p>Xem tài khoản theo vai trò, đổi vai trò, gán vai trò nhân viên và khóa tài khoản khi cần.</p>
         </div>
-        <button
-          type="button"
-          className="ui-btn ghost"
-          onClick={() => {
-            void users.refetch();
-            void stats.refetch();
-          }}
-          disabled={isRefreshing}
-        >
-          <Icon name="refresh" />
-          {isRefreshing ? 'Đang tải...' : 'Làm mới'}
-        </button>
+        <div className="user-head-actions">
+          <button
+            type="button"
+            className="ui-btn ghost"
+            onClick={() => {
+              void users.refetch();
+              void stats.refetch();
+            }}
+            disabled={isRefreshing}
+          >
+            <Icon name="refresh" />
+            {isRefreshing ? 'Đang tải...' : 'Làm mới'}
+          </button>
+          <Link className="ui-btn soft" to="/users/roles">
+            <Icon name="key" />
+            Vai trò nhân viên
+          </Link>
+        </div>
       </header>
 
       <section className="ui-card user-card" aria-label="Danh sách người dùng">

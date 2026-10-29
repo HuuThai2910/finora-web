@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { RowMenu } from '@/components/RowMenu';
+import { usePermission } from '@/features/auth';
 import { EMPTY, formatDate, formatDateTime } from '@/utils';
 import { useRescheduleRequestsQuery } from '../api/servicingApi';
 import { RESCHEDULE_TYPE_LABEL, SERVICING_PAGE_SIZE } from '../constant';
@@ -39,6 +40,8 @@ function MaturityCell({ item }: { item: RescheduleRequest }) {
  * trong menu "⋯"; cả hai mở hộp thoại để xác nhận và gửi kèm idempotency key.
  */
 export function ReschedulePanel({ page, onPage, onDone }: Props) {
+  // Thẩm định đạt/Từ chối cần quyền Thao tác "Cơ cấu nợ"; chỉ có quyền Xem thì bảng chỉ đọc.
+  const canDecide = usePermission().canAct('reschedule');
   const query = useRescheduleRequestsQuery({ page, size: SERVICING_PAGE_SIZE, status: 'PENDING_REVIEW' });
   const [pending, setPending] = useState<{ request: RescheduleRequest; decision: RescheduleDecision } | null>(null);
   const rows = query.data?.data ?? [];
@@ -79,13 +82,15 @@ export function ReschedulePanel({ page, onPage, onDone }: Props) {
                   <td className="svc-wrap">{item.reasonComment}</td>
                   <td>{formatDateTime(item.createdAt)}</td>
                   <td className="act">
-                    <RowMenu
-                      label={`Thao tác với yêu cầu cơ cấu khoản vay ${item.loanNumber}`}
-                      items={[
-                        { key: 'approve', label: 'Thẩm định đạt', icon: 'checkCircle', onSelect: () => setPending({ request: item, decision: 'approve' }) },
-                        { key: 'reject', label: 'Từ chối', icon: 'xCircle', danger: true, separatorBefore: true, onSelect: () => setPending({ request: item, decision: 'reject' }) },
-                      ]}
-                    />
+                    {canDecide && (
+                      <RowMenu
+                        label={`Thao tác với yêu cầu cơ cấu khoản vay ${item.loanNumber}`}
+                        items={[
+                          { key: 'approve', label: 'Thẩm định đạt', icon: 'checkCircle', onSelect: () => setPending({ request: item, decision: 'approve' }) },
+                          { key: 'reject', label: 'Từ chối', icon: 'xCircle', danger: true, separatorBefore: true, onSelect: () => setPending({ request: item, decision: 'reject' }) },
+                        ]}
+                      />
+                    )}
                   </td>
                 </tr>
               ))}

@@ -3,6 +3,7 @@ import type { AppDispatch } from '@/app/store';
 import { ErrorNotice } from '@/components/ErrorNotice';
 import { Icon } from '@/components/Icon';
 import { Pager } from '@/components/Pager';
+import { usePermission } from '@/features/auth';
 import { investmentApi } from '@/lib/api/investmentApi';
 import {
   useGetAdminTradesQuery,
@@ -47,6 +48,7 @@ export function SecondaryMarketPage() {
   const dispatch = useDispatch<AppDispatch>();
   const market = useMarketView();
   const { view, tradeFilter, page } = market;
+  const canStats = usePermission().canView('dashboard');
 
   const summary = useGetOrderBookAdminSummaryQuery();
   // Sổ lệnh luôn tải (trang 0 khi đang xem giao dịch) để tab "Sổ lệnh" có số đếm thật từ totalElements.
@@ -92,7 +94,8 @@ export function SecondaryMarketPage() {
         onShowTrades={showTrades}
       />
 
-      <MarketTrendCharts />
+      {/* Biểu đồ xu hướng đọc series thống kê, cần quyền Xem "Tổng quan & thống kê". */}
+      {canStats && <MarketTrendCharts />}
 
       <section className="ui-card sm-list" id="sm-list" aria-label="Sổ lệnh và giao dịch">
         <div className="sm-list-head">

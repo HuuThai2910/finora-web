@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { StatusPill } from '@/components/StatusPill';
+import { usePermission } from '@/features/auth';
 import { formatDateTime } from '@/utils';
 import { useWithdrawalIncidentsQuery } from '../api/paymentIncidentApi';
 import { SERVICING_PAGE_SIZE, WALLET_OWNER_LABEL } from '../constant';
@@ -53,6 +54,7 @@ function OwnerCell({ item }: { item: WithdrawalIncident }) {
  * tự hoàn tiền về ví. Hàng đợi tự giữ trang của mình; thao tác đi qua `onRecheck` để cả tab chỉ chạy một việc một lúc.
  */
 export function WithdrawalIncidentsSection({ running, onRecheck }: Props) {
+  const canRecheck = usePermission().canAct('withdrawal');
   const [page, setPage] = useState(0);
   const withdrawals = useWithdrawalIncidentsQuery({ page, size: SERVICING_PAGE_SIZE });
 
@@ -118,15 +120,17 @@ export function WithdrawalIncidentsSection({ running, onRecheck }: Props) {
                     )}
                   </td>
                   <td className="act">
-                    <button
-                      type="button"
-                      className="ui-btn soft"
-                      disabled={running != null || !needsOperator(item)}
-                      title={recheckBlockedReason(item)}
-                      onClick={() => onRecheck(item)}
-                    >
-                      {running === item.withdrawalId ? 'Đang gửi...' : 'Tra cứu lại'}
-                    </button>
+                    {canRecheck && (
+                      <button
+                        type="button"
+                        className="ui-btn soft"
+                        disabled={running != null || !needsOperator(item)}
+                        title={recheckBlockedReason(item)}
+                        onClick={() => onRecheck(item)}
+                      >
+                        {running === item.withdrawalId ? 'Đang gửi...' : 'Tra cứu lại'}
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))}

@@ -1,4 +1,5 @@
 import { Toast } from '@/components/Toast';
+import { usePermission } from '@/features/auth';
 import { AiErrorNotice } from '../components/AiErrorNotice';
 import { GradeTableCard } from '../components/GradeTableCard';
 import { IconEdit } from '../components/icons';
@@ -20,6 +21,8 @@ export default function AiPolicyPage() {
   const policy = usePolicyConfig();
   const { config, draft } = policy;
   const editing = draft !== null;
+  // Sửa trọng số, ngưỡng và bảng hạng cần quyền Thao tác "Chính sách AI"; chỉ có quyền Xem thì trang chỉ đọc.
+  const canEdit = usePermission().canAct('ai-policy');
 
   const headAction = !editing ? (
     <button type="button" className="ui-btn primary" onClick={policy.startEditing}>
@@ -39,7 +42,7 @@ export default function AiPolicyPage() {
     <section className="ui-page aip-page">
       <header className="ui-page-head aip-page-head">
         <div className="ui-title"><h1>Chính sách đánh giá AI</h1></div>
-        {config && headAction}
+        {config && canEdit && headAction}
       </header>
 
       {policy.formError && <div className="ui-alert" role="alert">{policy.formError}</div>}

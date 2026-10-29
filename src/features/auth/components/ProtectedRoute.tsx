@@ -2,25 +2,30 @@ import { type ReactNode } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import type { RootState } from '@/app/store';
+import { ADMIN_APP_ROLES } from '../permissions';
 import type { CurrentUser } from '../types';
+import { AccessDenied } from './AccessDenied';
 import { BrandMark } from './BrandMark';
 import './ProtectedRoute.css';
 
 interface ProtectedRouteProps {
   children: ReactNode;
-  requiredRole?: CurrentUser['role'];
+  /** Vai trò được vào; mặc định là quản trị viên và nhân viên vận hành. */
+  allowedRoles?: ReadonlyArray<CurrentUser['role']>;
 }
 
 const ROLE_LABELS: Record<CurrentUser['role'], string> = {
   ADMIN: 'quản trị viên',
+  STAFF: 'nhân viên vận hành',
   BORROWER: 'người vay',
   INVESTOR: 'nhà đầu tư',
 };
 
 /**
  * Chặn route theo phiên và vai trò để cải thiện trải nghiệm; backend vẫn là nơi kiểm soát quyền.
+ * Quyền Xem của từng trang do `RequirePageAccess` kiểm bên trong khung quản trị.
  */
-export function ProtectedRoute({ children, requiredRole = 'ADMIN' }: ProtectedRouteProps) {
+export function ProtectedRoute({ children, allowedRoles = ADMIN_APP_ROLES }: ProtectedRouteProps) {
   const location = useLocation();
   const { isAuthenticated, isLoading, profile } = useSelector((state: RootState) => state.auth);
 
@@ -38,25 +43,16 @@ export function ProtectedRoute({ children, requiredRole = 'ADMIN' }: ProtectedRo
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  if (requiredRole && profile && profile.role !== requiredRole) {
+  if (profile && !allowedRoles.includes(profile.role)) {
+    const allowed = allowedRoles.map((role) => ROLE_LABELS[role]).join(' hoặc ');
     return (
-      <div className="auth-denied">
-        <div className="auth-denied-card">
-          <span className="auth-denied-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <path d="M5 11h14v11H5Z" />
-              <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-            </svg>
-          </span>
-          <h1>Không có quyền truy cập</h1>
-          <p>
-            Tài khoản {profile.email} là {ROLE_LABELS[profile.role] ?? profile.role}. Trang này chỉ dành cho{' '}
-            {ROLE_LABELS[requiredRole]}.
-          </p>
-          {/* Tải lại toàn trang để phiên được kiểm tra lại từ đầu khi đổi tài khoản. */}
-          <a className="auth-denied-btn" href="/login">Đăng nhập bằng tài khoản khác</a>
-        </div>
-      </div>
+      <AccessDenied
+        message={(
+          <>
+            Tài khoản {profile.email} là {ROLE_LABELS[profile.role] ?? profile.role}. Trang này chỉ dành cho {allowed}.
+          </>
+        )}
+      />
     );
   }
 

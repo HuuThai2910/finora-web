@@ -1,0 +1,133 @@
+/* Trang Vai trò & phân quyền và hộp thoại tạo/sửa vai trò. Thành phần chung nằm ở styles/ui.css. */
+
+.staff-role-table .staff-role-desc {
+  max-width: 360px;
+  color: var(--text-secondary);
+  white-space: normal;
+}
+
+/* ---------- Hộp thoại vai trò ---------- */
+.staff-form {
+  display: grid;
+  gap: 12px;
+}
+
+.staff-field {
+  display: grid;
+  gap: 4px;
+}
+
+.staff-field > span {
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.staff-input {
+  width: 100%;
+  min-height: 34px;
+  padding: 7px 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  background: #fff;
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 14px;
+  resize: vertical;
+}
+
+.staff-input:focus {
+  border-color: var(--brand);
+  box-shadow: 0 0 0 3px rgba(29, 86, 196, 0.15);
+  outline: 0;
+}
+
+.staff-input[aria-invalid='true'] {
+  border-color: var(--danger);
+}
+
+.staff-err {
+  color: var(--danger);
+  font-size: 12px;
+}
+
+.staff-matrix-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 4px;
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.staff-matrix-hint {
+  margin-top: -6px;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.staff-matrix-wrap {
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+}
+
+.staff-matrix th,
+.staff-matrix td {
+  padding: 7px 12px;
+  text-align: left;
+  vertical-align: middle;
+}
+
+.staff-matrix thead th {
+  background: var(--surface-muted);
+}
+
+.staff-matrix .staff-matrix-col {
+  width: 92px;
+  text-align: center;
+}
+
+.staff-matrix input[type='checkbox'] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--brand);
+  cursor: pointer;
+}
+
+.staff-matrix input[type='checkbox']:disabled {
+  cursor: not-allowed;
+}
+
+/* Dòng tên nhóm: chọn cả cột cho nhóm. */
+.staff-matrix-group th,
+.staff-matrix-group td {
+  border-top: 1px solid var(--border-color);
+  background: var(--brand-50);
+  color: var(--text-primary);
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.staff-matrix-name {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.staff-matrix-name .ui-sub {
+  font-weight: 400;
+}
+
+.staff-matrix-none {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+@media (max-width: 760px) {
+  .staff-matrix .staff-matrix-col {
+    width: 64px;
+  }
+}

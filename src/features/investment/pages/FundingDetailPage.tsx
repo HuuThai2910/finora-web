@@ -3,6 +3,7 @@ import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { ErrorNotice } from '@/components/ErrorNotice';
 import { StatusPill } from '@/components/StatusPill';
 import { Toast } from '@/components/Toast';
+import { usePermission } from '@/features/auth';
 import {
   useGetFundingProgressQuery,
   useGetMarketListingQuery,
@@ -48,6 +49,8 @@ export default function FundingDetailPage() {
   const { names, isLoading: namesLoading } = useInvestorNames(investors.map((item) => item.investorId));
   const nameOf = useCallback((investorId: string) => names[investorId] ?? 'Không tra được tên', [names]);
   const actions = useFundingActions(listing, setToast);
+  const { canAct: canActOn, canView } = usePermission();
+  const canAct = canActOn('funding');
   // Tham chiếu ổn định: Toast đặt lại hẹn giờ mỗi khi `onDismiss` đổi.
   const dismissToast = useCallback(() => setToast(null), []);
 
@@ -104,7 +107,7 @@ export default function FundingDetailPage() {
         </div>
         <div className="fu-head-actions">
           {/* `loanId` của listing là ID hồ sơ vay bên Loan; proof chỉ có từ khi khoản vay đã có hợp đồng (W3D). */}
-          {listing.contractNumber && (
+          {listing.contractNumber && canView('blockchain') && (
             <Link
               className="ui-btn ghost"
               to={`/blockchain/proofs?referenceType=LOAN_APPLICATION&referenceId=${listing.loanId}`}
@@ -170,6 +173,7 @@ export default function FundingDetailPage() {
           progress={progress.data}
           probeNotes={probeNotes}
           busy={actions.busy}
+          canAct={canAct}
           errorOf={actions.errorOf}
           onFinalize={() => void actions.finalize()}
           onActivate={() => void actions.activate()}

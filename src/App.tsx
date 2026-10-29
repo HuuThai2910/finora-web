@@ -4,6 +4,8 @@ import { useDispatch } from 'react-redux';
 import type { AppDispatch } from '@/app/store';
 import { checkAuthSession, clearAuth, LoginPage, ProtectedRoute } from '@/features/auth';
 import AdminLayout from '@/layouts/AdminLayout';
+import { PAGE_ACCESS } from '@/layouts/adminNavigation';
+import { AdminHomeRedirect, RequirePageAccess } from '@/layouts/RequirePageAccess';
 
 /*
  * Mỗi trang tải theo nhu cầu (code splitting): ECharts và CSS của từng feature chỉ tải khi mở trang
@@ -19,6 +21,7 @@ const AiPolicyPage = page(() => import('@/features/rule-engine'), 'AiPolicyPage'
 const CreditScoringPage = page(() => import('@/features/credit-score'), 'CreditScoringPage');
 const ProductListPage = page(() => import('@/features/product'), 'ProductListPage');
 const UserListPage = page(() => import('@/features/user'), 'UserListPage');
+const StaffRolesPage = page(() => import('@/features/user'), 'StaffRolesPage');
 const CustomerKycPage = page(() => import('@/features/kyc'), 'CustomerKycPage');
 const CustomerDetailPage = page(() => import('@/features/kyc'), 'CustomerDetailPage');
 const EkycReviewListPage = page(() => import('@/features/ekyc-review'), 'EkycReviewListPage');
@@ -52,37 +55,39 @@ export default function App() {
 
         <Route
           element={
-            <ProtectedRoute requiredRole="ADMIN">
+            <ProtectedRoute>
               <AdminLayout />
             </ProtectedRoute>
           }
         >
-          <Route index element={<Navigate to="/dashboard" replace />} />
-          <Route path="dashboard" element={<DashboardPage />} />
-          <Route path="loans" element={<LoanListPage />} />
-          <Route path="loans/:applicationNumber/review" element={<LoanReviewPage />} />
+          {/* Mỗi trang kiểm quyền Xem của chức năng (PAGE_ACCESS); trang chỉ chuyển hướng thì không cần. */}
+          <Route index element={<AdminHomeRedirect />} />
+          <Route path="dashboard" element={<RequirePageAccess access={PAGE_ACCESS.dashboard}><DashboardPage /></RequirePageAccess>} />
+          <Route path="loans" element={<RequirePageAccess access={PAGE_ACCESS.loans}><LoanListPage /></RequirePageAccess>} />
+          <Route path="loans/:applicationNumber/review" element={<RequirePageAccess access={PAGE_ACCESS.loans}><LoanReviewPage /></RequirePageAccess>} />
           <Route path="loans/approval" element={<Navigate to="/loans?status=PENDING_REVIEW" replace />} />
-          <Route path="loans/overdue" element={<ServicingOperationsPage />} />
-          <Route path="loans/operations" element={<ServicingOperationsPage />} />
+          <Route path="loans/overdue" element={<RequirePageAccess access={PAGE_ACCESS.operations}><ServicingOperationsPage /></RequirePageAccess>} />
+          <Route path="loans/operations" element={<RequirePageAccess access={PAGE_ACCESS.operations}><ServicingOperationsPage /></RequirePageAccess>} />
           <Route path="disbursement" element={<Navigate to="/loans" replace />} />
-          <Route path="loans/evaluation" element={<AiPolicyPage />} />
-          <Route path="loans/scoring" element={<CreditScoringPage />} />
-          <Route path="investments/funding" element={<FundingPage />} />
-          <Route path="investments/funding/:listingId" element={<FundingDetailPage />} />
-          <Route path="investments/secondary" element={<SecondaryMarketPage />} />
-          <Route path="products" element={<ProductListPage />} />
+          <Route path="loans/evaluation" element={<RequirePageAccess access={PAGE_ACCESS.aiPolicy}><AiPolicyPage /></RequirePageAccess>} />
+          <Route path="loans/scoring" element={<RequirePageAccess access={PAGE_ACCESS.aiScoring}><CreditScoringPage /></RequirePageAccess>} />
+          <Route path="investments/funding" element={<RequirePageAccess access={PAGE_ACCESS.funding}><FundingPage /></RequirePageAccess>} />
+          <Route path="investments/funding/:listingId" element={<RequirePageAccess access={PAGE_ACCESS.funding}><FundingDetailPage /></RequirePageAccess>} />
+          <Route path="investments/secondary" element={<RequirePageAccess access={PAGE_ACCESS.secondary}><SecondaryMarketPage /></RequirePageAccess>} />
+          <Route path="products" element={<RequirePageAccess access={PAGE_ACCESS.products}><ProductListPage /></RequirePageAccess>} />
           <Route path="products/config" element={<Navigate to="/products" replace />} />
-          <Route path="users" element={<UserListPage />} />
-          <Route path="customers/kyc" element={<CustomerKycPage />} />
-          <Route path="customers/kyc/:id" element={<CustomerDetailPage />} />
-          <Route path="customers/ekyc-review" element={<EkycReviewListPage />} />
-          <Route path="customers/ekyc-review/:attemptId" element={<EkycReviewDetailPage />} />
-          <Route path="reconciliation" element={<ServicingOperationsPage />} />
+          <Route path="users" element={<RequirePageAccess access={PAGE_ACCESS.users}><UserListPage /></RequirePageAccess>} />
+          <Route path="users/roles" element={<RequirePageAccess access={PAGE_ACCESS.staffRoles}><StaffRolesPage /></RequirePageAccess>} />
+          <Route path="customers/kyc" element={<RequirePageAccess access={PAGE_ACCESS.customers}><CustomerKycPage /></RequirePageAccess>} />
+          <Route path="customers/kyc/:id" element={<RequirePageAccess access={PAGE_ACCESS.customers}><CustomerDetailPage /></RequirePageAccess>} />
+          <Route path="customers/ekyc-review" element={<RequirePageAccess access={PAGE_ACCESS.ekycReview}><EkycReviewListPage /></RequirePageAccess>} />
+          <Route path="customers/ekyc-review/:attemptId" element={<RequirePageAccess access={PAGE_ACCESS.ekycReview}><EkycReviewDetailPage /></RequirePageAccess>} />
+          <Route path="reconciliation" element={<RequirePageAccess access={PAGE_ACCESS.operations}><ServicingOperationsPage /></RequirePageAccess>} />
           <Route path="blockchain" element={<Navigate to="/blockchain/proofs" replace />} />
-          <Route path="blockchain/proofs" element={<BlockchainProofsPage />} />
+          <Route path="blockchain/proofs" element={<RequirePageAccess access={PAGE_ACCESS.blockchain}><BlockchainProofsPage /></RequirePageAccess>} />
         </Route>
 
-        <Route path="*" element={<Navigate to="/dashboard" replace />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
   );

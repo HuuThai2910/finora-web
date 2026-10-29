@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { ChartCard, ChartDataTable } from '@/components/ChartCard';
 import { EChart } from '@/components/EChart';
+import { usePermission } from '@/features/auth';
 import { useGetLoanStatisticsSummaryQuery } from '@/features/statistics';
 import { chartNumber } from '@/lib/charts/theme';
 import { formatNumber } from '@/utils';
@@ -9,10 +10,12 @@ import { binIndexOf, binLabel, buildScoreHistogramOption, formatShare } from '..
 /**
  * Thẻ "Phân bố điểm tín dụng" (mockup credit-scoring.html), từ `creditScores` của summary thống kê Loan:
  * điểm của lần chấm mới nhất thành công mỗi hồ sơ vay thật. Khi đã chấm thử một hồ sơ trên trang, cột chứa
- * điểm đó được tô đậm. Hồ sơ chấm thử không được lưu nên không nằm trong phân bố.
+ * điểm đó được tô đậm. Hồ sơ chấm thử không được lưu nên không nằm trong phân bố. Summary cần quyền Xem
+ * "Tổng quan & thống kê"; thiếu quyền thì thẻ không hiện.
  */
 export function ScoreDistributionCard({ currentScore }: { currentScore?: number }) {
-  const summary = useGetLoanStatisticsSummaryQuery();
+  const canStats = usePermission().canView('dashboard');
+  const summary = useGetLoanStatisticsSummaryQuery(undefined, { skip: !canStats });
   const scores = summary.data?.creditScores;
   const bins = scores?.histogram;
   const currentIndex = bins && currentScore != null ? binIndexOf(bins, currentScore) : -1;
@@ -20,6 +23,8 @@ export function ScoreDistributionCard({ currentScore }: { currentScore?: number 
   const total = bins ? bins.reduce((sum, bin) => sum + bin.count, 0) : 0;
   const below = bins && currentIndex >= 0 ? bins.slice(0, currentIndex).reduce((sum, bin) => sum + bin.count, 0) : 0;
   const currentBin = bins && currentIndex >= 0 ? bins[currentIndex] : undefined;
+
+  if (!canStats) return null;
 
   return (
     <ChartCard

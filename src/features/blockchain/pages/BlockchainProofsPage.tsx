@@ -5,6 +5,7 @@ import { ErrorNotice } from '@/components/ErrorNotice';
 import { Icon } from '@/components/Icon';
 import { Pager } from '@/components/Pager';
 import { Toast } from '@/components/Toast';
+import { usePermission } from '@/features/auth';
 import { blockchainApi } from '@/lib/api/blockchainApi';
 import { useSearchProofsQuery } from '../api/proofApi';
 import { ProofDrawer } from '../components/ProofDrawer';
@@ -15,6 +16,7 @@ import { PROOF_LEGAL_NOTE, PROOF_PAGE_SIZE } from '../constants';
 import { useProofFilters, type ProofFilters } from '../hooks/useProofFilters';
 import { useProofRetry } from '../hooks/useProofRetry';
 import { referenceNoun, statusInfo } from '../mappers/proofDisplay';
+import type { Proof } from '../types';
 import './BlockchainProofsPage.css';
 
 /** Câu báo khi danh sách rỗng, theo đúng bộ lọc đang áp dụng. */
@@ -63,6 +65,8 @@ export default function BlockchainProofsPage() {
   // Tham chiếu ổn định: Toast đặt lại giờ ẩn mỗi khi `onDismiss` đổi.
   const dismissToast = useCallback(() => setToast(''), []);
   const { retry, runningId, failure } = useProofRetry(setToast);
+  // Đưa proof dừng gửi về hàng đợi cần quyền Thao tác "Bằng chứng blockchain"; chỉ có quyền Xem thì chỉ tra cứu.
+  const onRetry = usePermission().canAct('blockchain') ? (proof: Proof) => void retry(proof) : undefined;
 
   const list = useSearchProofsQuery({
     referenceType: filters.reference?.type,
@@ -134,7 +138,7 @@ export default function BlockchainProofsPage() {
               openProofId={filters.proofId}
               runningId={runningId}
               onOpen={(proof) => openProof(proof.proofId)}
-              onRetry={(proof) => void retry(proof)}
+              onRetry={onRetry}
             />
             <Pager
               page={filters.page}
@@ -154,7 +158,7 @@ export default function BlockchainProofsPage() {
           proofId={filters.proofId}
           runningId={runningId}
           retryFailure={failure}
-          onRetry={(proof) => void retry(proof)}
+          onRetry={onRetry}
           onClose={closeProof}
         />
       )}

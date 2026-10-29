@@ -16,6 +16,8 @@ interface Props {
   progress: FundingProgress | undefined;
   probeNotes: InvestmentNote[] | undefined;
   busy: FundingActionKind | null;
+  /** Có quyền Thao tác "Gọi vốn & Notes"; không có thì tiến trình chỉ để xem, không hiện nút sửa lỗi. */
+  canAct: boolean;
   errorOf: (kind: FundingActionKind) => unknown;
   onFinalize: () => void;
   onActivate: () => void;
@@ -42,9 +44,10 @@ function StepButton({ kind, label, busyLabel, tone = 'primary', hint, props }: {
   busyLabel: string;
   tone?: 'primary' | 'danger';
   hint?: string;
-  props: Pick<Props, 'busy' | 'errorOf'> & { onClick: () => void };
+  props: Pick<Props, 'busy' | 'errorOf' | 'canAct'> & { onClick: () => void };
 }) {
   const error = props.errorOf(kind);
+  if (!props.canAct) return null;
   return (
     <div className="fd-work">
       <button type="button" className={`ui-btn ${tone} fd-block`} disabled={props.busy !== null} onClick={props.onClick}>

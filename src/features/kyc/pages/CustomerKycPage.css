@@ -7,6 +7,11 @@
   gap: 16px;
 }
 
+/* Không có quyền Xem thống kê: chỉ còn thẻ kết quả eKYC. */
+.kyc-overview.single {
+  grid-template-columns: minmax(0, 1fr);
+}
+
 .kyc-signup-plot {
   height: 220px;
 }

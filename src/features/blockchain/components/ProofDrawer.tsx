@@ -1,6 +1,7 @@
 import { Drawer } from '@/components/Drawer';
 import { ErrorNotice } from '@/components/ErrorNotice';
 import { StatusPill } from '@/components/StatusPill';
+import { usePermission } from '@/features/auth';
 import { toUiApiError } from '@/lib/api/errors';
 import { useGetProofQuery } from '../api/proofApi';
 import { MOCK_LEDGER_NOTICE } from '../constants';
@@ -16,7 +17,8 @@ interface Props {
   proofId: string;
   runningId: string | null;
   retryFailure: ProofRetryFailure | null;
-  onRetry: (proof: Proof) => void;
+  /** Bỏ trống khi không có quyền Thao tác "Bằng chứng blockchain": ngăn không hiện mục đưa lại hàng đợi. */
+  onRetry?: (proof: Proof) => void;
   onClose: () => void;
 }
 
@@ -52,6 +54,8 @@ export function ProofDrawer({ proofId, runningId, retryFailure, onRetry, onClose
   const proof = detail.data;
   const status = proof ? statusInfo(proof.status) : null;
   const notFound = toUiApiError(detail.error).status === 404;
+  // Văn bản chuyển nhượng đọc API của Chợ thứ cấp; thiếu quyền Xem chức năng đó thì không hiện phần tải/xác minh tệp.
+  const canViewDocument = usePermission().canView('secondary-market');
 
   return (
     <Drawer
@@ -77,7 +81,7 @@ export function ProofDrawer({ proofId, runningId, retryFailure, onRetry, onClose
           )}
           <ProofSummary proof={proof} />
           {/* Proof của giấy xác nhận chuyển nhượng neo hash tệp PDF: thêm tải tệp và xác minh chính tệp đó. */}
-          {proof.proofType === 'NOTE_TRANSFER_DOCUMENT' && (
+          {proof.proofType === 'NOTE_TRANSFER_DOCUMENT' && canViewDocument && (
             <section aria-labelledby="bc-document-title">
               <h3 id="bc-document-title">Văn bản</h3>
               <TransferDocumentPanel key={proof.proofId} proofId={proof.proofId} tradeReference={proof.aggregateId} />
@@ -91,7 +95,7 @@ export function ProofDrawer({ proofId, runningId, retryFailure, onRetry, onClose
             <summary>Xem chi tiết kỹ thuật và nguồn dữ liệu</summary>
             <div className="bc-technical-body"><ProofFacts proof={proof} /></div>
           </details>
-          {proof.status === 'DEAD_LETTER' && (
+          {proof.status === 'DEAD_LETTER' && onRetry && (
             <RetrySection
               proof={proof}
               running={runningId === proof.proofId}

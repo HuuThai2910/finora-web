@@ -20,6 +20,7 @@ export function TodoList({ todos }: { todos: DashboardTodo[] }) {
   return (
     <section className="ui-card dash-card dash-todo" aria-labelledby="dashTodoTitle">
       <DashCardHead id="dashTodoTitle" icon="checkSquare" title="Việc cần xử lý" aside={groups && <span className="ui-tag">{groups}</span>} />
+      {todos.length === 0 && <div className="ui-empty">Vai trò của bạn chưa được xem hàng đợi nào.</div>}
       <ul>
         {todos.map((todo) => {
           const count = todo.count;

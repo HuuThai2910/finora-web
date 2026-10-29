@@ -2,11 +2,11 @@ import { Suspense, useEffect, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import type { AppDispatch, RootState } from '@/app/store';
-import { logoutUser } from '@/features/auth';
+import { logoutUser, usePermission } from '@/features/auth';
 import { Icon } from '@/components/Icon';
 import { RowMenu } from '@/components/RowMenu';
 import { initials } from '@/components/Avatar';
-import { ADMIN_NAV_SECTIONS, getAdminBreadcrumb } from './adminNavigation';
+import { getAdminBreadcrumb, visibleNavSections } from './adminNavigation';
 import { SidebarIcon } from './SidebarIcon';
 import '@/styles/ui.css';
 import './AdminLayout.css';
@@ -16,6 +16,10 @@ export default function AdminLayout() {
   const navigate = useNavigate();
   const dispatch = useDispatch<AppDispatch>();
   const { profile, user } = useSelector((state: RootState) => state.auth);
+  const { canAccess } = usePermission();
+  // Nhân viên chỉ thấy mục có quyền Xem; quản trị viên thấy đủ.
+  const navSections = visibleNavSections(canAccess);
+  const roleLabel = profile?.role === 'STAFF' ? profile.staffRole?.name || profile.staffRoleName || 'Nhân viên' : 'Quản trị viên';
   // Ngăn menu trượt chỉ dùng trên màn hẹp; trạng thái mở là chuyện riêng của khung trang.
   const [navOpen, setNavOpen] = useState(false);
 
@@ -63,7 +67,7 @@ export default function AdminLayout() {
         </div>
 
         <nav className="sidebar-nav" aria-label="Điều hướng quản trị">
-          {ADMIN_NAV_SECTIONS.map((section) => (
+          {navSections.map((section) => (
             <div className="sidebar-section" key={section.label || 'root'}>
               {section.label && <div className="sidebar-section-label">{section.label}</div>}
               {section.items.map((item) => {
@@ -132,7 +136,7 @@ export default function AdminLayout() {
                   <span className="header-user-avatar" aria-hidden="true">{initials(displayName)}</span>
                   <span className="header-user-info">
                     <span className="header-user-name">{displayName}</span>
-                    <span className="header-user-role">Quản trị viên</span>
+                    <span className="header-user-role">{roleLabel}</span>
                   </span>
                   <span className="header-user-chevron"><Icon name="chevronDown" /></span>
                 </>

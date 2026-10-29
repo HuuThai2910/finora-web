@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { ErrorNotice } from '@/components/ErrorNotice';
 import { RowMenu } from '@/components/RowMenu';
 import { StatusPill } from '@/components/StatusPill';
+import { usePermission } from '@/features/auth';
 import { formatDate, formatDateTime } from '@/utils';
 import {
   useDisbursementIncidentsQuery, useRecheckDisbursementMutation, useRecheckWithdrawalMutation,
@@ -67,13 +68,19 @@ function OrderIncidentIssue({ item }: { item: OrderIncident }) {
  * Một thao tác chạy tại một thời điểm để không gửi chồng.
  */
 export function IncidentsPanel({ page, onPage, onDone }: Props) {
-  const repayments = useRepaymentIncidentsQuery({ page, size: SERVICING_PAGE_SIZE });
+  const { canView, canAct } = usePermission();
+  // Bốn hàng đợi tiền/lõi thuộc "Đối soát & sự cố", lệnh rút tiền thuộc "Rút tiền": mỗi phần hiện theo quyền Xem riêng,
+  // nút xử lý theo quyền Thao tác riêng.
+  const showReconciliation = canView('reconciliation');
+  const canFix = canAct('reconciliation');
+  const skip = !showReconciliation;
+  const repayments = useRepaymentIncidentsQuery({ page, size: SERVICING_PAGE_SIZE }, { skip });
   const [disbursementPage, setDisbursementPage] = useState(0);
-  const disbursements = useDisbursementIncidentsQuery({ page: disbursementPage, size: SERVICING_PAGE_SIZE });
+  const disbursements = useDisbursementIncidentsQuery({ page: disbursementPage, size: SERVICING_PAGE_SIZE }, { skip });
   const [sagaPage, setSagaPage] = useState(0);
-  const sagas = useRepairSagasQuery({ page: sagaPage, size: SERVICING_PAGE_SIZE });
+  const sagas = useRepairSagasQuery({ page: sagaPage, size: SERVICING_PAGE_SIZE }, { skip });
   const [orderPage, setOrderPage] = useState(0);
-  const orders = useOrderIncidentsQuery({ page: orderPage, size: SERVICING_PAGE_SIZE });
+  const orders = useOrderIncidentsQuery({ page: orderPage, size: SERVICING_PAGE_SIZE }, { skip });
   const [retryOrder] = useRetryOrderIncidentMutation();
   const [reconcile] = useReconcileRepaymentMutation();
   const [recheck] = useRecheckDisbursementMutation();
@@ -132,273 +139,285 @@ export function IncidentsPanel({ page, onPage, onDone }: Props) {
         </div>
       )}
 
-      <div className="svc-subhead">
-        <h2>Trả nợ chưa ghi xong vào hệ thống lõi</h2>
-        {repayments.data && repayments.data.totalElements > 0 && <span>Tiền đã trừ ví người vay</span>}
-      </div>
-      <QueueBody
-        error={repayments.error}
-        isLoading={repayments.isLoading}
-        isFetching={repayments.isFetching}
-        onRetry={repayments.refetch}
-        total={repayments.data?.totalElements ?? 0}
-        emptyText="Không có giao dịch trả nợ cần xử lý."
-        page={page}
-        unit="giao dịch"
-        onPage={onPage}
-      >
-        <div className="ui-table-wrap">
-          <table className="ui-table list svc-table">
-            <thead>
-              <tr>
-                <th>Giao dịch trả nợ</th>
-                <th>Hồ sơ vay</th>
-                <th className="num">Số tiền</th>
-                <th>Ngày ghi nhận</th>
-                <th>Lỗi gần nhất</th>
-                <th>Tình trạng</th>
-                <th className="act"><span className="ui-sr-only">Thao tác</span></th>
-              </tr>
-            </thead>
-            <tbody>
-              {(repayments.data?.content ?? []).map((item) => (
-                <tr key={item.repaymentId}>
-                  <td>
-                    <span className="ui-mono">{item.repaymentId}</span>
-                    <span className="ui-sub">{REPAYMENT_TYPE_LABEL[item.repaymentType] ?? item.repaymentType}</span>
-                  </td>
-                  <td>
-                    Hồ sơ #{item.loanApplicationId}
-                    <span className="ui-sub"><LoanProofsLink loanApplicationId={item.loanApplicationId} /></span>
-                  </td>
-                  <td className="num">{money(item.amount)}</td>
-                  <td>{formatDate(item.transactionDate)}</td>
-                  <ErrorCell code={item.errorCode} detail={item.errorDetail} />
-                  <td><RepaymentStatus item={item} /></td>
-                  <td className="act">
-                    {item.status === 'RECONCILIATION_REQUIRED' && (() => {
-                      const lockedUntil = repostLockedUntil(item, loadedAt);
-                      return (
-                        <RowMenu
-                          label={`Thao tác với giao dịch trả nợ ${item.repaymentId}`}
-                          items={[
-                            {
-                              key: 'reconcile', label: running === item.repaymentId ? 'Đang đối soát...' : 'Đối soát',
-                              icon: 'refresh', disabled: running != null, onSelect: () => reconcileRepayment(item),
-                            },
-                            {
-                              key: 'repost', label: 'Ghi lại vào hệ thống lõi', icon: 'repeat', separatorBefore: true,
-                              disabled: running != null || lockedUntil != null,
-                              disabledReason: lockedUntil ? `Ghi lại được từ ${formatDateTime(lockedUntil)}` : undefined,
-                              onSelect: () => setReposting(item),
-                            },
-                          ]}
-                        />
-                      );
-                    })()}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </QueueBody>
+      {showReconciliation && (
+        <>
+          <div className="svc-subhead">
+            <h2>Trả nợ chưa ghi xong vào hệ thống lõi</h2>
+            {repayments.data && repayments.data.totalElements > 0 && <span>Tiền đã trừ ví người vay</span>}
+          </div>
+          <QueueBody
+            error={repayments.error}
+            isLoading={repayments.isLoading}
+            isFetching={repayments.isFetching}
+            onRetry={repayments.refetch}
+            total={repayments.data?.totalElements ?? 0}
+            emptyText="Không có giao dịch trả nợ cần xử lý."
+            page={page}
+            unit="giao dịch"
+            onPage={onPage}
+          >
+            <div className="ui-table-wrap">
+              <table className="ui-table list svc-table">
+                <thead>
+                  <tr>
+                    <th>Giao dịch trả nợ</th>
+                    <th>Hồ sơ vay</th>
+                    <th className="num">Số tiền</th>
+                    <th>Ngày ghi nhận</th>
+                    <th>Lỗi gần nhất</th>
+                    <th>Tình trạng</th>
+                    <th className="act"><span className="ui-sr-only">Thao tác</span></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(repayments.data?.content ?? []).map((item) => (
+                    <tr key={item.repaymentId}>
+                      <td>
+                        <span className="ui-mono">{item.repaymentId}</span>
+                        <span className="ui-sub">{REPAYMENT_TYPE_LABEL[item.repaymentType] ?? item.repaymentType}</span>
+                      </td>
+                      <td>
+                        Hồ sơ #{item.loanApplicationId}
+                        <span className="ui-sub"><LoanProofsLink loanApplicationId={item.loanApplicationId} /></span>
+                      </td>
+                      <td className="num">{money(item.amount)}</td>
+                      <td>{formatDate(item.transactionDate)}</td>
+                      <ErrorCell code={item.errorCode} detail={item.errorDetail} />
+                      <td><RepaymentStatus item={item} /></td>
+                      <td className="act">
+                        {item.status === 'RECONCILIATION_REQUIRED' && canFix && (() => {
+                          const lockedUntil = repostLockedUntil(item, loadedAt);
+                          return (
+                            <RowMenu
+                              label={`Thao tác với giao dịch trả nợ ${item.repaymentId}`}
+                              items={[
+                                {
+                                  key: 'reconcile', label: running === item.repaymentId ? 'Đang đối soát...' : 'Đối soát',
+                                  icon: 'refresh', disabled: running != null, onSelect: () => reconcileRepayment(item),
+                                },
+                                {
+                                  key: 'repost', label: 'Ghi lại vào hệ thống lõi', icon: 'repeat', separatorBefore: true,
+                                  disabled: running != null || lockedUntil != null,
+                                  disabledReason: lockedUntil ? `Ghi lại được từ ${formatDateTime(lockedUntil)}` : undefined,
+                                  onSelect: () => setReposting(item),
+                                },
+                              ]}
+                            />
+                          );
+                        })()}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </QueueBody>
 
-      <div className="svc-subhead">
-        <h2>Giải ngân chưa có kết quả chuyển tiền</h2>
-        {disbursements.data && disbursements.data.totalElements > 0 && <span>Chỉ tra cứu theo mã saga, không chuyển lại</span>}
-      </div>
-      <QueueBody
-        error={disbursements.error}
-        isLoading={disbursements.isLoading}
-        isFetching={disbursements.isFetching}
-        onRetry={disbursements.refetch}
-        total={disbursements.data?.totalElements ?? 0}
-        emptyText="Không có lệnh giải ngân đang chờ kết quả."
-        page={disbursementPage}
-        unit="lệnh"
-        onPage={setDisbursementPage}
-      >
-        <div className="ui-table-wrap">
-          <table className="ui-table list svc-table">
-            <thead>
-              <tr>
-                <th>Hợp đồng</th>
-                <th className="num">Số tiền</th>
-                <th>Đối tác chuyển tiền</th>
-                <th>Lỗi gần nhất</th>
-                <th className="num">Lần tra cứu</th>
-                <th>Tình trạng</th>
-                <th className="act"><span className="ui-sr-only">Thao tác</span></th>
-              </tr>
-            </thead>
-            <tbody>
-              {(disbursements.data?.content ?? []).map((item) => (
-                <tr key={item.sagaId}>
-                  <td>
-                    <span className="ui-code">{item.contractNumber}</span>
-                    <span className="ui-sub">
-                      Hồ sơ #{item.loanApplicationId} · <LoanProofsLink loanApplicationId={item.loanApplicationId} />
-                    </span>
-                  </td>
-                  <td className="num">{money(item.amount)}</td>
-                  <td>
-                    {item.provider}
-                    {item.providerReference && <span className="ui-sub ui-mono">{item.providerReference}</span>}
-                  </td>
-                  <ErrorCell code={item.errorCode} detail={item.errorDetail} />
-                  <td className="num">
-                    {item.reconciliationAttemptCount}
-                    {item.manualRecheckCount > 0 && <span className="ui-sub">{item.manualRecheckCount} lần thủ công</span>}
-                  </td>
-                  <td>
-                    <DisbursementStatus item={item} />
-                    {item.nextAttemptAt && <span className="ui-sub">Lượt sau {formatDateTime(item.nextAttemptAt)}</span>}
-                  </td>
-                  <td className="act">
-                    {item.status === 'RECONCILIATION_REQUIRED' && (
-                      <button
-                        type="button"
-                        className="ui-btn soft"
-                        disabled={running != null}
-                        onClick={() => recheckDisbursement(item)}
-                      >
-                        {running === item.sagaId ? 'Đang gửi...' : 'Tra cứu lại'}
-                      </button>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </QueueBody>
+          <div className="svc-subhead">
+            <h2>Giải ngân chưa có kết quả chuyển tiền</h2>
+            {disbursements.data && disbursements.data.totalElements > 0 && <span>Chỉ tra cứu theo mã saga, không chuyển lại</span>}
+          </div>
+          <QueueBody
+            error={disbursements.error}
+            isLoading={disbursements.isLoading}
+            isFetching={disbursements.isFetching}
+            onRetry={disbursements.refetch}
+            total={disbursements.data?.totalElements ?? 0}
+            emptyText="Không có lệnh giải ngân đang chờ kết quả."
+            page={disbursementPage}
+            unit="lệnh"
+            onPage={setDisbursementPage}
+          >
+            <div className="ui-table-wrap">
+              <table className="ui-table list svc-table">
+                <thead>
+                  <tr>
+                    <th>Hợp đồng</th>
+                    <th className="num">Số tiền</th>
+                    <th>Đối tác chuyển tiền</th>
+                    <th>Lỗi gần nhất</th>
+                    <th className="num">Lần tra cứu</th>
+                    <th>Tình trạng</th>
+                    <th className="act"><span className="ui-sr-only">Thao tác</span></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(disbursements.data?.content ?? []).map((item) => (
+                    <tr key={item.sagaId}>
+                      <td>
+                        <span className="ui-code">{item.contractNumber}</span>
+                        <span className="ui-sub">
+                          Hồ sơ #{item.loanApplicationId}<LoanProofsLink loanApplicationId={item.loanApplicationId} separated />
+                        </span>
+                      </td>
+                      <td className="num">{money(item.amount)}</td>
+                      <td>
+                        {item.provider}
+                        {item.providerReference && <span className="ui-sub ui-mono">{item.providerReference}</span>}
+                      </td>
+                      <ErrorCell code={item.errorCode} detail={item.errorDetail} />
+                      <td className="num">
+                        {item.reconciliationAttemptCount}
+                        {item.manualRecheckCount > 0 && <span className="ui-sub">{item.manualRecheckCount} lần thủ công</span>}
+                      </td>
+                      <td>
+                        <DisbursementStatus item={item} />
+                        {item.nextAttemptAt && <span className="ui-sub">Lượt sau {formatDateTime(item.nextAttemptAt)}</span>}
+                      </td>
+                      <td className="act">
+                        {item.status === 'RECONCILIATION_REQUIRED' && canFix && (
+                          <button
+                            type="button"
+                            className="ui-btn soft"
+                            disabled={running != null}
+                            onClick={() => recheckDisbursement(item)}
+                          >
+                            {running === item.sagaId ? 'Đang gửi...' : 'Tra cứu lại'}
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </QueueBody>
+        </>
+      )}
 
-      <WithdrawalIncidentsSection running={running} onRecheck={recheckWithdrawalIncident} />
+      {canView('withdrawal') && <WithdrawalIncidentsSection running={running} onRecheck={recheckWithdrawalIncident} />}
 
-      <div className="svc-subhead">
-        <h2>Đã giải ngân, hệ thống lõi chưa ghi khoản vay</h2>
-        {sagas.data && sagas.data.totalElements > 0 && <span>Cần kiểm tra Fineract theo số hợp đồng</span>}
-      </div>
-      <QueueBody
-        error={sagas.error}
-        isLoading={sagas.isLoading}
-        isFetching={sagas.isFetching}
-        onRetry={sagas.refetch}
-        total={sagas.data?.totalElements ?? 0}
-        emptyText="Không có khoản giải ngân chờ ghi vào hệ thống lõi."
-        page={sagaPage}
-        unit="hợp đồng"
-        onPage={setSagaPage}
-      >
-        <div className="ui-table-wrap">
-          <table className="ui-table list svc-table">
-            <thead>
-              <tr>
-                <th>Hợp đồng</th>
-                <th className="num">Số tiền</th>
-                <th>Mã chuyển tiền</th>
-                <th>Lỗi gần nhất</th>
-                <th className="num">Lần ghi lõi</th>
-                <th>Cập nhật</th>
-                <th className="act"><span className="ui-sr-only">Thao tác</span></th>
-              </tr>
-            </thead>
-            <tbody>
-              {(sagas.data?.data ?? []).map((item) => (
-                <tr key={item.sagaId}>
-                  <td>
-                    <span className="ui-code">{item.contractNumber}</span>
-                    <span className="ui-sub">
-                      Hồ sơ #{item.loanApplicationId} · <LoanProofsLink loanApplicationId={item.loanApplicationId} />
-                    </span>
-                  </td>
-                  <td className="num">{money(item.amount)}</td>
-                  <td>{item.paymentReference ? <span className="ui-mono">{item.paymentReference}</span> : <span className="svc-muted">Không có</span>}</td>
-                  <ErrorCell code={item.lastErrorCode} detail={item.lastErrorDetail} />
-                  <td className="num">
-                    {item.attemptsSinceRepair}
-                    {item.repairCount > 0 && <span className="ui-sub">Đã sửa {item.repairCount} lần</span>}
-                  </td>
-                  <td>{formatDateTime(item.updatedAt)}</td>
-                  <td className="act">
-                    <button
-                      type="button"
-                      className="ui-btn soft"
-                      disabled={running != null}
-                      onClick={() => setRequeueing(item)}
-                    >
-                      Ghi lại
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </QueueBody>
+      {showReconciliation && (
+        <>
+          <div className="svc-subhead">
+            <h2>Đã giải ngân, hệ thống lõi chưa ghi khoản vay</h2>
+            {sagas.data && sagas.data.totalElements > 0 && <span>Cần kiểm tra Fineract theo số hợp đồng</span>}
+          </div>
+          <QueueBody
+            error={sagas.error}
+            isLoading={sagas.isLoading}
+            isFetching={sagas.isFetching}
+            onRetry={sagas.refetch}
+            total={sagas.data?.totalElements ?? 0}
+            emptyText="Không có khoản giải ngân chờ ghi vào hệ thống lõi."
+            page={sagaPage}
+            unit="hợp đồng"
+            onPage={setSagaPage}
+          >
+            <div className="ui-table-wrap">
+              <table className="ui-table list svc-table">
+                <thead>
+                  <tr>
+                    <th>Hợp đồng</th>
+                    <th className="num">Số tiền</th>
+                    <th>Mã chuyển tiền</th>
+                    <th>Lỗi gần nhất</th>
+                    <th className="num">Lần ghi lõi</th>
+                    <th>Cập nhật</th>
+                    <th className="act"><span className="ui-sr-only">Thao tác</span></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(sagas.data?.data ?? []).map((item) => (
+                    <tr key={item.sagaId}>
+                      <td>
+                        <span className="ui-code">{item.contractNumber}</span>
+                        <span className="ui-sub">
+                          Hồ sơ #{item.loanApplicationId}<LoanProofsLink loanApplicationId={item.loanApplicationId} separated />
+                        </span>
+                      </td>
+                      <td className="num">{money(item.amount)}</td>
+                      <td>{item.paymentReference ? <span className="ui-mono">{item.paymentReference}</span> : <span className="svc-muted">Không có</span>}</td>
+                      <ErrorCell code={item.lastErrorCode} detail={item.lastErrorDetail} />
+                      <td className="num">
+                        {item.attemptsSinceRepair}
+                        {item.repairCount > 0 && <span className="ui-sub">Đã sửa {item.repairCount} lần</span>}
+                      </td>
+                      <td>{formatDateTime(item.updatedAt)}</td>
+                      <td className="act">
+                        {canFix && (
+                          <button
+                            type="button"
+                            className="ui-btn soft"
+                            disabled={running != null}
+                            onClick={() => setRequeueing(item)}
+                          >
+                            Ghi lại
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </QueueBody>
 
-      <div className="svc-subhead">
-        <h2>Lệnh góp vốn chưa khớp với ví</h2>
-        {orders.data && orders.data.totalElements > 0 && <span>Tiền giữ của nhà đầu tư chưa xử lý xong</span>}
-      </div>
-      <QueueBody
-        error={orders.error}
-        isLoading={orders.isLoading}
-        isFetching={orders.isFetching}
-        onRetry={orders.refetch}
-        total={orders.data?.totalElements ?? 0}
-        emptyText="Không có lệnh góp vốn cần xử lý."
-        page={orderPage}
-        unit="lệnh"
-        onPage={setOrderPage}
-      >
-        <div className="ui-table-wrap">
-          <table className="ui-table list svc-table">
-            <thead>
-              <tr>
-                <th>Lệnh góp vốn</th>
-                <th>Nhà đầu tư</th>
-                <th className="num">Số tiền</th>
-                <th>Lỗi gần nhất</th>
-                <th className="num">Lần thử</th>
-                <th>Tình trạng</th>
-                <th className="act"><span className="ui-sr-only">Thao tác</span></th>
-              </tr>
-            </thead>
-            <tbody>
-              {(orders.data?.content ?? []).map((item) => (
-                <tr key={item.orderReference}>
-                  <td>
-                    <span className="ui-mono">{item.orderReference}</span>
-                    <span className="ui-sub">Khoản vay trên sàn #{item.listingId}</span>
-                  </td>
-                  <td><span className="ui-mono">{item.investorId}</span></td>
-                  <td className="num">{money(item.amount)}</td>
-                  <ErrorCell code={item.releaseErrorCode ?? item.rejectedReasonCode} detail={null} />
-                  <td className="num">{item.issue === 'HOLD_PENDING' ? item.pendingAttemptCount : item.releaseAttemptCount}</td>
-                  <td>
-                    <OrderIncidentIssue item={item} />
-                    {(item.releaseNextAttemptAt ?? item.pendingNextAttemptAt) && item.issue !== 'RELEASE_BLOCKED' && (
-                      <span className="ui-sub">Lượt sau {formatDateTime(item.releaseNextAttemptAt ?? item.pendingNextAttemptAt)}</span>
-                    )}
-                  </td>
-                  <td className="act">
-                    <button
-                      type="button"
-                      className="ui-btn soft"
-                      disabled={running != null}
-                      onClick={() => retryOrderIncident(item)}
-                    >
-                      {running === item.orderReference ? 'Đang gửi...' : 'Thử lại'}
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </QueueBody>
+          <div className="svc-subhead">
+            <h2>Lệnh góp vốn chưa khớp với ví</h2>
+            {orders.data && orders.data.totalElements > 0 && <span>Tiền giữ của nhà đầu tư chưa xử lý xong</span>}
+          </div>
+          <QueueBody
+            error={orders.error}
+            isLoading={orders.isLoading}
+            isFetching={orders.isFetching}
+            onRetry={orders.refetch}
+            total={orders.data?.totalElements ?? 0}
+            emptyText="Không có lệnh góp vốn cần xử lý."
+            page={orderPage}
+            unit="lệnh"
+            onPage={setOrderPage}
+          >
+            <div className="ui-table-wrap">
+              <table className="ui-table list svc-table">
+                <thead>
+                  <tr>
+                    <th>Lệnh góp vốn</th>
+                    <th>Nhà đầu tư</th>
+                    <th className="num">Số tiền</th>
+                    <th>Lỗi gần nhất</th>
+                    <th className="num">Lần thử</th>
+                    <th>Tình trạng</th>
+                    <th className="act"><span className="ui-sr-only">Thao tác</span></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(orders.data?.content ?? []).map((item) => (
+                    <tr key={item.orderReference}>
+                      <td>
+                        <span className="ui-mono">{item.orderReference}</span>
+                        <span className="ui-sub">Khoản vay trên sàn #{item.listingId}</span>
+                      </td>
+                      <td><span className="ui-mono">{item.investorId}</span></td>
+                      <td className="num">{money(item.amount)}</td>
+                      <ErrorCell code={item.releaseErrorCode ?? item.rejectedReasonCode} detail={null} />
+                      <td className="num">{item.issue === 'HOLD_PENDING' ? item.pendingAttemptCount : item.releaseAttemptCount}</td>
+                      <td>
+                        <OrderIncidentIssue item={item} />
+                        {(item.releaseNextAttemptAt ?? item.pendingNextAttemptAt) && item.issue !== 'RELEASE_BLOCKED' && (
+                          <span className="ui-sub">Lượt sau {formatDateTime(item.releaseNextAttemptAt ?? item.pendingNextAttemptAt)}</span>
+                        )}
+                      </td>
+                      <td className="act">
+                        {canFix && (
+                          <button
+                            type="button"
+                            className="ui-btn soft"
+                            disabled={running != null}
+                            onClick={() => retryOrderIncident(item)}
+                          >
+                            {running === item.orderReference ? 'Đang gửi...' : 'Thử lại'}
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </QueueBody>
+        </>
+      )}
 
       {reposting && (
         <RepaymentRepostModal

@@ -7,6 +7,7 @@ import { ErrorNotice } from '@/components/ErrorNotice';
 import { Icon } from '@/components/Icon';
 import { Pager } from '@/components/Pager';
 import { Toast } from '@/components/Toast';
+import { usePermission } from '@/features/auth';
 import { useGetMarketListingsQuery } from '../api/investmentApi';
 import { CommitmentTrendCard } from '../components/CommitmentTrendCard';
 import { FundingListFilters, isFilterActive, type ListingFilters } from '../components/FundingListFilters';
@@ -43,6 +44,7 @@ export function FundingPage() {
   const dispatch = useDispatch<AppDispatch>();
   const [searchParams, setSearchParams] = useSearchParams();
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const { canView } = usePermission();
   const [toast, setToast] = useState<string | null>(null);
   // Tham chiếu ổn định: Toast đặt lại hẹn giờ mỗi khi `onDismiss` đổi.
   const dismissToast = useCallback(() => setToast(null), []);
@@ -101,13 +103,17 @@ export function FundingPage() {
             <Icon name="refresh" />
             {list.isFetching ? 'Đang tải...' : 'Làm mới'}
           </button>
-          <button type="button" className="ui-btn ghost" onClick={() => setSettingsOpen(true)}>Tham số sàn</button>
+          {/* Tham số sàn thuộc chức năng "Cấu hình gọi vốn", phân quyền riêng với Gọi vốn & Notes. */}
+          {canView('funding-settings') && (
+            <button type="button" className="ui-btn ghost" onClick={() => setSettingsOpen(true)}>Tham số sàn</button>
+          )}
         </div>
       </header>
 
       <FundingSummary summary={summary.summary} isLoading={summary.isLoading} error={summary.error} onRetry={summary.refetch} />
 
-      <CommitmentTrendCard />
+      {/* Biểu đồ đọc series thống kê, cần quyền Xem "Tổng quan & thống kê". */}
+      {canView('dashboard') && <CommitmentTrendCard />}
 
       <section className="ui-card fu-list" aria-label="Danh sách khoản gọi vốn">
         <div className="fu-list-bar">

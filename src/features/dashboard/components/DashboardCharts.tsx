@@ -4,6 +4,7 @@ import { CHART_EMPTY_TEXT } from '@/components/ChartCard';
 import { EChart } from '@/components/EChart';
 import { ErrorNotice } from '@/components/ErrorNotice';
 import { Icon } from '@/components/Icon';
+import { usePermission } from '@/features/auth';
 import { StaleProjectionNote } from '@/features/statistics';
 import { DASHBOARD_CHARTS } from '../constants';
 import type { DashboardStatistics } from '../hooks/useDashboardStatistics';
@@ -47,6 +48,7 @@ function SideTable({ spec }: { spec: ChartSpecReady }) {
  */
 export function DashboardCharts({ stats }: { stats: DashboardStatistics }) {
   const [selected, setSelected] = useState<DashboardChartKey>('funding');
+  const { canView } = usePermission();
   const chart = DASHBOARD_CHARTS.find((item) => item.key === selected) ?? DASHBOARD_CHARTS[0];
   const {
     period, currentFrom, chartBucket, loanSummary, investmentSummary, investmentChart, loanChart,
@@ -92,7 +94,7 @@ export function DashboardCharts({ stats }: { stats: DashboardStatistics }) {
             </button>
           ))}
         </div>
-        {chart.link && (
+        {chart.link && canView(chart.link.view) && (
           <Link className="dash-more" to={chart.link.to}>Mở trang {chart.link.label}<Icon name="chevronRight" /></Link>
         )}
       </div>

@@ -14,7 +14,8 @@ interface Props {
   isLoading: boolean;
   error: unknown;
   onRetry: () => void;
-  onShowCollection: () => void;
+  /** Bấm biểu đồ để mở tab thu hồi; bỏ trống khi tài khoản không xem được tab đó. */
+  onShowCollection?: () => void;
 }
 
 /**

@@ -4,6 +4,7 @@ import { ErrorNotice } from '@/components/ErrorNotice';
 import { Icon } from '@/components/Icon';
 import { StatusPill } from '@/components/StatusPill';
 import { Toast } from '@/components/Toast';
+import { usePermission } from '@/features/auth';
 import { toUiApiError } from '@/lib/api/errors';
 import { useGetEkycAttemptQuery } from '../api/ekycReviewQueries';
 import { DraftFieldsCard } from '../components/DraftFieldsCard';
@@ -41,6 +42,7 @@ function EkycReviewView({ attemptId }: { attemptId: string }) {
   const attempt = detail.data;
   const [decision, setDecision] = useState<EkycReviewDecision | null>(null);
   const [conflict, setConflict] = useState(false);
+  const canViewCustomer = usePermission().canView('customer');
   const [toast, setToast] = useState<string | null>(null);
   // Tham chiếu ổn định: Toast đặt lại hẹn giờ mỗi khi `onDismiss` đổi.
   const dismissToast = useCallback(() => setToast(null), []);
@@ -80,7 +82,9 @@ function EkycReviewView({ attemptId }: { attemptId: string }) {
           </div>
           <div className="ekr-meta">
             <span><span className="k">Mã lượt</span> <span className="ui-mono">{attempt.attemptId}</span></span>
-            <Link className="ui-link" to={`/customers/kyc/${attempt.userProfileId}`}>Hồ sơ khách hàng #{attempt.userProfileId}</Link>
+            {canViewCustomer
+              ? <Link className="ui-link" to={`/customers/kyc/${attempt.userProfileId}`}>Hồ sơ khách hàng #{attempt.userProfileId}</Link>
+              : <span>Hồ sơ khách hàng #{attempt.userProfileId}</span>}
             <span><span className="k">Bắt đầu</span> {formatDayTime(attempt.createdAt)}</span>
             <span><span className="k">Gửi duyệt</span> {formatDayTime(attempt.submittedAt)}</span>
           </div>

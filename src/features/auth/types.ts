@@ -20,7 +20,7 @@ export interface CurrentUser {
   address: string | null;
   idNumber: string | null;
   phone: string | null;
-  role: 'ADMIN' | 'BORROWER' | 'INVESTOR';
+  role: 'ADMIN' | 'STAFF' | 'BORROWER' | 'INVESTOR';
   ekycStatus: 'PENDING' | 'VERIFIED' | 'FAILED' | 'MANUAL_REVIEW';
   documentVerified: boolean;
   profileCompleted: boolean;
@@ -28,6 +28,18 @@ export interface CurrentUser {
   createdAt?: string | null;
   /** Trạng thái khóa từ Keycloak — null với API hồ sơ cá nhân */
   locked?: boolean | null;
+  /** Quyền `ops:<chức năng>:view|action` của nhân viên; ADMIN có mọi quyền dù danh sách trống. */
+  permissions?: string[];
+  /** Vai trò nhân viên đang gán; null với tài khoản không phải STAFF. */
+  staffRole?: StaffRoleRef | null;
+  /** Bản phẳng của `staffRole` (backend trả cả hai). */
+  staffRoleCode?: string | null;
+  staffRoleName?: string | null;
+}
+
+export interface StaffRoleRef {
+  code: string;
+  name: string;
 }
 
 export interface AuthState {

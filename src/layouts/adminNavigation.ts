@@ -1,11 +1,35 @@
+import type { PageAccess } from '@/features/auth';
+
 export type SidebarIconName =
   | 'home' | 'chart' | 'file' | 'loan' | 'check' | 'clock' | 'workflow'
-  | 'grid' | 'identity' | 'users' | 'shield' | 'alert' | 'scan' | 'chain' | 'download' | 'faceScan';
+  | 'grid' | 'identity' | 'users' | 'shield' | 'alert' | 'scan' | 'chain' | 'download' | 'faceScan' | 'key';
+
+/**
+ * Quyền cần để mở từng trang quản trị (khớp `OpsFunction` của backend). Menu ẩn mục không xem được, route hiện thẻ
+ * "Không có quyền truy cập". Vận hành khoản vay gom bốn hàng đợi nên chỉ cần quyền Xem một trong số đó; bên trong trang
+ * chỉ hiện nhóm việc xem được.
+ */
+export const PAGE_ACCESS = {
+  dashboard: { anyView: ['dashboard'] },
+  loans: { anyView: ['loan-application'] },
+  operations: { anyView: ['collection', 'reschedule', 'withdrawal', 'reconciliation'] },
+  funding: { anyView: ['funding'] },
+  secondary: { anyView: ['secondary-market'] },
+  products: { anyView: ['loan-product'] },
+  customers: { anyView: ['customer'] },
+  ekycReview: { anyView: ['ekyc'] },
+  users: { adminOnly: true },
+  staffRoles: { adminOnly: true },
+  blockchain: { anyView: ['blockchain'] },
+  aiPolicy: { anyView: ['ai-policy'] },
+  aiScoring: { anyView: ['ai-scoring'] },
+} satisfies Record<string, PageAccess>;
 
 export interface AdminNavigationItem {
   to: string;
   label: string;
   icon: SidebarIconName;
+  access: PageAccess;
   /** Các đường dẫn thuộc mục này, kể cả trang chi tiết, để tô mục đang chọn. */
   matches: (pathname: string) => boolean;
 }
@@ -26,7 +50,7 @@ export const ADMIN_NAV_SECTIONS: AdminNavigationSection[] = [
   {
     label: '',
     items: [
-      { to: '/dashboard', label: 'Tổng quan', icon: 'home', matches: (pathname) => pathname === '/dashboard' },
+      { to: '/dashboard', label: 'Tổng quan', icon: 'home', access: PAGE_ACCESS.dashboard, matches: (pathname) => pathname === '/dashboard' },
     ],
   },
   {
@@ -36,12 +60,14 @@ export const ADMIN_NAV_SECTIONS: AdminNavigationSection[] = [
         to: '/loans',
         label: 'Quản lý khoản vay',
         icon: 'loan',
+        access: PAGE_ACCESS.loans,
         matches: (pathname) => pathname === '/loans' || isLoanReview(pathname),
       },
       {
         to: '/loans/operations',
         label: 'Vận hành khoản vay',
         icon: 'workflow',
+        access: PAGE_ACCESS.operations,
         matches: (pathname) => ['/loans/operations', '/loans/overdue', '/reconciliation'].includes(pathname),
       },
     ],
@@ -49,44 +75,58 @@ export const ADMIN_NAV_SECTIONS: AdminNavigationSection[] = [
   {
     label: 'Đầu tư',
     items: [
-      { to: '/investments/funding', label: 'Gọi vốn & Notes', icon: 'chart', matches: (pathname) => pathname.startsWith('/investments/funding') },
-      { to: '/investments/secondary', label: 'Chợ thứ cấp Notes', icon: 'file', matches: (pathname) => pathname === '/investments/secondary' },
+      { to: '/investments/funding', label: 'Gọi vốn & Notes', icon: 'chart', access: PAGE_ACCESS.funding, matches: (pathname) => pathname.startsWith('/investments/funding') },
+      { to: '/investments/secondary', label: 'Chợ thứ cấp Notes', icon: 'file', access: PAGE_ACCESS.secondary, matches: (pathname) => pathname === '/investments/secondary' },
     ],
   },
   {
     label: 'Sản phẩm',
     items: [
-      { to: '/products', label: 'Sản phẩm vay', icon: 'grid', matches: (pathname) => pathname === '/products' },
+      { to: '/products', label: 'Sản phẩm vay', icon: 'grid', access: PAGE_ACCESS.products, matches: (pathname) => pathname === '/products' },
     ],
   },
   {
     label: 'Người dùng',
     items: [
-      { to: '/customers/kyc', label: 'Khách hàng eKYC', icon: 'identity', matches: (pathname) => pathname.startsWith('/customers/kyc') },
+      { to: '/customers/kyc', label: 'Khách hàng eKYC', icon: 'identity', access: PAGE_ACCESS.customers, matches: (pathname) => pathname.startsWith('/customers/kyc') },
       {
         to: '/customers/ekyc-review',
         label: 'Duyệt eKYC',
         icon: 'faceScan',
+        access: PAGE_ACCESS.ekycReview,
         matches: (pathname) => pathname === '/customers/ekyc-review' || pathname.startsWith('/customers/ekyc-review/'),
       },
-      { to: '/users', label: 'Người dùng & phân quyền', icon: 'users', matches: (pathname) => pathname === '/users' },
+      { to: '/users', label: 'Người dùng & phân quyền', icon: 'users', access: PAGE_ACCESS.users, matches: (pathname) => pathname === '/users' },
+      { to: '/users/roles', label: 'Vai trò nhân viên', icon: 'key', access: PAGE_ACCESS.staffRoles, matches: (pathname) => pathname === '/users/roles' },
     ],
   },
   {
-    // Explorer proof của Blockchain Service (W3D, D54): đã nối API thật qua Gateway, chỉ ADMIN.
+    // Explorer proof của Blockchain Service (W3D, D54): đã nối API thật qua Gateway; nhân viên cần quyền Xem blockchain.
     label: 'Kiểm toán',
     items: [
-      { to: '/blockchain/proofs', label: 'Xác minh giao dịch', icon: 'chain', matches: (pathname) => pathname === '/blockchain/proofs' },
+      { to: '/blockchain/proofs', label: 'Xác minh giao dịch', icon: 'chain', access: PAGE_ACCESS.blockchain, matches: (pathname) => pathname === '/blockchain/proofs' },
     ],
   },
   {
     label: 'Cấu hình',
     items: [
-      { to: '/loans/evaluation', label: 'Chính sách đánh giá AI', icon: 'shield', matches: (pathname) => pathname === '/loans/evaluation' },
-      { to: '/loans/scoring', label: 'Chấm điểm & giải thích AI', icon: 'scan', matches: (pathname) => pathname === '/loans/scoring' },
+      { to: '/loans/evaluation', label: 'Chính sách đánh giá AI', icon: 'shield', access: PAGE_ACCESS.aiPolicy, matches: (pathname) => pathname === '/loans/evaluation' },
+      { to: '/loans/scoring', label: 'Chấm điểm & giải thích AI', icon: 'scan', access: PAGE_ACCESS.aiScoring, matches: (pathname) => pathname === '/loans/scoring' },
     ],
   },
 ];
+
+/** Menu theo quyền: bỏ mục không xem được, bỏ cả nhóm khi không còn mục nào. */
+export function visibleNavSections(canAccess: (access: PageAccess) => boolean): AdminNavigationSection[] {
+  return ADMIN_NAV_SECTIONS
+    .map((section) => ({ ...section, items: section.items.filter((item) => canAccess(item.access)) }))
+    .filter((section) => section.items.length > 0);
+}
+
+/** Trang đầu tiên tài khoản mở được, theo thứ tự menu; null khi vai trò nhân viên chưa có quyền Xem nào. */
+export function firstAccessiblePath(canAccess: (access: PageAccess) => boolean): string | null {
+  return visibleNavSections(canAccess)[0]?.items[0]?.to ?? null;
+}
 
 export interface AdminBreadcrumb {
   section: string;

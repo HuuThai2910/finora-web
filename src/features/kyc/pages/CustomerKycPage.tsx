@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { ErrorNotice } from '@/components/ErrorNotice';
 import { Icon } from '@/components/Icon';
 import { Pager } from '@/components/Pager';
+import { usePermission } from '@/features/auth';
 import { useGetUserStatsQuery, useGetUsersQuery, type EkycStatusType } from '@/features/user';
 import { CustomerTable } from '../components/CustomerTable';
 import { EkycOutcomeCard } from '../components/EkycOutcomeCard';
@@ -32,6 +33,8 @@ export default function CustomerKycPage() {
   const filter: KycFilter = isKycFilter(requested) ? requested : 'ALL';
   const page = readPage(searchParams.get('page'));
   const listRef = useRef<HTMLElement>(null);
+  // Biểu đồ đăng ký theo tuần đọc series thống kê, cần quyền Xem "Tổng quan & thống kê".
+  const canStats = usePermission().canView('dashboard');
 
   // Lọc ở backend để kết quả trải trên toàn bộ người dùng, không chỉ trang đang tải.
   const users = useGetUsersQuery({ page, size: KYC_LIST_PAGE_SIZE, role: 'ALL', ekycStatus: filter });
@@ -78,8 +81,8 @@ export default function CustomerKycPage() {
         </button>
       </header>
 
-      <div className="kyc-overview">
-        <SignupWeeklyCard />
+      <div className={canStats ? 'kyc-overview' : 'kyc-overview single'}>
+        {canStats && <SignupWeeklyCard />}
         <EkycOutcomeCard
           stats={stats.data}
           isLoading={stats.isLoading}

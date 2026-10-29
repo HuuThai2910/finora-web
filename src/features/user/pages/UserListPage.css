@@ -37,6 +37,12 @@
   font-weight: 400;
 }
 
+.user-head-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 /* Hộp thoại đổi vai trò, khóa tài khoản */
 .user-modal-lead {
   margin-bottom: 12px;
@@ -81,6 +87,29 @@
 
 .user-role-option strong + span {
   display: block;
+  color: var(--text-muted);
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.user-staff-role {
+  display: grid;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.user-staff-role label {
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.user-required {
+  color: var(--danger);
+  font-weight: 700;
+}
+
+.user-staff-hint {
   color: var(--text-muted);
   font-size: 13px;
   line-height: 18px;

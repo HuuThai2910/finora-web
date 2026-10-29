@@ -3,6 +3,7 @@ import { useDispatch } from 'react-redux';
 import type { AppDispatch } from '@/app/store';
 import { Icon } from '@/components/Icon';
 import { Toast } from '@/components/Toast';
+import { usePermission } from '@/features/auth';
 import { investmentApi } from '@/lib/api/investmentApi';
 import { loanApi } from '@/lib/api/loanApi';
 import { paymentApi } from '@/lib/api/paymentApi';
@@ -40,7 +41,10 @@ function updatedLabel(timestamp: number): string {
  */
 export default function ServicingOperationsPage() {
   const dispatch = useDispatch<AppDispatch>();
-  const { tab, page, setTab, setPage } = useServicingTab();
+  const { canView } = usePermission();
+  // Nhân viên chỉ thấy nhóm việc có quyền Xem (route đã chặn khi không xem được nhóm nào).
+  const tabs = SERVICING_TABS.filter((item) => item.functions.some(canView));
+  const { tab, page, setTab, setPage } = useServicingTab(tabs.map((item) => item.key));
   const counts = useServicingCounts();
   const [openCase, setOpenCase] = useState<CollectionCase | null>(null);
   const [toast, setToast] = useState('');
@@ -66,28 +70,31 @@ export default function ServicingOperationsPage() {
         </div>
       </header>
 
-      <div className="svc-overview-row">
-        <OverdueByGroupCard
-          summary={counts.summary.data}
-          isLoading={counts.summary.isLoading}
-          error={counts.summary.error}
-          onRetry={counts.summary.refetch}
-        />
-        <OpenCasesCard
-          stages={counts.stages}
-          portfolio={counts.summary.data?.portfolio}
-          openCases={counts.openCases}
-          isLoading={counts.summary.isLoading}
-          error={counts.summary.error}
-          onRetry={counts.summary.refetch}
-          onShowCollection={() => setTab('collection')}
-        />
-      </div>
+      {/* Hai thẻ tổng quan đọc summary thống kê, cần quyền Xem "Tổng quan & thống kê". */}
+      {canView('dashboard') && (
+        <div className="svc-overview-row">
+          <OverdueByGroupCard
+            summary={counts.summary.data}
+            isLoading={counts.summary.isLoading}
+            error={counts.summary.error}
+            onRetry={counts.summary.refetch}
+          />
+          <OpenCasesCard
+            stages={counts.stages}
+            portfolio={counts.summary.data?.portfolio}
+            openCases={counts.openCases}
+            isLoading={counts.summary.isLoading}
+            error={counts.summary.error}
+            onRetry={counts.summary.refetch}
+            onShowCollection={canView('collection') ? () => setTab('collection') : undefined}
+          />
+        </div>
+      )}
 
       <section className="ui-card svc-list" aria-label="Việc vận hành">
         <div className="svc-list-head">
           <div className="ui-tabs" role="tablist" aria-label="Nhóm việc">
-            {SERVICING_TABS.map((item) => (
+            {tabs.map((item) => (
               <button
                 key={item.key}
                 type="button"

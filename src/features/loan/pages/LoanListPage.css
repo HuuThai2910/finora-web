@@ -11,6 +11,11 @@
   min-width: 0;
 }
 
+/* Nhân viên không có quyền Xem thống kê: chỉ còn thẻ chờ thẩm định. */
+.loan-top.single {
+  grid-template-columns: minmax(0, 1fr);
+}
+
 .loan-top-card {
   padding: 16px 18px;
 }

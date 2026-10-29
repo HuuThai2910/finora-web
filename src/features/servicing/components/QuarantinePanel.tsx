@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { ErrorNotice } from '@/components/ErrorNotice';
 import { StatusPill } from '@/components/StatusPill';
+import { usePermission } from '@/features/auth';
 import { formatDateTime } from '@/utils';
 import { useQuarantinedEventsQuery, useReplayQuarantineMutation } from '../api/servicingApi';
 import { SERVICING_PAGE_SIZE, quarantineReasonLabel } from '../constant';
@@ -19,6 +20,7 @@ interface Props {
 export function QuarantinePanel({ page, onPage, onDone }: Props) {
   const query = useQuarantinedEventsQuery({ page, size: SERVICING_PAGE_SIZE });
   const [replay, state] = useReplayQuarantineMutation();
+  const canReplay = usePermission().canAct('reconciliation');
   const [running, setRunning] = useState<string | null>(null);
   const [failed, setFailed] = useState<{ eventId: string; error: unknown } | null>(null);
 
@@ -86,7 +88,7 @@ export function QuarantinePanel({ page, onPage, onDone }: Props) {
                       : <StatusPill tone="success">Đã ghép</StatusPill>}
                   </td>
                   <td className="act">
-                    {item.status === 'PENDING' && (
+                    {item.status === 'PENDING' && canReplay && (
                       <button
                         type="button"
                         className="ui-btn soft"

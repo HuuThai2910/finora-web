@@ -7,6 +7,7 @@ import { ErrorNotice } from '@/components/ErrorNotice';
 import { Icon } from '@/components/Icon';
 import { Pager } from '@/components/Pager';
 import { Toast } from '@/components/Toast';
+import { usePermission } from '@/features/auth';
 import { loanApi } from '@/lib/api/loanApi';
 import { useGetAdminProductsQuery } from '../api/productApi';
 import { ActionError } from '../components/ActionError';
@@ -30,6 +31,7 @@ function readPage(raw: string | null): number {
 type OpenDrawer = { id: number; initial: LoanProduct | null; askArchive: boolean } | null;
 
 export default function ProductListPage() {
+  const { canView, canAct } = usePermission();
   const dispatch = useDispatch<AppDispatch>();
   // Tab và trang nằm trên URL để chia sẻ đường dẫn hoặc quay lại đúng chỗ đang xem.
   const [searchParams, setSearchParams] = useSearchParams();
@@ -97,24 +99,27 @@ export default function ProductListPage() {
             <Icon name="refresh" />
             {list.isFetching ? 'Đang tải...' : 'Làm mới'}
           </button>
-          <button
-            type="button"
-            className="ui-btn primary"
-            onClick={() => {
-              createAndSync.clearError();
-              setShowCreate(true);
-            }}
-          >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
-              <path d="M12 5v14" />
-              <path d="M5 12h14" />
-            </svg>
-            Tạo sản phẩm
-          </button>
+          {canAct('loan-product') && (
+            <button
+              type="button"
+              className="ui-btn primary"
+              onClick={() => {
+                createAndSync.clearError();
+                setShowCreate(true);
+              }}
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+                <path d="M12 5v14" />
+                <path d="M5 12h14" />
+              </svg>
+              Tạo sản phẩm
+            </button>
+          )}
         </div>
       </header>
 
-      <ProductOverview onOpenProduct={(id) => setDrawer({ id, initial: null, askArchive: false })} />
+      {/* Hai thẻ đầu trang đọc API thống kê, cần quyền Xem "Tổng quan & thống kê". */}
+      {canView('dashboard') && <ProductOverview onOpenProduct={(id) => setDrawer({ id, initial: null, askArchive: false })} />}
 
       <section className="ui-card prod-list" aria-label="Danh sách sản phẩm vay">
         <div className="prod-list-bar">
@@ -142,7 +147,9 @@ export default function ProductListPage() {
           <div className="ui-empty" aria-busy="true">Đang tải danh sách sản phẩm...</div>
         ) : products.length === 0 ? (
           <div className="ui-empty">
-            {filter === 'ALL' ? 'Chưa có sản phẩm vay nào. Bấm "Tạo sản phẩm" để bắt đầu.' : 'Chưa có sản phẩm ở trạng thái này.'}
+            {filter !== 'ALL'
+              ? 'Chưa có sản phẩm ở trạng thái này.'
+              : canAct('loan-product') ? 'Chưa có sản phẩm vay nào. Bấm "Tạo sản phẩm" để bắt đầu.' : 'Chưa có sản phẩm vay nào.'}
           </div>
         ) : (
           <div className={list.isFetching ? 'ui-busy' : undefined}>
@@ -150,6 +157,7 @@ export default function ProductListPage() {
               products={products}
               openId={drawer?.id ?? null}
               busy={rowAction.isBusy}
+              canAct={canAct('loan-product')}
               onOpen={(product) => setDrawer({ id: product.id, initial: product, askArchive: false })}
               onAskArchive={(product) => setDrawer({ id: product.id, initial: product, askArchive: true })}
               onAction={(product, action) => void runRowAction(product, action)}

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { usePermission } from '@/features/auth';
 import { userApi } from '@/features/user/api/userApi';
 
 /**
@@ -17,13 +18,15 @@ export function useInvestorNames(investorIds: string[]): {
 } {
   const [names, setNames] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
+  // Danh sách người dùng cần quyền Xem "Khách hàng"; thiếu quyền thì không gọi, bảng hiện mã nhà đầu tư.
+  const canLookup = usePermission().canView('customer');
 
   // Khoá phụ thuộc là chuỗi đã sắp xếp: mảng mới mỗi lần render sẽ làm effect chạy lại
   // vô hạn nếu so sánh bằng tham chiếu.
   const key = [...new Set(investorIds)].sort().join(',');
 
   useEffect(() => {
-    if (key === '') {
+    if (key === '' || !canLookup) {
       setNames({});
       return undefined;
     }
@@ -53,7 +56,7 @@ export function useInvestorNames(investorIds: string[]): {
     return () => {
       cancelled = true;
     };
-  }, [key]);
+  }, [key, canLookup]);
 
   return { names, isLoading };
 }

@@ -1,5 +1,15 @@
 import { apiFetch } from '@/lib/api/httpClient';
-import type { EkycStatusType, PageResponse, RoleType, UserItem, UserStats } from '../types';
+import type {
+  AssignRoleRequest,
+  EkycStatusType,
+  PageResponse,
+  RoleType,
+  StaffPermissionFunction,
+  StaffRole,
+  StaffRoleRequest,
+  UserItem,
+  UserStats,
+} from '../types';
 
 /**
  * API quản trị người dùng — nối thẳng tới finora-user qua API Gateway.
@@ -41,9 +51,33 @@ export const userApi = {
       method: 'POST',
     }),
 
-  assignRole: (id: number, role: RoleType): Promise<void> =>
+  /** Đổi vai trò; STAFF phải kèm `staffRoleCode` (backend trả 400 nếu thiếu). */
+  assignRole: (id: number, request: AssignRoleRequest): Promise<void> =>
     apiFetch<void>(`/api/v1/admin/users/${id}/roles`, {
       method: 'POST',
-      body: JSON.stringify({ role }),
+      body: JSON.stringify(request),
+    }),
+
+  /** Danh mục chức năng phân quyền (nguồn: `OpsFunction` ở backend), để dựng ma trận Xem/Thao tác. */
+  getStaffPermissions: (): Promise<StaffPermissionFunction[]> =>
+    apiFetch<StaffPermissionFunction[]>('/api/v1/admin/staff-roles/permissions'),
+
+  getStaffRoles: (): Promise<StaffRole[]> => apiFetch<StaffRole[]>('/api/v1/admin/staff-roles'),
+
+  createStaffRole: (request: StaffRoleRequest): Promise<StaffRole> =>
+    apiFetch<StaffRole>('/api/v1/admin/staff-roles', {
+      method: 'POST',
+      body: JSON.stringify(request),
+    }),
+
+  updateStaffRole: (code: string, request: StaffRoleRequest): Promise<StaffRole> =>
+    apiFetch<StaffRole>(`/api/v1/admin/staff-roles/${encodeURIComponent(code)}`, {
+      method: 'PUT',
+      body: JSON.stringify(request),
+    }),
+
+  deleteStaffRole: (code: string): Promise<void> =>
+    apiFetch<void>(`/api/v1/admin/staff-roles/${encodeURIComponent(code)}`, {
+      method: 'DELETE',
     }),
 };

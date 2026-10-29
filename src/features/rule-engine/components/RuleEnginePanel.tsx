@@ -1,4 +1,5 @@
 import { Toast } from '@/components/Toast';
+import { usePermission } from '@/features/auth';
 import { useRuleEngine } from '../hooks/useRuleEngine';
 import { AiErrorNotice } from './AiErrorNotice';
 import { IconEdit, IconPlus } from './icons';
@@ -14,6 +15,8 @@ import './RuleEnginePanel.css';
  */
 export default function RuleEnginePanel() {
   const re = useRuleEngine();
+  // Sửa bộ luật cần quyền Thao tác "Chính sách AI"; chỉ có quyền Xem thì không có nút chỉnh sửa.
+  const canEdit = usePermission().canAct('ai-policy');
 
   const actions = !re.editing ? (
     <button type="button" className="ui-btn ghost" onClick={re.startEditing}>
@@ -41,7 +44,7 @@ export default function RuleEnginePanel() {
             </span>
           )}
         </div>
-        {re.data && actions}
+        {re.data && canEdit && actions}
       </div>
 
       {re.loadError ? (

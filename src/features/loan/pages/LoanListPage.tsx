@@ -5,6 +5,7 @@ import { loanApi } from '@/lib/api/loanApi';
 import { ErrorNotice } from '@/components/ErrorNotice';
 import { Icon, type IconName } from '@/components/Icon';
 import { Pager } from '@/components/Pager';
+import { usePermission } from '@/features/auth';
 import { useGetAdminApplicationsQuery } from '../api/loanReviewApi';
 import { ApplicationTable } from '../components/ApplicationTable';
 import { PendingReviewCard } from '../components/PendingReviewCard';
@@ -42,6 +43,7 @@ export default function LoanListPage() {
     size: APPLICATION_LIST_PAGE_SIZE,
   });
   const counts = useApplicationStatusCounts();
+  const canStats = usePermission().canView('dashboard');
   const pending = usePendingReviewSummary();
   const applications = list.data?.data ?? [];
   const { displayName, names } = useActorNames(applications.map((item) => item.borrowerId));
@@ -72,8 +74,9 @@ export default function LoanListPage() {
         </button>
       </header>
 
-      <div className="loan-top">
-        <SubmittedValueCard />
+      <div className={canStats ? 'loan-top' : 'loan-top single'}>
+        {/* Biểu đồ giá trị hồ sơ đọc series thống kê, cần quyền Xem "Tổng quan & thống kê". */}
+        {canStats && <SubmittedValueCard />}
         <PendingReviewCard
           summary={pending.summary}
           isLoading={pending.isLoading}

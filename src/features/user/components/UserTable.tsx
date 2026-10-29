@@ -1,5 +1,6 @@
-import { RowMenu } from '@/components/RowMenu';
+import { RowMenu, type RowMenuItem } from '@/components/RowMenu';
 import { StatusPill } from '@/components/StatusPill';
+import { usePermission } from '@/features/auth';
 import { EKYC_DISPLAY, ROLE_LABELS, formatGender } from '../constant';
 import type { UserItem } from '../types';
 
@@ -13,6 +14,9 @@ interface UserTableProps {
 
 /** Bảng người dùng; các thao tác của dòng gom vào menu "⋯". */
 export function UserTable({ users, currentAdminId, onChangeRole, onToggleLock }: UserTableProps) {
+  // Khóa/mở khóa là quyền Thao tác "Khách hàng"; đổi vai trò chỉ ADMIN (route trang này cũng chỉ mở cho ADMIN).
+  const { canAct, isAdmin } = usePermission();
+  const canLock = canAct('customer');
   return (
     <div className="ui-table-wrap">
       <table className="ui-table list">
@@ -48,7 +52,12 @@ export function UserTable({ users, currentAdminId, onChangeRole, onToggleLock }:
                 <td>{user.phone || '-'}</td>
                 <td>{formatGender(user.gender)}</td>
                 <td>{user.idNumber ? <span className="ui-mono">{user.idNumber}</span> : '-'}</td>
-                <td>{ROLE_LABELS[user.role] ?? user.role}</td>
+                <td>
+                  {ROLE_LABELS[user.role] ?? user.role}
+                  {user.role === 'STAFF' && (
+                    <span className="ui-sub">{user.staffRoleName || user.staffRoleCode || 'Chưa gán vai trò nhân viên'}</span>
+                  )}
+                </td>
                 <td>
                   {ekyc
                     ? <StatusPill tone={ekyc.tone}>{ekyc.label}</StatusPill>
@@ -59,15 +68,15 @@ export function UserTable({ users, currentAdminId, onChangeRole, onToggleLock }:
                     label={`Thao tác với ${name}`}
                     items={[
                       { key: 'detail', label: 'Xem chi tiết', icon: 'eye', to: `/customers/kyc/${user.id}` },
-                      {
+                      ...(isAdmin ? [{
                         key: 'role',
                         label: 'Đổi vai trò',
                         icon: 'userCheck',
                         onSelect: () => onChangeRole(user),
                         disabled: isSelf,
                         disabledReason: 'Không thể đổi vai trò của chính bạn',
-                      },
-                      {
+                      } satisfies RowMenuItem] : []),
+                      ...(canLock ? [{
                         key: 'lock',
                         label: isLocked ? 'Mở khóa tài khoản' : 'Khóa tài khoản',
                         icon: isLocked ? 'unlock' : 'lock',
@@ -76,7 +85,7 @@ export function UserTable({ users, currentAdminId, onChangeRole, onToggleLock }:
                         onSelect: () => onToggleLock(user),
                         disabled: isSelf,
                         disabledReason: 'Không thể tự khóa tài khoản của chính bạn',
-                      },
+                      } satisfies RowMenuItem] : []),
                     ]}
                   />
                 </td>

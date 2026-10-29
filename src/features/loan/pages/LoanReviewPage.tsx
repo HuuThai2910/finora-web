@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { ErrorNotice } from '@/components/ErrorNotice';
 import { Toast } from '@/components/Toast';
+import { usePermission } from '@/features/auth';
 import { toUiApiError } from '@/lib/api/errors';
 import { useGetReviewDetailQuery } from '../api/loanReviewApi';
 import { DecisionTray } from '../components/review/DecisionTray';
@@ -44,6 +45,8 @@ function LoanReviewView({ applicationNumber }: { applicationNumber: string }) {
   const application = detail.data;
   const explanation = useAssessmentExplanation(applicationNumber, application?.assessment ?? null, tab === 'model');
   const decision = useReviewDecision(application);
+  // Duyệt, từ chối và yêu cầu chấm lại cần quyền Thao tác "Hồ sơ vay"; chỉ có quyền Xem thì trang chỉ đọc.
+  const canAct = usePermission().canAct('loan-application');
   const [copyMessage, setCopyMessage] = useState('');
   // Giữ tham chiếu ổn định: Toast đặt lại giờ ẩn mỗi khi onDismiss đổi.
   const dismissCopy = useCallback(() => setCopyMessage(''), []);
@@ -82,7 +85,7 @@ function LoanReviewView({ applicationNumber }: { applicationNumber: string }) {
   const assessmentStatus = application.assessment?.status;
   const canDecide = application.status === 'PENDING_REVIEW' && assessmentStatus === 'SUCCEEDED';
   // Nút chấm lại hiện khi lần chấm gần nhất lỗi hoặc đang chờ thử lại, nhưng chỉ bật ở trạng thái Loan nhận yêu cầu.
-  const showRetry = assessmentStatus === 'FAILED' || assessmentStatus === 'RETRY_PENDING';
+  const showRetry = canAct && (assessmentStatus === 'FAILED' || assessmentStatus === 'RETRY_PENDING');
   const retryBlockedReason = scoringRetryBlockedReason(application);
 
   return (
@@ -129,6 +132,7 @@ function LoanReviewView({ applicationNumber }: { applicationNumber: string }) {
           <DecisionTray
             application={application}
             canDecide={canDecide}
+            canAct={canAct}
             approving={decision.approving}
             rejecting={decision.rejecting}
             error={decision.decisionError}
