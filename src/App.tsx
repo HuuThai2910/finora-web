@@ -21,6 +21,8 @@ const ProductListPage = page(() => import('@/features/product'), 'ProductListPag
 const UserListPage = page(() => import('@/features/user'), 'UserListPage');
 const CustomerKycPage = page(() => import('@/features/kyc'), 'CustomerKycPage');
 const CustomerDetailPage = page(() => import('@/features/kyc'), 'CustomerDetailPage');
+const EkycReviewListPage = page(() => import('@/features/ekyc-review'), 'EkycReviewListPage');
+const EkycReviewDetailPage = page(() => import('@/features/ekyc-review'), 'EkycReviewDetailPage');
 const FundingPage = page(() => import('@/features/investment'), 'FundingPage');
 const FundingDetailPage = page(() => import('@/features/investment'), 'FundingDetailPage');
 const SecondaryMarketPage = page(() => import('@/features/secondary-market'), 'SecondaryMarketPage');
@@ -73,6 +75,8 @@ export default function App() {
           <Route path="users" element={<UserListPage />} />
           <Route path="customers/kyc" element={<CustomerKycPage />} />
           <Route path="customers/kyc/:id" element={<CustomerDetailPage />} />
+          <Route path="customers/ekyc-review" element={<EkycReviewListPage />} />
+          <Route path="customers/ekyc-review/:attemptId" element={<EkycReviewDetailPage />} />
           <Route path="reconciliation" element={<ServicingOperationsPage />} />
           <Route path="blockchain" element={<Navigate to="/blockchain/proofs" replace />} />
           <Route path="blockchain/proofs" element={<BlockchainProofsPage />} />

@@ -10,6 +10,6 @@ import { createApi, fakeBaseQuery } from '@reduxjs/toolkit/query/react';
 export const userServiceApi = createApi({
   reducerPath: 'userServiceApi',
   baseQuery: fakeBaseQuery<unknown>(),
-  tagTypes: ['UserList', 'UserStats', 'User'],
+  tagTypes: ['UserList', 'UserStats', 'User', 'EkycAttemptList', 'EkycAttempt'],
   endpoints: () => ({}),
 });

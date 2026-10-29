@@ -1,0 +1,616 @@
+/*
+ * Chi tiết một lượt eKYC (lớp `ekr-*`). Bố cục như trang chi tiết hồ sơ vay: nội dung bên trái,
+ * kết quả tóm tắt + khay quyết định bên phải (dính khi cuộn). Thành phần chung lấy từ styles/ui.css.
+ */
+
+/* ---------- Đầu trang ---------- */
+.ekr-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  justify-self: start;
+  font-size: 13px;
+}
+
+.ekr-back svg {
+  width: 14px;
+  height: 14px;
+}
+
+.ekr-head {
+  align-items: flex-start;
+}
+
+.ekr-head-main {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.ekr-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.ekr-title-row h1 {
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+}
+
+.ekr-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  row-gap: 4px;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.ekr-meta > * {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.ekr-meta > * + * {
+  margin-left: 12px;
+  padding-left: 12px;
+  border-left: 1px solid var(--border-color);
+}
+
+.ekr-meta .k {
+  color: var(--text-muted);
+}
+
+.ekr-meta .ui-mono {
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+.ekr-notice {
+  padding: 10px 16px;
+  border-radius: var(--radius-md);
+  background: var(--warning-bg);
+  color: var(--warning);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+/* ---------- Bố cục hai cột ---------- */
+.ekr-dossier {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 20px;
+  align-items: start;
+}
+
+.ekr-main {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+
+.ekr-aside {
+  position: sticky;
+  top: calc(var(--header-height) + 16px);
+  display: grid;
+  gap: 12px;
+  max-height: calc(100vh - var(--header-height) - 32px);
+  overflow-y: auto;
+}
+
+/* ---------- Thẻ ---------- */
+.ekr-card {
+  padding: 14px 18px 16px;
+}
+
+.ekr-card h2 {
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.ekr-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 12px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.ekr-card-aside {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.ekr-sub-head {
+  margin: 14px 0 6px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.ekr-empty-line {
+  padding: 6px 0;
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.ekr-hint {
+  margin-bottom: 6px;
+  padding: 8px 10px;
+  border-radius: var(--radius-md);
+  background: var(--warning-bg);
+  color: var(--text-primary);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+/* ---------- Trường đọc từ thẻ ---------- */
+.ekr-fields > div {
+  display: grid;
+  grid-template-columns: 170px minmax(0, 1fr);
+  gap: 12px;
+  align-items: baseline;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--row-divider);
+}
+
+.ekr-fields > div:last-child {
+  border-bottom: 0;
+}
+
+/* Trường chỉ có nguồn AI/người dùng sửa: vạch cam bên trái, kèm nhãn nguồn nên không chỉ dựa vào màu */
+.ekr-fields > div.unverified {
+  padding-left: 10px;
+  box-shadow: inset 3px 0 0 var(--warning);
+}
+
+.ekr-fields dt {
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.ekr-fields dd {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  min-width: 0;
+  font-size: 14px;
+}
+
+.ekr-value {
+  color: var(--text-primary);
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
+.ekr-value.ui-mono {
+  font-size: 14px;
+  color: var(--text-primary);
+}
+
+.ekr-value.missing {
+  color: var(--warning);
+  font-weight: 400;
+}
+
+.ekr-value.absent {
+  color: var(--text-muted);
+  font-weight: 400;
+}
+
+.ekr-sources {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+/* ---------- Lý do ---------- */
+.ekr-reasons {
+  display: grid;
+}
+
+.ekr-reason {
+  display: grid;
+  grid-template-columns: 16px minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: start;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--row-divider);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.ekr-reason:last-child {
+  border-bottom: 0;
+}
+
+.ekr-reason svg {
+  width: 16px;
+  height: 16px;
+  margin-top: 2px;
+  color: var(--text-muted);
+}
+
+.ekr-reason.success svg { color: var(--success); }
+.ekr-reason.warning svg { color: var(--warning); }
+.ekr-reason.danger svg { color: var(--danger); }
+
+.ekr-reason .ekr-code {
+  margin-top: 2px;
+  text-align: right;
+}
+
+/* ---------- Bằng chứng ---------- */
+.ekr-group + .ekr-group {
+  margin-top: 4px;
+}
+
+.ekr-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.ekr-gallery.card {
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+}
+
+.ekr-tile {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.ekr-tile.video {
+  grid-column: span 2;
+}
+
+.ekr-tile.text,
+.ekr-tile.other {
+  grid-column: 1 / -1;
+}
+
+.ekr-media {
+  display: grid;
+  place-items: center;
+  height: 220px;
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: var(--surface-muted);
+}
+
+/* Ảnh thẻ theo tỉ lệ thẻ 85,6 × 54 mm; ảnh khác tỉ lệ vẫn hiện đủ nhờ object-fit */
+.ekr-gallery.card .ekr-media {
+  height: auto;
+  aspect-ratio: 85.6 / 54;
+}
+
+.ekr-tile.video .ekr-media {
+  height: 300px;
+}
+
+.ekr-media.dark {
+  background: #0b1730;
+}
+
+.ekr-tile.text .ekr-media,
+.ekr-tile.other .ekr-media {
+  height: auto;
+  min-height: 72px;
+  place-items: stretch;
+  background: #fff;
+}
+
+.ekr-media img,
+.ekr-media video {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.ekr-zoom-btn {
+  display: block;
+  width: 100%;
+  height: 100%;
+  cursor: zoom-in;
+}
+
+.ekr-tile figcaption {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.ekr-tile-state {
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: 4px;
+  padding: 12px;
+  color: var(--text-muted);
+  font-size: 12px;
+  text-align: center;
+}
+
+.ekr-tile-state svg {
+  width: 18px;
+  height: 18px;
+}
+
+.ekr-tile-state strong {
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.ekr-tile-state.error,
+.ekr-tile-state.error strong {
+  color: var(--danger);
+}
+
+.ekr-tile-state .ui-btn {
+  margin-top: 4px;
+}
+
+.ekr-text {
+  max-height: 320px;
+  margin: 0;
+  padding: 10px 12px;
+  overflow: auto;
+  color: var(--text-primary);
+  font-family: ui-monospace, SFMono-Regular, Consolas, 'Liberation Mono', monospace;
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.ekr-zoom-img {
+  display: block;
+  max-width: 100%;
+  max-height: 64vh;
+  margin: 0 auto;
+  object-fit: contain;
+}
+
+/* ---------- Kết quả tóm tắt và quyết định (cột phải) ---------- */
+.ekr-summary {
+  margin-top: 6px;
+}
+
+.ekr-summary > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--row-divider);
+  font-size: 13px;
+}
+
+.ekr-summary > div:last-child {
+  border-bottom: 0;
+}
+
+.ekr-summary dt {
+  color: var(--text-muted);
+}
+
+.ekr-summary dd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 0;
+  font-weight: 500;
+  text-align: right;
+}
+
+.ekr-score {
+  font-size: 16px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.ekr-decide {
+  background: var(--surface-muted);
+}
+
+.ekr-outcome {
+  display: grid;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.ekr-outcome-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.ekr-outcome-meta {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.ekr-review-note {
+  padding-left: 10px;
+  border-left: 2px solid var(--border-strong);
+  color: var(--text-primary);
+  font-size: 13px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.ekr-decide-note {
+  margin: 8px 0 12px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.ekr-decide-row {
+  display: flex;
+  gap: 8px;
+}
+
+.ekr-decide-row .ui-btn {
+  height: 36px;
+  padding: 0 14px;
+}
+
+.ekr-grow {
+  flex: 1;
+}
+
+.ekr-btn-danger-outline {
+  background: #fff;
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.ekr-btn-danger-outline:hover:not(:disabled) {
+  background: var(--danger-bg);
+}
+
+/* ---------- Hộp thoại quyết định (vẽ qua portal nên lớp đặt ở mức trang) ---------- */
+.ekr-modal-body {
+  display: grid;
+  gap: 12px;
+}
+
+.ekr-label {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.ekr-textarea {
+  width: 100%;
+  min-height: 96px;
+  padding: 8px 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  background: #fff;
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 13px;
+  line-height: 1.5;
+  resize: vertical;
+}
+
+.ekr-textarea:focus {
+  outline: 0;
+  border-color: var(--brand);
+  box-shadow: 0 0 0 3px rgba(29, 86, 196, 0.15);
+}
+
+.ekr-textarea[aria-invalid='true'] {
+  border-color: var(--danger);
+}
+
+.ekr-field-foot {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 4px;
+  font-size: 12px;
+}
+
+.ekr-err {
+  color: var(--danger);
+}
+
+.ekr-count {
+  margin-left: auto;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.ekr-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.ekr-chip {
+  padding: 4px 8px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: #fff;
+  color: var(--text-secondary);
+  font-size: 12px;
+  text-align: left;
+}
+
+.ekr-chip:hover:not(:disabled) {
+  border-color: var(--brand);
+  color: var(--text-primary);
+}
+
+/* ---------- Màn hẹp ---------- */
+/* Cột phải xuống dưới nội dung: xem bằng chứng trước rồi mới tới nút quyết định. */
+@media (max-width: 1180px) {
+  .ekr-dossier {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .ekr-aside {
+    position: static;
+    max-height: none;
+    overflow: visible;
+  }
+}
+
+@media (max-width: 760px) {
+  .ekr-card {
+    padding: 14px;
+  }
+
+  .ekr-meta {
+    column-gap: 12px;
+  }
+
+  .ekr-meta > * + * {
+    margin-left: 0;
+    padding-left: 0;
+    border-left: 0;
+  }
+
+  .ekr-fields > div {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 4px;
+  }
+
+  .ekr-gallery,
+  .ekr-gallery.card {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  }
+
+  .ekr-tile.video {
+    grid-column: 1 / -1;
+  }
+}

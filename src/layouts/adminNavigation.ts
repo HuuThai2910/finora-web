@@ -1,6 +1,6 @@
 export type SidebarIconName =
   | 'home' | 'chart' | 'file' | 'loan' | 'check' | 'clock' | 'workflow'
-  | 'grid' | 'identity' | 'users' | 'shield' | 'alert' | 'scan' | 'chain' | 'download';
+  | 'grid' | 'identity' | 'users' | 'shield' | 'alert' | 'scan' | 'chain' | 'download' | 'faceScan';
 
 export interface AdminNavigationItem {
   to: string;
@@ -63,6 +63,12 @@ export const ADMIN_NAV_SECTIONS: AdminNavigationSection[] = [
     label: 'Người dùng',
     items: [
       { to: '/customers/kyc', label: 'Khách hàng eKYC', icon: 'identity', matches: (pathname) => pathname.startsWith('/customers/kyc') },
+      {
+        to: '/customers/ekyc-review',
+        label: 'Duyệt eKYC',
+        icon: 'faceScan',
+        matches: (pathname) => pathname === '/customers/ekyc-review' || pathname.startsWith('/customers/ekyc-review/'),
+      },
       { to: '/users', label: 'Người dùng & phân quyền', icon: 'users', matches: (pathname) => pathname === '/users' },
     ],
   },
@@ -92,6 +98,7 @@ export interface AdminBreadcrumb {
 const DETAIL_TITLES: Array<[RegExp, string]> = [
   [/^\/loans\/[^/]+\/review$/, 'Chi tiết hồ sơ vay'],
   [/^\/customers\/kyc\/[^/]+$/, 'Chi tiết khách hàng'],
+  [/^\/customers\/ekyc-review\/[^/]+$/, 'Chi tiết lượt eKYC'],
   [/^\/investments\/funding\/[^/]+$/, 'Chi tiết khoản gọi vốn'],
 ];
 

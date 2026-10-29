@@ -1,0 +1,64 @@
+/* Trang Duyệt eKYC (lớp `ekr-*`): danh sách và vài lớp nhỏ dùng chung với trang chi tiết.
+ * Thành phần chung (thẻ, tab, bảng, nhãn, phân trang) nằm ở styles/ui.css. */
+
+.ekr-muted {
+  color: var(--text-muted);
+}
+
+.ekr-code {
+  font-family: ui-monospace, SFMono-Regular, Consolas, 'Liberation Mono', monospace;
+  font-size: 11px;
+  color: var(--text-muted);
+  overflow-wrap: anywhere;
+}
+
+/* ---------- Danh sách ---------- */
+.ekr-list {
+  padding: 14px 14px 12px;
+}
+
+.ekr-list-bar {
+  margin-bottom: 12px;
+}
+
+.ekr-email {
+  display: block;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+/* Ô lý do xuống dòng được, các ô khác giữ một dòng như bảng chung */
+.ekr-table .ekr-reasons-cell {
+  min-width: 200px;
+  max-width: 300px;
+  white-space: normal;
+}
+
+.ekr-reason-preview {
+  display: grid;
+  gap: 2px;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--text-secondary);
+}
+
+.ekr-reason-preview .more {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+@media (max-width: 1100px) {
+  .ekr-table .hide-md {
+    display: none;
+  }
+}
+
+@media (max-width: 760px) {
+  .ekr-list {
+    padding: 14px 10px 10px;
+  }
+
+  .ekr-table .hide-sm {
+    display: none;
+  }
+}
