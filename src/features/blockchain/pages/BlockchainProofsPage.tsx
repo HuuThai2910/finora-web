@@ -21,7 +21,7 @@ import './BlockchainProofsPage.css';
 function emptyText(filters: ProofFilters): string {
   if (filters.reference) {
     return `Chưa có proof nào cho ${referenceNoun(filters.reference.type)} ${filters.reference.id}. `
-      + 'Proof chỉ được tạo sau khi mốc nghiệp vụ hoàn tất (hợp đồng đủ chữ ký, giải ngân, trả nợ, Note).';
+      + 'Proof chỉ được tạo sau khi mốc nghiệp vụ hoàn tất (hợp đồng đủ chữ ký, giải ngân, trả nợ, Note, giấy xác nhận chuyển nhượng).';
   }
   if (filters.status) return `Không có proof nào ở trạng thái "${statusInfo(filters.status).label}".`;
   return 'Chưa có proof nào.';

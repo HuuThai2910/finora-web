@@ -59,7 +59,8 @@ export function SecondaryMarketPage() {
   const busy = active.isFetching || summary.isFetching;
 
   const reload = () => {
-    dispatch(investmentApi.util.invalidateTags(['OrderBooks']));
+    // Giấy xác nhận có tag riêng: văn bản đang lập có thể đã phát hành xong kể từ lần tải trước.
+    dispatch(investmentApi.util.invalidateTags(['OrderBooks', 'TransferDocuments']));
   };
 
   const showTrades = (status: TradeFilter) => {

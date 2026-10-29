@@ -93,3 +93,36 @@ export interface PageResponse<T> {
   totalPages: number;
   last: boolean;
 }
+
+/**
+ * Giấy xác nhận chuyển nhượng Note: mỗi lần khớp đã thanh toán (`SETTLED`) có đúng một văn bản PDF do FINORA ký số.
+ * `PENDING` là đang lập, `FAILED` là lập lỗi và chờ quản trị bấm thử lại. Chưa thanh toán thì chưa có văn bản.
+ */
+export type TransferDocumentStatus = 'PENDING' | 'ISSUED' | 'FAILED';
+
+/** Một dòng của `GET /investments/admin/transfer-documents`. Tiền là chuỗi decimal như các API Investment khác. */
+export interface TransferDocument {
+  documentNumber: string;
+  tradeReference: string;
+  loanApplicationId: number;
+  listingId: number;
+  sellerId: string;
+  buyerId: string;
+  quantity: number;
+  amount: string;
+  status: TransferDocumentStatus;
+  /** Hash của tệp PDF đã ký; null khi chưa phát hành. */
+  documentHash: string | null;
+  attempts: number;
+  lastError: string | null;
+  executedAt: string;
+  issuedAt: string | null;
+}
+
+/**
+ * Chi tiết một văn bản. `proofArtifact` là đúng phần `data` của sự kiện `NoteTransferDocumentIssued` mà Blockchain đã
+ * neo hash (có `documentHash`, `hashAlgorithm`...); gửi nguyên đối tượng này vào `POST /verify` để tính lại hash.
+ */
+export interface TransferDocumentDetail extends TransferDocument {
+  proofArtifact: Record<string, unknown> | null;
+}

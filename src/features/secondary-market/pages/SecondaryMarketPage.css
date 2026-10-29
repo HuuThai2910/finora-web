@@ -139,6 +139,10 @@ button.sm-fig:hover .lbl svg { color: var(--brand); }
 
 .sm-loan { display: inline-flex; align-items: center; gap: 8px; }
 
+/* Cột giấy xác nhận chuyển nhượng: nút tải PDF và liên kết bằng chứng nằm cùng hàng */
+.sm-table td.sm-doc { min-width: 170px; max-width: 240px; white-space: normal; }
+.sm-doc-actions { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+
 .sm-link {
   color: var(--text-primary);
   font-weight: 500;

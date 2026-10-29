@@ -1,3 +1,4 @@
+import { apiFetchBlob } from '@/lib/api/httpClient';
 import { investmentApi } from '@/lib/api/investmentApi';
 import type {
   AdminTrade,
@@ -6,10 +7,14 @@ import type {
   OrderBookSummary,
   PageResponse,
   SettlementStatus,
+  TransferDocumentDetail,
 } from '../types';
 
 /** Cùng base URL với slice Investment; luồng SSE không đi qua `fetchBaseQuery` nên cần tự ghép. */
 const BASE_URL = import.meta.env.VITE_INVESTMENT_API_URL ?? '/api/v1';
+
+const documentPath = (tradeReference: string) =>
+  `/investments/admin/transfer-documents/${encodeURIComponent(tradeReference)}`;
 
 export interface PageParams {
   page?: number;
@@ -35,6 +40,21 @@ const endpoints = investmentApi.injectEndpoints({
     getAdminTrades: builder.query<PageResponse<AdminTrade>, TradeParams>({
       query: (params) => ({ url: '/investments/admin/order-books/trades', params }),
       providesTags: [{ type: 'OrderBooks', id: 'TRADES' }],
+    }),
+
+    /**
+     * Giấy xác nhận chuyển nhượng của một lần khớp. 404 nghĩa là lần khớp chưa có văn bản (chưa thanh toán xong hoặc
+     * khớp trước khi có tính năng), nơi gọi hiểu là "chưa có" chứ không phải lỗi.
+     */
+    getTransferDocument: builder.query<TransferDocumentDetail, string>({
+      query: documentPath,
+      providesTags: (_result, _error, tradeReference) => [{ type: 'TransferDocuments', id: tradeReference }],
+    }),
+
+    // Chỉ văn bản FAILED mới lập lại được (backend chặn trạng thái khác); 204 rồi worker lập lại, nên làm mới đúng dòng đó.
+    retryTransferDocument: builder.mutation<void, string>({
+      query: (tradeReference) => ({ url: `${documentPath(tradeReference)}/retry`, method: 'POST' }),
+      invalidatesTags: (_result, _error, tradeReference) => [{ type: 'TransferDocuments', id: tradeReference }],
     }),
 
     getOrderBooks: builder.query<PageResponse<OrderBookSummary>, PageParams>({
@@ -72,9 +92,20 @@ const endpoints = investmentApi.injectEndpoints({
   }),
 });
 
+/**
+ * Tải tệp PDF đã ký của giấy xác nhận. Không đi qua RTK Query vì `Blob` không lưu được vào store; dùng `apiFetchBlob`
+ * để kèm cookie phiên và tự làm mới phiên khi gặp 401 (không đưa token lên URL, nên không mở bằng link thường).
+ */
+export function fetchTransferDocumentPdf(tradeReference: string, signal?: AbortSignal): Promise<Blob> {
+  return apiFetchBlob(`${BASE_URL}${documentPath(tradeReference)}/pdf`, { signal });
+}
+
 export const {
   useGetOrderBookAdminSummaryQuery,
   useGetAdminTradesQuery,
   useGetOrderBooksQuery,
   useGetOrderBookQuery,
+  useGetTransferDocumentQuery,
+  useLazyGetTransferDocumentQuery,
+  useRetryTransferDocumentMutation,
 } = endpoints;

@@ -11,12 +11,13 @@ export interface Tagged {
   tone: PillTone;
 }
 
-/** Bốn mốc nghiệp vụ được neo (W3D D52). */
+/** Các mốc nghiệp vụ được neo (W3D D52) và giấy xác nhận chuyển nhượng Note. */
 export const PROOF_TYPE_LABEL: Record<ProofType, string> = {
   CONTRACT_DOCUMENT: 'Hợp đồng đủ chữ ký',
   DISBURSEMENT: 'Giải ngân',
   REPAYMENT: 'Trả nợ',
   NOTE_OWNERSHIP: 'Phát hành hoặc chuyển nhượng Note',
+  NOTE_TRANSFER_DOCUMENT: 'Giấy xác nhận chuyển nhượng',
 };
 
 /**
@@ -45,6 +46,12 @@ export const REFERENCE_TYPES: ReadonlyArray<{
     noun: 'giao dịch chuyển nhượng Note',
     placeholder: 'Mã giao dịch chuyển nhượng',
   },
+  {
+    value: 'NOTE_TRANSFER_DOCUMENT',
+    label: 'Giấy xác nhận chuyển nhượng',
+    noun: 'giấy xác nhận chuyển nhượng của giao dịch',
+    placeholder: 'Mã giao dịch chuyển nhượng',
+  },
 ];
 
 /** Tên aggregate lưu trên proof (`aggregateType`); tên lạ hiện nguyên văn. */
@@ -54,6 +61,7 @@ export const AGGREGATE_LABEL: Record<string, string> = {
   Repayment: 'Giao dịch trả nợ',
   NoteIssuance: 'Phát hành Note',
   NoteTransfer: 'Chuyển nhượng Note',
+  NoteTransferDocument: 'Giấy xác nhận chuyển nhượng',
 };
 
 /** Tab lọc trạng thái; `null` là tất cả proof, mới nhất trước. */

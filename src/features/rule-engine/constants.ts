@@ -68,4 +68,8 @@ export const NHAN_MA_LOAI_TRUC_TIEP: Record<string, string> = {
 export const NHAN_LY_DO_THAM_DINH: Record<string, string> = {
   CIC_CURRENT_GROUP_MISSING: 'CIC không trả về nhóm nợ hiện tại',
   CIC_BAD_DEBT_RECOVERY_REVIEW: 'Đang trong giai đoạn theo dõi sau nợ xấu',
+  // Model v18: hồ sơ nằm ngoài vùng dữ liệu mô hình từng học thì không để máy tự duyệt.
+  CIC_CHUA_CO_LICH_SU: 'Chưa có lịch sử tín dụng tại CIC',
+  NGOAI_MIEN_CIC: 'Điểm CIC thấp hơn mọi hồ sơ mô hình từng học',
+  NGOAI_MIEN_VAY_THU_NHAP: 'Số tiền vay vượt quá nửa thu nhập năm',
 };

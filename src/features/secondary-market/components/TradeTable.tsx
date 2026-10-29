@@ -4,6 +4,7 @@ import { formatDateTime } from '@/utils';
 import { SETTLEMENT_LABEL, SETTLEMENT_TONE, settlementErrorLabel } from '../constant';
 import { formatMoneyVnd, formatPrice } from '../formatters';
 import type { AdminTrade } from '../types';
+import { TransferDocumentCell } from './TransferDocumentCell';
 
 interface Props {
   trades: AdminTrade[];
@@ -24,7 +25,8 @@ function SettlementDetail({ trade }: { trade: AdminTrade }) {
 
 /**
  * Các lần khớp: ai mua của ai, bao nhiêu Note ở giá nào, tiền và phí, và tiền đã chuyển chưa. Lần
- * khớp lỗi hiện mã lỗi và số lần thử để quản trị đối soát với sổ của dịch vụ thanh toán.
+ * khớp lỗi hiện mã lỗi và số lần thử để quản trị đối soát với sổ của dịch vụ thanh toán. Lần khớp
+ * đã thanh toán có giấy xác nhận chuyển nhượng (PDF ký số) ở cột cuối.
  */
 export function TradeTable({ trades, onOpenBook }: Props) {
   // Tên lấy từ finora-user rồi ghép ở đây; Investment Service không lưu dữ liệu cá nhân.
@@ -51,6 +53,7 @@ export function TradeTable({ trades, onOpenBook }: Props) {
             <th className="num">Số tiền</th>
             <th className="num">Phí</th>
             <th>Thanh toán</th>
+            <th>Giấy xác nhận</th>
           </tr>
         </thead>
         <tbody>
@@ -87,6 +90,7 @@ export function TradeTable({ trades, onOpenBook }: Props) {
                 <StatusPill tone={SETTLEMENT_TONE[trade.settlementStatus]}>{SETTLEMENT_LABEL[trade.settlementStatus]}</StatusPill>
                 <SettlementDetail trade={trade} />
               </td>
+              <td className="sm-doc"><TransferDocumentCell trade={trade} /></td>
             </tr>
           ))}
         </tbody>

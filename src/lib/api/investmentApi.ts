@@ -33,6 +33,8 @@ export const investmentApi = createApi({
     'InvestmentStatistics',
     // R3: lệnh góp vốn chưa khớp với ví ở Payment (tab Sự cố giao dịch).
     'OrderIncidents',
+    // Giấy xác nhận chuyển nhượng Note (PDF ký số) của từng lần khớp đã thanh toán.
+    'TransferDocuments',
   ],
   endpoints: () => ({}),
 });

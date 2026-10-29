@@ -3,8 +3,13 @@
  * Proof không chứa payload gốc: chỉ có hash, cách tính hash và biên nhận của sổ cái.
  */
 
-/** Bốn mốc nghiệp vụ được neo (D52). */
-export type ProofType = 'CONTRACT_DOCUMENT' | 'DISBURSEMENT' | 'REPAYMENT' | 'NOTE_OWNERSHIP';
+/** Các mốc nghiệp vụ được neo (D52), thêm giấy xác nhận chuyển nhượng Note (PDF ký số của mỗi lần khớp đã thanh toán). */
+export type ProofType =
+  | 'CONTRACT_DOCUMENT'
+  | 'DISBURSEMENT'
+  | 'REPAYMENT'
+  | 'NOTE_OWNERSHIP'
+  | 'NOTE_TRANSFER_DOCUMENT';
 
 /** `PENDING → PROCESSING → CONFIRMED | PENDING (thử lại) | DEAD_LETTER`; chỉ `POST /retry` đưa DEAD_LETTER về PENDING. */
 export type ProofStatus = 'PENDING' | 'PROCESSING' | 'CONFIRMED' | 'DEAD_LETTER';
@@ -19,7 +24,8 @@ export type ProofReferenceType =
   | 'DISBURSEMENT_SAGA'
   | 'REPAYMENT'
   | 'NOTE_ISSUANCE'
-  | 'NOTE_TRANSFER';
+  | 'NOTE_TRANSFER'
+  | 'NOTE_TRANSFER_DOCUMENT';
 
 /** Loại biên nhận do backend gắn; hai loại không bao giờ được trình bày giống nhau (B50, LEGAL-DATA-01). */
 export type ReceiptKind = 'FABRIC_ON_CHAIN' | 'MOCK_NOT_ON_CHAIN';

@@ -188,6 +188,9 @@
 }
 
 .bc-verify-main h4 { font-size: 13px; font-weight: 700; }
+
+/* Giấy xác nhận chuyển nhượng: hai nút Tải PDF và Xác minh văn bản cùng hàng */
+.bc-doc-actions { display: flex; flex: none; flex-wrap: wrap; gap: 8px; }
 .bc-verify-main p { margin-top: 3px; color: var(--text-secondary); font-size: 12px; line-height: 1.45; }
 
 .bc-technical,
@@ -260,6 +263,7 @@
   .bc-summary-facts { grid-template-columns: 1fr; }
   .bc-verify-main { align-items: stretch; flex-direction: column; }
   .bc-verify-main .ui-btn { width: 100%; }
+  .bc-doc-actions { flex-direction: column; }
 }
 
 @media (max-width: 520px) {

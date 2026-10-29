@@ -9,6 +9,7 @@ import { proofTypeLabel, statusInfo } from '../mappers/proofDisplay';
 import type { Proof } from '../types';
 import { ProofFacts } from './ProofFacts';
 import { ProofSummary } from './ProofSummary';
+import { TransferDocumentPanel } from './TransferDocumentPanel';
 import { VerifyPanel } from './VerifyPanel';
 
 interface Props {
@@ -75,6 +76,13 @@ export function ProofDrawer({ proofId, runningId, retryFailure, onRetry, onClose
             <p className="bc-callout warning" role="note">{proof.receipt?.notice ?? MOCK_LEDGER_NOTICE}</p>
           )}
           <ProofSummary proof={proof} />
+          {/* Proof của giấy xác nhận chuyển nhượng neo hash tệp PDF: thêm tải tệp và xác minh chính tệp đó. */}
+          {proof.proofType === 'NOTE_TRANSFER_DOCUMENT' && (
+            <section aria-labelledby="bc-document-title">
+              <h3 id="bc-document-title">Văn bản</h3>
+              <TransferDocumentPanel key={proof.proofId} proofId={proof.proofId} tradeReference={proof.aggregateId} />
+            </section>
+          )}
           <section aria-labelledby="bc-verify-title">
             <h3 id="bc-verify-title">Xác minh dữ liệu</h3>
             <VerifyPanel key={proof.proofId} proofId={proof.proofId} />
