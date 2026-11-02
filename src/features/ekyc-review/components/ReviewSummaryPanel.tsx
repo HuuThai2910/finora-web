@@ -85,7 +85,7 @@ export function ReviewSummaryPanel({ attempt, refreshing, onDecide }: ReviewSumm
   const zone = attempt.faceMatchZone ?? faceMatchZone(toReasonViews(attempt.livenessReasons));
   const isPending = attempt.status === 'MANUAL_REVIEW';
   const isDecided = attempt.status === 'APPROVED' || attempt.status === 'REJECTED';
-  // Duyệt/Từ chối cần quyền Thao tác "Duyệt eKYC"; chỉ có quyền Xem thì khay chỉ hiện kết quả.
+  // Duyệt/Từ chối cần quyền Thao tác "Duyệt xác minh danh tính"; chỉ có quyền Xem thì khay chỉ hiện kết quả.
   const canDecide = usePermission().canAct('ekyc');
 
   return (
@@ -124,7 +124,7 @@ export function ReviewSummaryPanel({ attempt, refreshing, onDecide }: ReviewSumm
         {isDecided ? <DecisionOutcome attempt={attempt} /> : null}
         <p id={noteId} className="ekr-decide-note">
           {isPending && !canDecide
-            ? 'Lượt đang chờ duyệt tay. Vai trò của bạn chỉ được xem; cần quyền Thao tác "Duyệt eKYC" để duyệt hoặc từ chối.'
+            ? 'Lượt đang chờ duyệt tay. Vai trò của bạn chỉ được xem; cần quyền Sửa "Duyệt xác minh danh tính" để duyệt hoặc từ chối.'
             : decideNote(attempt.status, isPending, isDecided)}
         </p>
         {canDecide && (

@@ -79,12 +79,14 @@ export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> 
     return handleError(response);
   }
 
-  // Handle 204 No Content
-  if (response.status === 204) {
+  // 204, hoặc 200 không có body (vd. khóa/mở khóa, đổi vai trò người dùng của User Service): thao tác đã thành công,
+  // không được coi thân rỗng là lỗi đọc JSON.
+  const body = response.status === 204 ? '' : await response.text();
+  if (!body.trim()) {
     return {} as T;
   }
 
-  return response.json();
+  return JSON.parse(body) as T;
 }
 
 /**

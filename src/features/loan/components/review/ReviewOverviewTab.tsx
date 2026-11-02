@@ -65,7 +65,7 @@ export function ReviewOverviewTab({ application, explanation, onOpenScoring }: R
         : 'Chưa kiểm tra',
       hint: eligibility?.reasonCode ? reasonLabel(eligibility.reasonCode) : null,
     },
-    { key: 'kyc', label: 'Định danh eKYC', value: eligibility ? formatBusinessLabel(eligibility.kycStatus) : '-' },
+    { key: 'kyc', label: 'Xác minh danh tính', value: eligibility ? formatBusinessLabel(eligibility.kycStatus) : '-' },
     { key: 'age', label: 'Tuổi lúc nộp', value: eligibility ? `${eligibility.age} tuổi` : '-' },
   ];
   const profileRight: ReviewRow[] = [

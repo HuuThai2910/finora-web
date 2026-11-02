@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { ErrorNotice } from '@/components/ErrorNotice';
 import { Modal } from '@/components/Modal';
 import { usePermission } from '@/features/auth';
+import { useActorNames } from '@/features/loan';
 import {
   useCloseExpiredListingsMutation,
   useGetFundingSettingsQuery,
@@ -56,9 +57,11 @@ function validate(form: FormValues): FormErrors {
  * backend trả về, nên không cần effect đồng bộ.
  */
 export function FundingSettingsModal({ onClose, onNotice }: Props) {
-  const settings = useGetFundingSettingsQuery();
+  // Form chỉ lấy giá trị một lần lúc dựng: phải chờ bản mới nhất, không dùng bản cache cũ (mở lại ngay sau khi lưu
+  // sẽ hiện số cũ, bấm Lưu tiếp là ghi đè).
+  const settings = useGetFundingSettingsQuery(undefined, { refetchOnMountOrArgChange: true });
 
-  if (settings.data) {
+  if (settings.data && !settings.isFetching) {
     return <SettingsEditor current={settings.data} onClose={onClose} onNotice={onNotice} />;
   }
 
@@ -79,6 +82,9 @@ function SettingsEditor({ current, onClose, onNotice }: Props & { current: Fundi
   const [update, updateState] = useUpdateFundingSettingsMutation();
   const [closeExpired, closeState] = useCloseExpiredListingsMutation();
   const { canAct } = usePermission();
+  // Investment chỉ lưu mã người cập nhật; tra họ tên hoặc email từ finora-user. SYSTEM là giá trị khởi tạo.
+  const updatedBy = current.updatedBy === 'SYSTEM' ? null : current.updatedBy;
+  const { displayName } = useActorNames([updatedBy]);
   // Lưu tham số cần quyền Thao tác "Cấu hình gọi vốn"; đóng khoản quá hạn là thao tác của "Gọi vốn & Notes".
   const canSave = canAct('funding-settings');
   const canCloseExpired = canAct('funding');
@@ -216,7 +222,7 @@ function SettingsEditor({ current, onClose, onNotice }: Props & { current: Fundi
 
         <p className="fu-meta">
           Cập nhật lần cuối {formatDateTime(current.updatedAt)}
-          {current.updatedBy ? ` bởi ${current.updatedBy}` : ''}
+          {current.updatedBy === 'SYSTEM' ? ' bởi hệ thống' : updatedBy ? ` bởi ${displayName(updatedBy)}` : ''}
         </p>
 
         {updateState.error ? <ErrorNotice error={updateState.error} /> : null}

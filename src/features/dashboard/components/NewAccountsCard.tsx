@@ -110,7 +110,7 @@ export function NewAccountsCard({ stats }: { stats: DashboardStatistics }) {
         <>
           <div className="ui-table-wrap">
             <table className="ui-table dash-new-table">
-              <thead><tr><th scope="col">Người dùng</th><th scope="col">eKYC</th><th scope="col" className="num">Ngày tạo</th></tr></thead>
+              <thead><tr><th scope="col">Người dùng</th><th scope="col">Xác minh</th><th scope="col" className="num">Ngày tạo</th></tr></thead>
               <tbody aria-busy={query.isFetching}>
                 {rows.map((user) => {
                   const ekyc = EKYC_DISPLAY[user.ekycStatus];

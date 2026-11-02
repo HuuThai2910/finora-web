@@ -1,4 +1,4 @@
-/* Trang Khách hàng eKYC: thẻ kết quả eKYC + danh sách. Thành phần chung nằm ở styles/ui.css. */
+/* Trang Khách hàng: thẻ kết quả xác minh + danh sách. Thành phần chung nằm ở styles/ui.css. */
 
 /* ---------- Hai thẻ biểu đồ (mockup .k-overview) ---------- */
 .kyc-overview {
@@ -7,7 +7,7 @@
   gap: 16px;
 }
 
-/* Không có quyền Xem thống kê: chỉ còn thẻ kết quả eKYC. */
+/* Không có quyền Xem thống kê: chỉ còn thẻ kết quả xác minh. */
 .kyc-overview.single {
   grid-template-columns: minmax(0, 1fr);
 }

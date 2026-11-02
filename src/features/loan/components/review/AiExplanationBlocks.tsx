@@ -4,8 +4,7 @@ import { formatDecimal, formatRuleValue, IMPACT_LABELS } from '../../mappers/rev
 
 /*
  * Các khối trình bày giải thích AI của trang chi tiết hồ sơ (lớp CSS `lr-ai-*`).
- * Tách khỏi màn Chấm điểm thử nghiệm (feature credit-score) để hai trang đổi giao diện độc lập;
- * nội dung đều do backend sinh, ở đây chỉ hiển thị.
+ * Nội dung đều do backend sinh, ở đây chỉ hiển thị.
  */
 
 /** Bảng luật đã chấm: căn cứ thẩm định, mỗi điểm truy về một luật có mã. */

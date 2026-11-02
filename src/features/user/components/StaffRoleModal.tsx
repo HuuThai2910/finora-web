@@ -41,14 +41,14 @@ export function StaffRoleModal({ role, onClose, onDone }: StaffRoleModalProps) {
     event.preventDefault();
     setTouched(true);
     if (nameError || permissionError || busy) return;
-    // Gửi theo thứ tự danh mục để backend lưu ổn định; quyền lạ (đã bỏ khỏi danh mục) giữ nguyên để backend báo lỗi.
+    // Gửi theo thứ tự danh mục để backend lưu ổn định. Quyền của chức năng đã bỏ khỏi danh mục (vd. "Chấm thử AI")
+    // không hiện trong ma trận nên người cấu hình không bỏ tick được; lưu lại là dọn luôn khỏi vai trò.
     const ordered = (catalog.data ?? []).flatMap((item) => [item.view, item.action]).filter((permission): permission is string =>
       permission != null && selected.has(permission));
-    const extra = [...selected].filter((permission) => !ordered.includes(permission));
     const request: StaffRoleRequest = {
       name: name.trim(),
       description: description.trim() || undefined,
-      permissions: [...ordered, ...extra],
+      permissions: ordered,
     };
     const result = role
       ? await updateRole({ code: role.code, request })
@@ -61,7 +61,7 @@ export function StaffRoleModal({ role, onClose, onDone }: StaffRoleModalProps) {
     <Modal
       wide
       title={role ? 'Sửa vai trò nhân viên' : 'Tạo vai trò nhân viên'}
-      subtitle={role ? `Mã ${role.code}` : 'Nhân viên được gán vai trò chỉ thấy các màn và nút được cấp quyền.'}
+      subtitle={role ? role.name : 'Nhân viên được gán vai trò chỉ thấy các màn và nút được cấp quyền.'}
       onClose={onClose}
       busy={busy}
       footer={(
@@ -103,9 +103,9 @@ export function StaffRoleModal({ role, onClose, onDone }: StaffRoleModalProps) {
 
         <div className="staff-matrix-head">
           <span>Quyền theo chức năng</span>
-          <span className="ui-tag">{viewCount} Xem, {actionCount} Thao tác</span>
+          <span className="ui-tag">{viewCount} Xem, {actionCount} Sửa</span>
         </div>
-        <p className="staff-matrix-hint">Thao tác (duyệt, xử lý, lưu cấu hình) luôn kèm quyền Xem của cùng chức năng.</p>
+        <p className="staff-matrix-hint">Sửa (thêm, sửa, duyệt, xử lý, lưu cấu hình) luôn kèm quyền Xem của cùng chức năng.</p>
         {catalog.error ? (
           <ErrorNotice error={catalog.error} onRetry={catalog.refetch} />
         ) : !catalog.data ? (

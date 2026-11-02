@@ -1,4 +1,4 @@
-/* Trang Vai trò & phân quyền và hộp thoại tạo/sửa vai trò. Thành phần chung nằm ở styles/ui.css. */
+/* Phần Vai trò nhân viên của trang Phân quyền và hộp thoại tạo/sửa vai trò. Thành phần chung nằm ở styles/ui.css. */
 
 .staff-role-table .staff-role-desc {
   max-width: 360px;
@@ -117,13 +117,9 @@
   font-weight: 500;
 }
 
-.staff-matrix-name .ui-sub {
-  font-weight: 400;
-}
-
-.staff-matrix-none {
-  color: var(--text-muted);
-  font-size: 12px;
+/* Ô không có quyền tương ứng (chức năng chỉ xem, cột Xóa): mờ hẳn để khác ô bị khóa tạm khi đang lưu. */
+.staff-matrix input.staff-matrix-placeholder {
+  opacity: 0.35;
 }
 
 @media (max-width: 760px) {

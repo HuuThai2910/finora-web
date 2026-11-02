@@ -70,7 +70,7 @@ export function DecisionTray(props: DecisionTrayProps) {
   if (application.status === 'PENDING_REVIEW' && !canAct) {
     body = (
       <p className="lr-tray-note">
-        Hồ sơ đang chờ thẩm định. Vai trò của bạn chỉ được xem; cần quyền Thao tác "Hồ sơ vay" để duyệt hoặc từ chối.
+        Hồ sơ đang chờ thẩm định. Vai trò của bạn chỉ được xem; cần quyền Sửa "Hồ sơ vay" để duyệt hoặc từ chối.
       </p>
     );
   } else if (application.status === 'PENDING_REVIEW' && rejectOpen) {

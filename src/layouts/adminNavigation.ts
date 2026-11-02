@@ -17,12 +17,12 @@ export const PAGE_ACCESS = {
   secondary: { anyView: ['secondary-market'] },
   products: { anyView: ['loan-product'] },
   customers: { anyView: ['customer'] },
+  // Duyệt xác minh mở từ menu dòng của trang Khách hàng, không có mục menu riêng.
   ekycReview: { anyView: ['ekyc'] },
   users: { adminOnly: true },
   staffRoles: { adminOnly: true },
   blockchain: { anyView: ['blockchain'] },
   aiPolicy: { anyView: ['ai-policy'] },
-  aiScoring: { anyView: ['ai-scoring'] },
 } satisfies Record<string, PageAccess>;
 
 export interface AdminNavigationItem {
@@ -88,16 +88,9 @@ export const ADMIN_NAV_SECTIONS: AdminNavigationSection[] = [
   {
     label: 'Người dùng',
     items: [
-      { to: '/customers/kyc', label: 'Khách hàng eKYC', icon: 'identity', access: PAGE_ACCESS.customers, matches: (pathname) => pathname.startsWith('/customers/kyc') },
-      {
-        to: '/customers/ekyc-review',
-        label: 'Duyệt eKYC',
-        icon: 'faceScan',
-        access: PAGE_ACCESS.ekycReview,
-        matches: (pathname) => pathname === '/customers/ekyc-review' || pathname.startsWith('/customers/ekyc-review/'),
-      },
-      { to: '/users', label: 'Người dùng & phân quyền', icon: 'users', access: PAGE_ACCESS.users, matches: (pathname) => pathname === '/users' },
-      { to: '/users/roles', label: 'Vai trò nhân viên', icon: 'key', access: PAGE_ACCESS.staffRoles, matches: (pathname) => pathname === '/users/roles' },
+      { to: '/customers/kyc', label: 'Khách hàng', icon: 'identity', access: PAGE_ACCESS.customers, matches: (pathname) => pathname.startsWith('/customers/kyc') },
+      // Phân quyền gồm hai phần chuyển bằng tab đầu trang: Người dùng (/users) và Vai trò nhân viên (/users/roles).
+      { to: '/users', label: 'Phân quyền', icon: 'users', access: PAGE_ACCESS.users, matches: (pathname) => pathname === '/users' || pathname === '/users/roles' },
     ],
   },
   {
@@ -110,9 +103,7 @@ export const ADMIN_NAV_SECTIONS: AdminNavigationSection[] = [
   {
     label: 'Cấu hình',
     items: [
-      { to: '/loans/evaluation', label: 'Chính sách đánh giá AI', icon: 'shield', access: PAGE_ACCESS.aiPolicy, matches: (pathname) => pathname === '/loans/evaluation' },
-      { to: '/loans/scoring', label: 'Chấm điểm & giải thích AI', icon: 'scan', access: PAGE_ACCESS.aiScoring, matches: (pathname) => pathname === '/loans/scoring' },
-    ],
+      { to: '/loans/evaluation', label: 'Chính sách đánh giá AI', icon: 'shield', access: PAGE_ACCESS.aiPolicy, matches: (pathname) => pathname === '/loans/evaluation' },    ],
   },
 ];
 
@@ -137,8 +128,8 @@ export interface AdminBreadcrumb {
 
 const DETAIL_TITLES: Array<[RegExp, string]> = [
   [/^\/loans\/[^/]+\/review$/, 'Chi tiết hồ sơ vay'],
+  [/^\/customers\/kyc\/review\/[^/]+$/, 'Chi tiết lượt xác minh'],
   [/^\/customers\/kyc\/[^/]+$/, 'Chi tiết khách hàng'],
-  [/^\/customers\/ekyc-review\/[^/]+$/, 'Chi tiết lượt eKYC'],
   [/^\/investments\/funding\/[^/]+$/, 'Chi tiết khoản gọi vốn'],
 ];
 

@@ -18,8 +18,7 @@ export type OpsFunctionCode =
   | 'customer'
   | 'ekyc'
   | 'blockchain'
-  | 'ai-policy'
-  | 'ai-scoring';
+  | 'ai-policy';
 
 /** Tên chức năng để báo thiếu quyền; danh mục đầy đủ (kèm nhóm) lấy từ API khi cấu hình vai trò. */
 export const OPS_FUNCTION_LABELS: Record<OpsFunctionCode, string> = {
@@ -34,10 +33,9 @@ export const OPS_FUNCTION_LABELS: Record<OpsFunctionCode, string> = {
   'secondary-market': 'Chợ thứ cấp',
   'loan-product': 'Sản phẩm vay',
   customer: 'Khách hàng',
-  ekyc: 'Duyệt eKYC',
+  ekyc: 'Duyệt xác minh danh tính',
   blockchain: 'Bằng chứng blockchain',
   'ai-policy': 'Chính sách AI',
-  'ai-scoring': 'Chấm thử AI',
 };
 
 export const opsView = (code: OpsFunctionCode) => `ops:${code}:view`;

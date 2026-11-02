@@ -2,7 +2,7 @@ import type {
   DienGiaiNguoiDung,
   GiaiThichMoHinh,
   RuleTraceItem,
-} from '@/features/credit-score';
+} from './aiExplanationTypes';
 
 import type { PageResponse, RepaymentMethod } from '@/features/product';
 
@@ -213,11 +213,11 @@ export interface ScoringRetryAcceptedResponse {
 export type AdminLoanReviewPage = PageResponse<AdminLoanReviewSummary>;
 export type AssessmentPage = PageResponse<CreditAssessmentSummary>;
 
-/* ── Type giải thích AI dùng ở trang chi tiết hồ sơ (nguồn: @/features/credit-score) ── */
+/* ── Type giải thích AI dùng ở trang chi tiết hồ sơ ── */
 export type {
   RuleTraceItem,
   YeuToAnhHuong,
   YeuToGop,
   TomTatYeuTo,
   DienGiaiNguoiDung,
-} from '@/features/credit-score';
+} from './aiExplanationTypes';

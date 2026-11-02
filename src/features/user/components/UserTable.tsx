@@ -1,7 +1,7 @@
 import { RowMenu, type RowMenuItem } from '@/components/RowMenu';
 import { StatusPill } from '@/components/StatusPill';
 import { usePermission } from '@/features/auth';
-import { EKYC_DISPLAY, ROLE_LABELS, formatGender } from '../constant';
+import { ROLE_LABELS, formatGender } from '../constant';
 import type { UserItem } from '../types';
 
 interface UserTableProps {
@@ -27,7 +27,6 @@ export function UserTable({ users, currentAdminId, onChangeRole, onToggleLock }:
             <th>Giới tính</th>
             <th>Số CCCD</th>
             <th>Vai trò</th>
-            <th>eKYC</th>
             <th className="act"><span className="ui-sr-only">Thao tác</span></th>
           </tr>
         </thead>
@@ -35,7 +34,6 @@ export function UserTable({ users, currentAdminId, onChangeRole, onToggleLock }:
           {users.map((user) => {
             const isSelf = currentAdminId != null && String(user.id) === currentAdminId;
             const isLocked = user.locked === true;
-            const ekyc = EKYC_DISPLAY[user.ekycStatus];
             const name = user.fullName || user.email;
             return (
               <tr key={user.id}>
@@ -55,13 +53,8 @@ export function UserTable({ users, currentAdminId, onChangeRole, onToggleLock }:
                 <td>
                   {ROLE_LABELS[user.role] ?? user.role}
                   {user.role === 'STAFF' && (
-                    <span className="ui-sub">{user.staffRoleName || user.staffRoleCode || 'Chưa gán vai trò nhân viên'}</span>
+                    <span className="ui-sub">{user.staffRoleName || 'Chưa gán vai trò nhân viên'}</span>
                   )}
-                </td>
-                <td>
-                  {ekyc
-                    ? <StatusPill tone={ekyc.tone}>{ekyc.label}</StatusPill>
-                    : <StatusPill tone="neutral">{user.ekycStatus}</StatusPill>}
                 </td>
                 <td className="act">
                   <RowMenu

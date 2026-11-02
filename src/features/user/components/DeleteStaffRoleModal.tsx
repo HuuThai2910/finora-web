@@ -22,7 +22,7 @@ export function DeleteStaffRoleModal({ role, onClose, onDone }: DeleteStaffRoleM
   return (
     <Modal
       title="Xóa vai trò nhân viên"
-      subtitle={`${role.name}, mã ${role.code}`}
+      subtitle={role.name}
       onClose={onClose}
       busy={isLoading}
       footer={(

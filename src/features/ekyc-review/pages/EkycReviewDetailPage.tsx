@@ -15,20 +15,19 @@ import { ReviewSummaryPanel } from '../components/ReviewSummaryPanel';
 import { EKYC_REVIEW_LIST_PATH } from '../constants';
 import { attemptStatusDisplay, formatDayTime } from '../mappers/attemptDisplay';
 import type { EkycReviewDecision } from '../types';
-import './EkycReviewListPage.css';
 import './EkycReviewDetailPage.css';
 
 function BackLink() {
   return (
     <Link className="ui-link ekr-back" to={EKYC_REVIEW_LIST_PATH}>
       <Icon name="chevronLeft" />
-      Về danh sách duyệt eKYC
+      Về danh sách khách hàng
     </Link>
   );
 }
 
 /**
- * Chi tiết một lượt eKYC (`/customers/ekyc-review/:attemptId`): trường đọc từ thẻ và nguồn, ảnh/video
+ * Chi tiết một lượt xác minh (`/customers/kyc/review/:attemptId`): trường đọc từ thẻ và nguồn, ảnh/video
  * bằng chứng, lý do liveness bên trái; kết quả tóm tắt và nút Duyệt/Từ chối bên phải.
  */
 export default function EkycReviewDetailPage() {
@@ -48,12 +47,12 @@ function EkycReviewView({ attemptId }: { attemptId: string }) {
   const dismissToast = useCallback(() => setToast(null), []);
 
   if (!attemptId) {
-    return <section className="ui-page"><div className="ui-alert" role="alert">Thiếu mã lượt eKYC.</div></section>;
+    return <section className="ui-page"><div className="ui-alert" role="alert">Thiếu mã lượt xác minh.</div></section>;
   }
   if (detail.isLoading) {
     return (
       <section className="ui-page">
-        <div className="ui-card ui-empty" aria-busy="true">Đang tải lượt eKYC...</div>
+        <div className="ui-card ui-empty" aria-busy="true">Đang tải lượt xác minh...</div>
       </section>
     );
   }
@@ -62,7 +61,7 @@ function EkycReviewView({ attemptId }: { attemptId: string }) {
     return (
       <section className="ui-page">
         {notFound
-          ? <div className="ui-alert" role="alert">Không tìm thấy lượt eKYC này.</div>
+          ? <div className="ui-alert" role="alert">Không tìm thấy lượt xác minh này.</div>
           : <ErrorNotice error={detail.error} onRetry={detail.refetch} />}
         <BackLink />
       </section>

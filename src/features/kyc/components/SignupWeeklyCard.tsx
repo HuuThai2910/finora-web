@@ -35,7 +35,7 @@ export function SignupWeeklyCard() {
       {points && option && (
         <>
           <p className="ui-chart-lead">
-            <b>{chartNumber(registered)}</b> khách đăng ký và <b>{chartNumber(verified)}</b> khách xác minh xong eKYC
+            <b>{chartNumber(registered)}</b> khách đăng ký và <b>{chartNumber(verified)}</b> khách xác minh xong danh tính
             trong {WEEKS} tuần.
           </p>
           <EChart className="ui-chart-plot kyc-signup-plot" option={option} ariaLabel="Biểu đồ cột số khách đăng ký mới và số khách xác minh xong theo tuần" />

@@ -46,15 +46,15 @@ export function ReviewDecisionModal({ attempt, decision, onClose, onDone, onConf
       return;
     }
     onDone(isReject
-      ? `Đã từ chối lượt eKYC của ${attempt.email}. Người dùng có thể xác minh lại.`
-      : `Đã duyệt lượt eKYC của ${attempt.email}. Hồ sơ chuyển sang đã xác minh.`);
+      ? `Đã từ chối lượt xác minh của ${attempt.email}. Người dùng có thể xác minh lại.`
+      : `Đã duyệt lượt xác minh của ${attempt.email}. Hồ sơ chuyển sang đã xác minh.`);
   };
 
   const errorId = `${fieldId}-err`;
 
   return (
     <Modal
-      title={isReject ? 'Từ chối lượt eKYC' : 'Duyệt lượt eKYC'}
+      title={isReject ? 'Từ chối lượt xác minh' : 'Duyệt lượt xác minh'}
       subtitle={attempt.email}
       onClose={onClose}
       busy={state.isLoading}
@@ -70,7 +70,7 @@ export function ReviewDecisionModal({ attempt, decision, onClose, onDone, onConf
       <div className="ekr-modal-body">
         <p>
           {isReject
-            ? 'Hồ sơ khách hàng chuyển sang xác minh thất bại. Người dùng có thể làm lại eKYC từ đầu.'
+            ? 'Hồ sơ khách hàng chuyển sang xác minh thất bại. Người dùng có thể xác minh lại từ đầu.'
             : 'Hồ sơ khách hàng chuyển sang đã xác minh, các trường định danh được ghi theo bản nháp của lượt này.'}
         </p>
         <div>

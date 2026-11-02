@@ -1,7 +1,12 @@
 /*
- * Chi tiết một lượt eKYC (lớp `ekr-*`). Bố cục như trang chi tiết hồ sơ vay: nội dung bên trái,
- * kết quả tóm tắt + khay quyết định bên phải (dính khi cuộn). Thành phần chung lấy từ styles/ui.css.
+ * Chi tiết một lượt xác minh (lớp `ekr-*`), mở từ menu "Duyệt xác minh" của trang Khách hàng. Bố cục như trang
+ * chi tiết hồ sơ vay: nội dung bên trái, kết quả tóm tắt + khay quyết định bên phải (dính khi cuộn).
+ * Thành phần chung lấy từ styles/ui.css.
  */
+
+.ekr-muted {
+  color: var(--text-muted);
+}
 
 /* ---------- Đầu trang ---------- */
 .ekr-back {
@@ -246,11 +251,6 @@
 .ekr-reason.success svg { color: var(--success); }
 .ekr-reason.warning svg { color: var(--warning); }
 .ekr-reason.danger svg { color: var(--danger); }
-
-.ekr-reason .ekr-code {
-  margin-top: 2px;
-  text-align: right;
-}
 
 /* ---------- Bằng chứng ---------- */
 .ekr-group + .ekr-group {

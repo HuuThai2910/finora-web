@@ -17,7 +17,7 @@ export function isReviewTab(value: string | null): value is ReviewTabId {
 /** Mã lý do từ chối khớp enum `AdminDecisionReasonCode` của Loan Service (trừ POLICY_APPROVED dành cho duyệt). */
 export const REJECT_REASONS: Array<{ code: string; label: string }> = [
   { code: 'INSUFFICIENT_REPAYMENT_CAPACITY', label: 'Khả năng trả nợ chưa đạt' },
-  { code: 'IDENTITY_OR_KYC_NOT_ELIGIBLE', label: 'eKYC không đủ điều kiện' },
+  { code: 'IDENTITY_OR_KYC_NOT_ELIGIBLE', label: 'Xác minh danh tính không đủ điều kiện' },
   { code: 'INCONSISTENT_DECLARED_INFORMATION', label: 'Thông tin khai báo không nhất quán' },
   { code: 'POLICY_NOT_SATISFIED', label: 'Không đạt chính sách' },
   { code: 'OTHER_MANUAL_REVIEW', label: 'Lý do thẩm định khác' },

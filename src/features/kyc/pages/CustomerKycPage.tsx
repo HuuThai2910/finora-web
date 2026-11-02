@@ -1,9 +1,10 @@
-import { useRef } from 'react';
+import { useMemo, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { ErrorNotice } from '@/components/ErrorNotice';
 import { Icon } from '@/components/Icon';
 import { Pager } from '@/components/Pager';
 import { usePermission } from '@/features/auth';
+import { PENDING_ATTEMPT_LOOKUP_SIZE, useGetEkycAttemptsQuery } from '@/features/ekyc-review';
 import { useGetUserStatsQuery, useGetUsersQuery, type EkycStatusType } from '@/features/user';
 import { CustomerTable } from '../components/CustomerTable';
 import { EkycOutcomeCard } from '../components/EkycOutcomeCard';
@@ -33,12 +34,28 @@ export default function CustomerKycPage() {
   const filter: KycFilter = isKycFilter(requested) ? requested : 'ALL';
   const page = readPage(searchParams.get('page'));
   const listRef = useRef<HTMLElement>(null);
+  const permission = usePermission();
   // Biểu đồ đăng ký theo tuần đọc series thống kê, cần quyền Xem "Tổng quan & thống kê".
-  const canStats = usePermission().canView('dashboard');
+  const canStats = permission.canView('dashboard');
+  // Mục "Duyệt xác minh" ở menu dòng chỉ có khi được Xem "Duyệt xác minh danh tính".
+  const canReview = permission.canView('ekyc');
 
   // Lọc ở backend để kết quả trải trên toàn bộ người dùng, không chỉ trang đang tải.
   const users = useGetUsersQuery({ page, size: KYC_LIST_PAGE_SIZE, role: 'ALL', ekycStatus: filter });
   const stats = useGetUserStatsQuery();
+  const customers = users.data?.content ?? [];
+  // Lượt chờ duyệt tay chỉ cần tải khi trang bảng đang có khách chờ duyệt tay.
+  const hasPendingRow = customers.some((customer) => customer.ekycStatus === 'MANUAL_REVIEW');
+  const pending = useGetEkycAttemptsQuery(
+    { status: 'MANUAL_REVIEW', page: 0, size: PENDING_ATTEMPT_LOOKUP_SIZE },
+    { skip: !canReview || !hasPendingRow },
+  );
+  // Mã khách → lượt chờ duyệt mới nhất của khách đó (backend sắp lượt gửi sớm trước nên lượt sau ghi đè).
+  const pendingAttempts = useMemo(() => {
+    const byCustomer = new Map<number, string>();
+    for (const attempt of pending.data?.content ?? []) byCustomer.set(attempt.userProfileId, attempt.attemptId);
+    return byCustomer;
+  }, [pending.data]);
 
   const updateQuery = (nextFilter: KycFilter, nextPage: number) => {
     const params: Record<string, string> = {};
@@ -58,14 +75,13 @@ export default function CustomerKycPage() {
     listRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
-  const customers = users.data?.content ?? [];
-  const isRefreshing = users.isFetching || stats.isFetching;
+  const isRefreshing = users.isFetching || stats.isFetching || pending.isFetching;
 
   return (
     <section className="ui-page">
       <header className="ui-page-head">
         <div className="ui-title">
-          <h1>Khách hàng eKYC</h1>
+          <h1>Khách hàng</h1>
         </div>
         <button
           type="button"
@@ -73,6 +89,7 @@ export default function CustomerKycPage() {
           onClick={() => {
             void users.refetch();
             void stats.refetch();
+            if (canReview && hasPendingRow) void pending.refetch();
           }}
           disabled={isRefreshing}
         >
@@ -94,7 +111,7 @@ export default function CustomerKycPage() {
 
       <section ref={listRef} className="ui-card kyc-list" aria-label="Danh sách khách hàng">
         <div className="kyc-list-bar">
-          <div className="ui-tabs" role="tablist" aria-label="Lọc trạng thái eKYC">
+          <div className="ui-tabs" role="tablist" aria-label="Lọc trạng thái xác minh">
             {KYC_FILTERS.map((tab) => {
               const count = tabCount(tab);
               return (
@@ -117,7 +134,11 @@ export default function CustomerKycPage() {
           <div className="ui-empty">{EMPTY_TEXT[filter]}</div>
         ) : (
           <div className={users.isFetching ? 'ui-busy' : undefined}>
-            <CustomerTable customers={customers} filter={filter} />
+            <CustomerTable
+              customers={customers}
+              filter={filter}
+              review={canReview ? { attempts: pendingAttempts, isLoading: pending.isFetching } : null}
+            />
             <Pager
               page={page}
               size={KYC_LIST_PAGE_SIZE}

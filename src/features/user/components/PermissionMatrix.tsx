@@ -18,10 +18,20 @@ function groupFunctions(functions: StaffPermissionFunction[]): Array<[string, St
   return Array.from(groups.entries());
 }
 
+/** Ô không có quyền tương ứng: ô tick mờ, không bấm được, rê chuột để biết lý do. */
+function PlaceholderBox({ reason }: { reason: string }) {
+  return <input type="checkbox" className="staff-matrix-placeholder" checked={false} disabled title={reason} aria-label={reason} readOnly />;
+}
+
+const NO_EDIT = 'Chức năng này chỉ có quyền Xem';
+// Nhân viên không xóa được dữ liệu nghiệp vụ ở chức năng nào (lưu trữ sản phẩm vay tính là Sửa), nên cột Xóa chỉ để
+// người cấu hình thấy rõ điều đó; khi backend có quyền xóa riêng thì thay ô này bằng ô tick thật.
+const NO_DELETE = 'Chức năng này không có quyền Xóa';
+
 /**
- * Ma trận quyền của một vai trò nhân viên: mỗi dòng là một chức năng (một màn quản trị), hai cột Xem và Thao tác.
- * Thao tác luôn kéo theo Xem (không thể bấm nút trên màn không mở được): tick Thao tác thì tự tick Xem, bỏ Xem thì
- * bỏ luôn Thao tác. Chức năng chỉ có quyền Xem thì cột Thao tác để trống.
+ * Ma trận quyền của một vai trò nhân viên: mỗi dòng là một chức năng (một màn quản trị), ba cột Xem, Sửa, Xóa.
+ * Sửa (quyền `ops:<mã>:action`: thêm, sửa, duyệt, xử lý, lưu cấu hình) luôn kéo theo Xem (không thể bấm nút trên màn
+ * không mở được): tick Sửa thì tự tick Xem, bỏ Xem thì bỏ luôn Sửa. Ô không có quyền tương ứng hiện mờ, không bấm được.
  */
 export function PermissionMatrix({ functions, selected, disabled = false, onChange }: PermissionMatrixProps) {
   const toggleView = (item: StaffPermissionFunction, checked: boolean) => {
@@ -73,7 +83,8 @@ export function PermissionMatrix({ functions, selected, disabled = false, onChan
           <tr>
             <th scope="col">Chức năng</th>
             <th scope="col" className="staff-matrix-col">Xem</th>
-            <th scope="col" className="staff-matrix-col">Thao tác</th>
+            <th scope="col" className="staff-matrix-col">Sửa</th>
+            <th scope="col" className="staff-matrix-col">Xóa</th>
           </tr>
         </thead>
         {groupFunctions(functions).map(([group, items]) => {
@@ -94,25 +105,23 @@ export function PermissionMatrix({ functions, selected, disabled = false, onChan
                   />
                 </td>
                 <td className="staff-matrix-col">
-                  {actionable.length > 0 && (
+                  {actionable.length > 0 ? (
                     <input
                       type="checkbox"
                       checked={allAction}
                       disabled={disabled}
-                      aria-label={`Thao tác mọi chức năng nhóm ${group}`}
+                      aria-label={`Sửa mọi chức năng nhóm ${group}`}
                       onChange={(event) => toggleGroup(items, 'action', event.target.checked)}
                     />
-                  )}
+                  ) : <PlaceholderBox reason={NO_EDIT} />}
                 </td>
+                <td className="staff-matrix-col"><PlaceholderBox reason={NO_DELETE} /></td>
               </tr>
               {items.map((item) => {
                 const action = item.action;
                 return (
                   <tr key={item.code}>
-                    <th scope="row" className="staff-matrix-name">
-                      {item.label}
-                      <span className="ui-sub ui-mono">{item.code}</span>
-                    </th>
+                    <th scope="row" className="staff-matrix-name">{item.label}</th>
                     <td className="staff-matrix-col">
                       <input
                         type="checkbox"
@@ -128,13 +137,12 @@ export function PermissionMatrix({ functions, selected, disabled = false, onChan
                           type="checkbox"
                           checked={selected.has(action)}
                           disabled={disabled}
-                          aria-label={`Thao tác ${item.label}`}
+                          aria-label={`Sửa ${item.label}`}
                           onChange={(event) => toggleAction(item, action, event.target.checked)}
                         />
-                      ) : (
-                        <span className="staff-matrix-none" title="Chức năng này chỉ có quyền Xem">Chỉ xem</span>
-                      )}
+                      ) : <PlaceholderBox reason={NO_EDIT} />}
                     </td>
+                    <td className="staff-matrix-col"><PlaceholderBox reason={NO_DELETE} /></td>
                   </tr>
                 );
               })}

@@ -22,7 +22,7 @@ interface ApplicationTableProps {
 /** Dấu xác minh eKYC cạnh tên người vay (mockup loans.html). */
 function VerifiedIcon() {
   return (
-    <svg className="loan-verified" viewBox="0 0 24 24" role="img" aria-label="Đã xác minh eKYC">
+    <svg className="loan-verified" viewBox="0 0 24 24" role="img" aria-label="Đã xác minh danh tính">
       <path fill="currentColor" d="M12 2 14.4 4l3.1-.3.9 3 2.6 1.8-1.2 2.9 1.2 2.9-2.6 1.8-.9 3-3.1-.3L12 22l-2.4-2-3.1.3-.9-3L3 15.5l1.2-2.9L3 9.6l2.6-1.8.9-3 3.1.3Z" />
       <path d="m8.5 12 2.4 2.4 4.6-4.8" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
     </svg>

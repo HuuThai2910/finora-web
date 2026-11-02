@@ -15,7 +15,7 @@ interface EkycOutcomeCardProps {
 }
 
 /**
- * Thẻ "Kết quả eKYC": số tài khoản theo trạng thái eKYC hiện tại, đếm trên toàn hệ thống (`/admin/users/stats`).
+ * Thẻ "Kết quả xác minh danh tính": số tài khoản theo trạng thái xác minh hiện tại, đếm trên toàn hệ thống (`/admin/users/stats`).
  * Mockup chia theo cách xác minh (tự động, duyệt tay) trong 30 ngày; backend chỉ có trạng thái hiện tại nên thẻ
  * hiện phân bổ hiện tại. Biểu đồ theo tuần nằm ở `SignupWeeklyCard`.
  */
@@ -29,7 +29,7 @@ export function EkycOutcomeCard({ stats, isLoading, error, onRetry, onSelect }: 
   return (
     <section className="ui-card kyc-chart" aria-labelledby="kycOutcomeTitle">
       <div className="kyc-chart-head">
-        <h2 id="kycOutcomeTitle">Kết quả eKYC</h2>
+        <h2 id="kycOutcomeTitle">Kết quả xác minh danh tính</h2>
         <span className="ui-tag">Hiện tại, toàn hệ thống</span>
       </div>
 
@@ -45,14 +45,14 @@ export function EkycOutcomeCard({ stats, isLoading, error, onRetry, onSelect }: 
       ) : (
         <>
           <p className="kyc-chart-lead">
-            <b>{chartNumber(verified.count)}</b> trên <b>{chartNumber(stats.total)}</b> tài khoản đã xác minh eKYC
+            <b>{chartNumber(verified.count)}</b> trên <b>{chartNumber(stats.total)}</b> tài khoản đã xác minh danh tính
             (<b>{formatShare(verified.share)}</b>); <b>{chartNumber(count('PENDING') + count('MANUAL_REVIEW'))}</b> chưa
             xác minh xong, <b>{chartNumber(count('FAILED'))}</b> thất bại.
           </p>
           <EChart
             className="kyc-chart-plot"
             option={option}
-            ariaLabel="Biểu đồ thanh ngang số tài khoản theo trạng thái eKYC"
+            ariaLabel="Biểu đồ thanh ngang số tài khoản theo trạng thái xác minh danh tính"
             onClick={({ dataIndex }) => {
               const row = rows[dataIndex];
               if (row) onSelect(row.status);

@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 import { useSelector } from 'react-redux';
-import { Link, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import type { RootState } from '@/app/store';
 import { ErrorNotice } from '@/components/ErrorNotice';
 import { Icon } from '@/components/Icon';
@@ -9,21 +9,13 @@ import { Toast } from '@/components/Toast';
 import { useGetUserStatsQuery, useGetUsersQuery } from '../api/userQueries';
 import { ChangeRoleModal } from '../components/ChangeRoleModal';
 import { LockUserModal } from '../components/LockUserModal';
+import { PermissionSectionTabs } from '../components/PermissionSectionTabs';
 import { UserTable } from '../components/UserTable';
-import {
-  EKYC_DISPLAY,
-  ROLE_LABELS,
-  USER_LIST_PAGE_SIZE,
-  isEkycFilter,
-  isRoleFilter,
-  type EkycFilter,
-  type RoleFilter,
-} from '../constant';
-import type { EkycStatusType, RoleType, UserItem } from '../types';
+import { ROLE_LABELS, USER_LIST_PAGE_SIZE, isRoleFilter, type RoleFilter } from '../constant';
+import type { RoleType, UserItem } from '../types';
 import './UserListPage.css';
 
 const ROLE_TABS: RoleFilter[] = ['ALL', 'ADMIN', 'STAFF', 'INVESTOR', 'BORROWER'];
-const EKYC_OPTIONS: EkycStatusType[] = ['VERIFIED', 'PENDING', 'MANUAL_REVIEW', 'FAILED'];
 
 type PendingAction = { kind: 'role' | 'lock'; user: UserItem } | null;
 
@@ -36,12 +28,11 @@ export default function UserListPage() {
   // Bộ lọc và trang nằm trên URL để chia sẻ đường dẫn và giữ chỗ khi quay lại.
   const [searchParams, setSearchParams] = useSearchParams();
   const roleParam = searchParams.get('role');
-  const ekycParam = searchParams.get('ekyc');
   const role: RoleFilter = isRoleFilter(roleParam) ? roleParam : 'ALL';
-  const ekycStatus: EkycFilter = isEkycFilter(ekycParam) ? ekycParam : 'ALL';
   const page = readPage(searchParams.get('page'));
 
-  const users = useGetUsersQuery({ page, size: USER_LIST_PAGE_SIZE, role, ekycStatus });
+  // Trạng thái xác minh xem và lọc ở trang Khách hàng; trang này chỉ lọc theo vai trò.
+  const users = useGetUsersQuery({ page, size: USER_LIST_PAGE_SIZE, role, ekycStatus: 'ALL' });
   const stats = useGetUserStatsQuery();
   const currentAdminId = useSelector((state: RootState) => state.auth.profile?.id ?? null);
 
@@ -49,13 +40,11 @@ export default function UserListPage() {
   const [notice, setNotice] = useState<string | null>(null);
   const dismissNotice = useCallback(() => setNotice(null), []);
 
-  const updateQuery = (next: { role?: RoleFilter; ekyc?: EkycFilter; page?: number }) => {
+  const updateQuery = (next: { role?: RoleFilter; page?: number }) => {
     const nextRole = next.role ?? role;
-    const nextEkyc = next.ekyc ?? ekycStatus;
     const nextPage = next.page ?? 0;
     const params: Record<string, string> = {};
     if (nextRole !== 'ALL') params.role = nextRole;
-    if (nextEkyc !== 'ALL') params.ekyc = nextEkyc;
     if (nextPage > 0) params.page = String(nextPage + 1);
     setSearchParams(params);
   };
@@ -78,7 +67,7 @@ export default function UserListPage() {
     <section className="ui-page">
       <header className="ui-page-head">
         <div className="ui-title">
-          <h1>Người dùng &amp; phân quyền</h1>
+          <h1>Phân quyền</h1>
           <p>Xem tài khoản theo vai trò, đổi vai trò, gán vai trò nhân viên và khóa tài khoản khi cần.</p>
         </div>
         <div className="user-head-actions">
@@ -94,12 +83,10 @@ export default function UserListPage() {
             <Icon name="refresh" />
             {isRefreshing ? 'Đang tải...' : 'Làm mới'}
           </button>
-          <Link className="ui-btn soft" to="/users/roles">
-            <Icon name="key" />
-            Vai trò nhân viên
-          </Link>
         </div>
       </header>
+
+      <PermissionSectionTabs />
 
       <section className="ui-card user-card" aria-label="Danh sách người dùng">
         <div className="user-toolbar">
@@ -111,17 +98,6 @@ export default function UserListPage() {
               </button>
             ))}
           </div>
-          <select
-            className="ui-select"
-            value={ekycStatus}
-            onChange={(event) => updateQuery({ ekyc: isEkycFilter(event.target.value) ? event.target.value : 'ALL' })}
-            aria-label="Lọc trạng thái eKYC"
-          >
-            <option value="ALL">Mọi trạng thái eKYC</option>
-            {EKYC_OPTIONS.map((status) => (
-              <option key={status} value={status}>{EKYC_DISPLAY[status].label}</option>
-            ))}
-          </select>
         </div>
 
         <div className="user-body">

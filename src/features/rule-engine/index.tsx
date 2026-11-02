@@ -1,7 +1,7 @@
 /*
  * Public API của feature chính sách và bộ luật chấm điểm AI.
  * Chỉ xuất phần nơi khác cần: trang, type dùng chung và vài tiện ích hiển thị kết
- * quả chấm điểm (credit-score dùng lại cho nhãn mã luật và lỗi finora-ai).
+ * quả chấm điểm (nhãn mã luật, lỗi finora-ai).
  */
 export { default as AiPolicyPage } from './pages/AiPolicyPage';
 export type * from './types';

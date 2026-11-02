@@ -1,20 +1,49 @@
-import { Link, useNavigate } from 'react-router-dom';
-import { Icon } from '@/components/Icon';
+import { useNavigate } from 'react-router-dom';
+import { RowMenu, type RowMenuItem } from '@/components/RowMenu';
 import { StatusPill } from '@/components/StatusPill';
+import { ekycReviewDetailPath } from '@/features/ekyc-review';
 import type { UserItem } from '@/features/user';
 import type { KycFilter } from '../constants';
 import { ekycDisplay, formatDay, roleLabel } from '../mappers/customerDisplay';
+
+interface CustomerReviewLookup {
+  /** Mã khách → mã lượt đang chờ duyệt tay của khách đó. */
+  attempts: Map<number, string>;
+  isLoading: boolean;
+}
 
 interface CustomerTableProps {
   customers: UserItem[];
   /** Tab đang chọn: cột cuối đổi theo trạng thái để mỗi tab chỉ hiện thứ người xem cần. */
   filter: KycFilter;
+  /** Lượt chờ duyệt để mở từ menu dòng; `null` khi tài khoản không có quyền Xem "Duyệt xác minh danh tính". */
+  review: CustomerReviewLookup | null;
 }
 
 const detailPath = (id: number) => `/customers/kyc/${id}`;
 
-/** Bảng khách hàng. Cả dòng bấm được để mở hồ sơ; nút cuối dòng giữ cho người dùng bàn phím và đọc màn hình. */
-export function CustomerTable({ customers, filter }: CustomerTableProps) {
+function menuItems(customer: UserItem, review: CustomerReviewLookup | null): RowMenuItem[] {
+  const items: RowMenuItem[] = [{ key: 'detail', label: 'Chi tiết', icon: 'eye', to: detailPath(customer.id) }];
+  if (!review || customer.ekycStatus !== 'MANUAL_REVIEW') return items;
+
+  const attemptId = review.attempts.get(customer.id);
+  if (attemptId) {
+    items.push({ key: 'review', label: 'Duyệt xác minh', icon: 'userCheck', to: ekycReviewDetailPath(attemptId) });
+  } else {
+    items.push({
+      key: 'review',
+      label: 'Duyệt xác minh',
+      icon: 'userCheck',
+      onSelect: () => undefined,
+      disabled: true,
+      disabledReason: review.isLoading ? 'Đang tải lượt chờ duyệt...' : 'Không tìm thấy lượt chờ duyệt của khách này',
+    });
+  }
+  return items;
+}
+
+/** Bảng khách hàng. Cả dòng bấm được để mở hồ sơ; thao tác của dòng gom vào menu "⋯". */
+export function CustomerTable({ customers, filter, review }: CustomerTableProps) {
   const navigate = useNavigate();
   const showStatus = filter === 'ALL';
   const showVerifiedAt = filter === 'VERIFIED';
@@ -28,9 +57,9 @@ export function CustomerTable({ customers, filter }: CustomerTableProps) {
             <th className="hide-md">Vai trò</th>
             <th className="hide-sm">Số CCCD</th>
             <th className="hide-md">Số điện thoại</th>
-            {showStatus && <th>eKYC</th>}
+            {showStatus && <th>Xác minh</th>}
             {showVerifiedAt ? <th>Xác minh</th> : <th className={showStatus ? 'hide-sm' : undefined}>Đăng ký</th>}
-            <th><span className="ui-sr-only">Thao tác</span></th>
+            <th className="act"><span className="ui-sr-only">Thao tác</span></th>
           </tr>
         </thead>
         <tbody>
@@ -42,7 +71,7 @@ export function CustomerTable({ customers, filter }: CustomerTableProps) {
                 className="clickable"
                 tabIndex={0}
                 onClick={(event) => {
-                  if ((event.target as HTMLElement).closest('a')) return;
+                  if ((event.target as HTMLElement).closest('button, a')) return;
                   navigate(detailPath(customer.id));
                 }}
                 onKeyDown={(event) => {
@@ -62,11 +91,8 @@ export function CustomerTable({ customers, filter }: CustomerTableProps) {
                 {showVerifiedAt
                   ? <td>{formatDay(customer.ekycCompletedAt)}</td>
                   : <td className={showStatus ? 'hide-sm' : undefined}>{formatDay(customer.createdAt)}</td>}
-                <td className="num">
-                  <Link className="ui-btn soft" to={detailPath(customer.id)}>
-                    Chi tiết
-                    <Icon name="arrowRight" />
-                  </Link>
+                <td className="act">
+                  <RowMenu label={`Thao tác với ${customer.fullName || customer.email}`} items={menuItems(customer, review)} />
                 </td>
               </tr>
             );

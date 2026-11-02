@@ -8,6 +8,7 @@ import { Toast } from '@/components/Toast';
 import { formatNumber } from '@/utils';
 import { useGetStaffRolesQuery } from '../api/userQueries';
 import { DeleteStaffRoleModal } from '../components/DeleteStaffRoleModal';
+import { PermissionSectionTabs } from '../components/PermissionSectionTabs';
 import { StaffRoleModal } from '../components/StaffRoleModal';
 import type { StaffRole } from '../types';
 import './UserListPage.css';
@@ -25,12 +26,12 @@ function deleteBlockedReason(role: StaffRole): string | null {
 function permissionSummary(role: StaffRole): string {
   const views = role.permissions.filter((permission) => permission.endsWith(':view')).length;
   const actions = role.permissions.filter((permission) => permission.endsWith(':action')).length;
-  return `${formatNumber(views)} Xem, ${formatNumber(actions)} Thao tác`;
+  return `${formatNumber(views)} Xem, ${formatNumber(actions)} Sửa`;
 }
 
 /**
- * Vai trò & phân quyền (chỉ ADMIN): mỗi vai trò nhân viên là một bộ quyền Xem/Thao tác trên các màn quản trị.
- * Gán vai trò cho từng tài khoản làm ở trang Người dùng & phân quyền (đổi vai trò sang "Nhân viên").
+ * Phần "Vai trò nhân viên" của trang Phân quyền (chỉ ADMIN): mỗi vai trò nhân viên là một bộ quyền Xem/Thao tác trên
+ * các màn quản trị. Gán vai trò cho từng tài khoản làm ở phần "Người dùng" (đổi vai trò sang "Nhân viên").
  */
 export default function StaffRolesPage() {
   const roles = useGetStaffRolesQuery();
@@ -48,20 +49,18 @@ export default function StaffRolesPage() {
     <section className="ui-page">
       <header className="ui-page-head">
         <div className="ui-title">
-          <h1>Vai trò &amp; phân quyền</h1>
+          <h1>Phân quyền</h1>
           <p>Mỗi vai trò nhân viên quy định màn nào được xem và thao tác nào được làm trên web quản trị.</p>
         </div>
         <div className="user-head-actions">
-          <Link className="ui-btn ghost" to="/users">
-            <Icon name="chevronLeft" />
-            Về Người dùng
-          </Link>
           <button type="button" className="ui-btn primary" onClick={() => setAction({ kind: 'create' })}>
             <Icon name="plus" />
             Tạo vai trò
           </button>
         </div>
       </header>
+
+      <PermissionSectionTabs />
 
       <section className="ui-card user-card" aria-label="Danh sách vai trò nhân viên">
         <div className="user-body">
@@ -93,7 +92,6 @@ export default function StaffRolesPage() {
                             <span className="user-name">{role.name}</span>
                             {role.builtIn && <StatusPill tone="info" small>Mặc định</StatusPill>}
                           </div>
-                          <span className="ui-sub ui-mono">{role.code}</span>
                         </td>
                         <td className="staff-role-desc">{role.description || <span className="user-name empty">Chưa có mô tả</span>}</td>
                         <td>{permissionSummary(role)}</td>
