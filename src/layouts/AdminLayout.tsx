@@ -1,27 +1,38 @@
-import { Suspense, useEffect, useState } from 'react';
-import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { Suspense, useEffect } from 'react';
+import { Link, Outlet, useLocation, useNavigate, useNavigationType } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import type { AppDispatch, RootState } from '@/app/store';
+import { resetApiCaches, type AppDispatch, type RootState } from '@/app/store';
 import { logoutUser, usePermission } from '@/features/auth';
 import { Icon } from '@/components/Icon';
 import { RowMenu } from '@/components/RowMenu';
 import { initials } from '@/components/Avatar';
+import { PageErrorBoundary } from '@/components/PageErrorBoundary';
+import { backToListUrl } from '@/lib/navigation';
+import { PageChunkFallback } from '@/components/GlobalProgressBar';
+import { NotificationBell } from '@/features/staff-inbox';
+import { AccountMenuHeader } from './AccountMenuHeader';
+import { permissionSummary } from './accountSummary';
 import { getAdminBreadcrumb, visibleNavSections } from './adminNavigation';
-import { SidebarIcon } from './SidebarIcon';
+import { AdminSidebar } from './AdminSidebar';
+import { OpenApplicationBox } from './OpenApplicationBox';
+import { useNavDrawer } from './useNavDrawer';
 import '@/styles/ui.css';
-import './AdminLayout.css';
 
+/**
+ * Khung trang quản trị, theo finora-web-mockup (SHELL + soft.css). Kích thước: sidebar 236px, mục menu 34px, header 56px.
+ * Dưới 1024px sidebar thành ngăn trượt mở bằng nút menu ở header.
+ */
 export default function AdminLayout() {
   const location = useLocation();
+  const navigationType = useNavigationType();
   const navigate = useNavigate();
   const dispatch = useDispatch<AppDispatch>();
   const { profile, user } = useSelector((state: RootState) => state.auth);
-  const { canAccess } = usePermission();
+  const { canAccess, canView } = usePermission();
   // Nhân viên chỉ thấy mục có quyền Xem; quản trị viên thấy đủ.
   const navSections = visibleNavSections(canAccess);
   const roleLabel = profile?.role === 'STAFF' ? profile.staffRole?.name || profile.staffRoleName || 'Nhân viên' : 'Quản trị viên';
-  // Ngăn menu trượt chỉ dùng trên màn hẹp; trạng thái mở là chuyện riêng của khung trang.
-  const [navOpen, setNavOpen] = useState(false);
+  const drawer = useNavDrawer(location.pathname);
 
   const breadcrumb = getAdminBreadcrumb(location.pathname);
   const displayName = profile?.fullName || user?.fullName || 'Quản trị viên';
@@ -30,127 +41,107 @@ export default function AdminLayout() {
     document.title = `${breadcrumb.current} | FINORA Quản trị`;
   }, [breadcrumb.current]);
 
-  // Đổi trang thì đóng ngăn menu, nếu không ngăn sẽ che nội dung vừa mở.
+  // Đổi trang thì mở trang mới từ đầu. Bấm Back/Forward (POP) thì để trình duyệt tự giữ vị trí cuộn cũ.
   useEffect(() => {
-    setNavOpen(false);
-  }, [location.pathname]);
+    if (navigationType !== 'POP') window.scrollTo(0, 0);
+  }, [location.pathname, navigationType]);
 
-  useEffect(() => {
-    if (!navOpen) return;
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setNavOpen(false);
-    };
-    document.addEventListener('keydown', onKeyDown);
-    return () => document.removeEventListener('keydown', onKeyDown);
-  }, [navOpen]);
-
+  // Đăng xuất rồi bỏ cache API: tài khoản đăng nhập kế tiếp trên tab này không thấy dữ liệu của phiên trước.
   const handleLogout = async () => {
     await dispatch(logoutUser());
     navigate('/login', { replace: true });
+    resetApiCaches();
   };
 
   return (
-    <div className={`app-layout${navOpen ? ' nav-open' : ''}`}>
-      <aside className="sidebar" id="admin-sidebar">
-        <div className="sidebar-logo">
-          <div className="sidebar-logo-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <path d="M12 2 3 7v10l9 5 9-5V7l-9-5z" />
-              <path d="M12 22V12" />
-              <path d="m3 7 9 5 9-5" />
-            </svg>
-          </div>
-          <div className="sidebar-logo-text">
-            <span className="sidebar-brand">FINORA</span>
-            <span>Quản trị</span>
-          </div>
-        </div>
+    <div className={`app-layout${drawer.open ? ' nav-open' : ''} flex min-h-dvh`}>
+      <AdminSidebar
+        sections={navSections}
+        pathname={location.pathname}
+        sidebarRef={drawer.sidebarRef}
+        onClose={() => drawer.close()}
+        onLogout={() => void handleLogout()}
+      />
 
-        <nav className="sidebar-nav" aria-label="Điều hướng quản trị">
-          {navSections.map((section) => (
-            <div className="sidebar-section" key={section.label || 'root'}>
-              {section.label && <div className="sidebar-section-label">{section.label}</div>}
-              {section.items.map((item) => {
-                const active = item.matches(location.pathname);
-                return (
-                  <NavLink
-                    key={item.to}
-                    to={item.to}
-                    end
-                    // Dùng hàm để NavLink không tự gắn lớp "active" theo tiền tố đường dẫn
-                    // (/loans/operations nằm dưới /loans); mục đang chọn do `matches` quyết định.
-                    className={() => `sidebar-item${active ? ' active' : ''}`}
-                    aria-current={active ? 'page' : undefined}
-                  >
-                    <SidebarIcon name={item.icon} />
-                    <span className="sidebar-item-label">{item.label}</span>
-                  </NavLink>
-                );
-              })}
-            </div>
-          ))}
-        </nav>
+      <div
+        className="nav-scrim hidden max-[1024px]:in-[.nav-open]:block max-[1024px]:in-[.nav-open]:fixed max-[1024px]:in-[.nav-open]:inset-0 max-[1024px]:in-[.nav-open]:z-89 max-[1024px]:in-[.nav-open]:bg-[rgba(12,29,67,0.45)]"
+        onClick={() => drawer.close(false)}
+        aria-hidden="true"
+      />
 
-        <button type="button" className="sidebar-logout" onClick={handleLogout}>
-          <Icon name="logout" />
-          Đăng xuất
-        </button>
-      </aside>
-
-      <div className="nav-scrim" onClick={() => setNavOpen(false)} aria-hidden="true" />
-
-      <div className="main-area">
-        <header className="admin-header">
+      {/* Hai mảng tròn mờ ở góc trên (::before, ::after): chỉ là nền, không mang thông tin. */}
+      <div className="main-area relative isolate flex flex-col flex-1 min-w-0 overflow-clip bg-page before:content-[''] before:absolute before:-z-1 before:-top-75 before:-right-40 before:size-140 before:rounded-[50%] before:bg-[radial-gradient(circle_at_40%_60%,#d8e2f1_0%,#e2e9f4_45%,rgba(226,233,244,0)_70%)] before:pointer-events-none after:content-[''] after:absolute after:-z-1 after:-top-62.5 after:left-[34%] after:size-90 after:rounded-[50%] after:bg-[radial-gradient(circle,rgba(216,226,241,0.9)_0%,rgba(216,226,241,0)_70%)] after:pointer-events-none">
+        <header className="admin-header sticky top-0 z-40 flex items-center justify-between gap-3 h-(--header-height) px-(--admin-page-inline-padding) bg-[rgba(237,242,249,0.86)] backdrop-blur-sm max-[1024px]:justify-start">
           <button
+            ref={drawer.toggleRef}
             type="button"
-            className="nav-toggle"
-            aria-label={navOpen ? 'Đóng menu' : 'Mở menu'}
-            aria-expanded={navOpen}
+            className="nav-toggle hidden place-items-center flex-none size-8 -mr-1 rounded-sm text-secondary hover:bg-surface-muted hover:text-primary [&_svg]:size-4.5 max-[1024px]:grid"
+            aria-label={drawer.open ? 'Đóng menu' : 'Mở menu'}
+            aria-expanded={drawer.open}
             aria-controls="admin-sidebar"
-            onClick={() => setNavOpen((open) => !open)}
+            onClick={drawer.toggle}
           >
             <Icon name="menu" />
           </button>
-          <nav className="header-breadcrumb" aria-label="Vị trí trang">
+          <nav className="header-breadcrumb flex items-center gap-1.5 min-w-0 text-secondary text-[13px] max-[760px]:text-[14px]" aria-label="Vị trí trang">
             {breadcrumb.section && (
               <>
-                <span>{breadcrumb.section}</span>
-                <span className="sep" aria-hidden="true">/</span>
+                <span className="whitespace-nowrap max-[760px]:hidden">{breadcrumb.section}</span>
+                <span className="sep text-line-strong max-[760px]:hidden" aria-hidden="true">/</span>
               </>
             )}
             {breadcrumb.parent && (
               <>
-                <Link to={breadcrumb.parent.to}>{breadcrumb.parent.label}</Link>
-                <span className="sep" aria-hidden="true">/</span>
+                {/* Về đúng danh sách đã mở trang chi tiết (giữ tab, bộ lọc, trang) nếu danh sách gửi kèm state. */}
+                <Link className="whitespace-nowrap hover:text-primary" to={backToListUrl(location.state, breadcrumb.parent.to)}>{breadcrumb.parent.label}</Link>
+                <span className="sep text-line-strong" aria-hidden="true">/</span>
               </>
             )}
-            <span className="current" aria-current="page">{breadcrumb.current}</span>
+            <span className="current truncate text-primary font-semibold" aria-current="page">{breadcrumb.current}</span>
           </nav>
-          <div className="header-actions">
-            {/* Menu tài khoản như mockup (soft.js): bấm tên mở danh sách; hiện chỉ có Đăng xuất. */}
+          <div className="header-actions flex items-center gap-3 max-[1024px]:ml-auto max-[760px]:gap-1.5">
+            {/* Mở hồ sơ theo mã chỉ có ích với ai xem được hồ sơ vay. */}
+            {canView('loan-application') && <OpenApplicationBox />}
+            <NotificationBell />
+            {/* Menu tài khoản như mockup (soft.js): đầu menu là ai đang đăng nhập và quyền, dưới là Đăng xuất. */}
             <RowMenu
               label={`Tài khoản ${displayName}`}
-              buttonClassName="header-user"
+              buttonClassName="header-user flex items-center gap-2.5 h-10 -mr-2 px-2 rounded-[10px] text-left transition-[background] duration-150 hover:bg-[rgba(255,255,255,0.7)] aria-expanded:bg-[rgba(255,255,255,0.7)]"
               buttonContent={(
                 <>
-                  <span className="header-user-avatar" aria-hidden="true">{initials(displayName)}</span>
-                  <span className="header-user-info">
-                    <span className="header-user-name">{displayName}</span>
-                    <span className="header-user-role">{roleLabel}</span>
+                  <span className="header-user-avatar grid place-items-center size-7 rounded-[50%] bg-[#e3ecfd] text-brand text-[12px] font-bold" aria-hidden="true">
+                    {initials(displayName)}
                   </span>
-                  <span className="header-user-chevron"><Icon name="chevronDown" /></span>
+                  <span className="header-user-info flex flex-col leading-tight max-[760px]:hidden">
+                    <span className="header-user-name text-primary text-[13px] font-semibold">{displayName}</span>
+                    <span className="header-user-role text-secondary text-[12px]">{roleLabel}</span>
+                  </span>
+                  {/* Mũi tên lật lên khi menu đang mở (nút mở có aria-expanded). */}
+                  <span className="header-user-chevron grid place-items-center text-muted transition-[transform] duration-150 in-aria-expanded:transform-[rotate(180deg)] [&_svg]:size-3.5">
+                    <Icon name="chevronDown" />
+                  </span>
                 </>
+              )}
+              header={(
+                <AccountMenuHeader
+                  name={displayName}
+                  email={profile?.email ?? user?.email ?? null}
+                  roleLabel={roleLabel}
+                  permissions={permissionSummary(profile)}
+                />
               )}
               items={[{ key: 'logout', label: 'Đăng xuất', icon: 'logout', onSelect: () => void handleLogout() }]}
             />
           </div>
         </header>
 
-        <main className="admin-content">
-          <div className="admin-page">
-            <Suspense fallback={<div className="ui-empty" aria-busy="true">Đang tải trang...</div>}>
-              <Outlet />
-            </Suspense>
+        <main className="admin-content flex-1">
+          <div className="admin-page w-full max-w-360 pt-5 px-(--admin-page-inline-padding) pb-8">
+            <PageErrorBoundary resetKey={location.pathname}>
+              <Suspense fallback={<PageChunkFallback />}>
+                <Outlet />
+              </Suspense>
+            </PageErrorBoundary>
           </div>
         </main>
       </div>

@@ -1,5 +1,8 @@
 export { FundingPage } from './pages/FundingPage';
 export { default as FundingDetailPage } from './pages/FundingDetailPage';
-// Chợ Notes cũng hiển thị tên nhà đầu tư hai bên giao dịch; dùng chung cách tra một lần cả trang.
-export { useInvestorNames } from './hooks/useInvestorNames';
-
+// Chợ Notes cũng hiện tên hai bên giao dịch, bấm để mở hồ sơ khách hàng như bảng nhà đầu tư của gọi vốn.
+export { InvestorLink } from './components/InvestorLink';
+export { fundingDetailPath } from './components/FundingListTable';
+export { useGetInvestorNotesQuery } from './api/investmentApi';
+export type { AdminInvestorNote } from './api/investmentApi';
+export { NOTE_STATUS_LABEL, NOTE_STATUS_TONE } from './constants';

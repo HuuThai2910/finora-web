@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import type { StaffPermissionFunction } from '../types';
 
 interface PermissionMatrixProps {
@@ -18,9 +19,62 @@ function groupFunctions(functions: StaffPermissionFunction[]): Array<[string, St
   return Array.from(groups.entries());
 }
 
-/** Ô không có quyền tương ứng: ô tick mờ, không bấm được, rê chuột để biết lý do. */
+/** Ô ma trận: thấp hơn ô bảng chung (đệm dọc 7px). */
+const CELL = 'py-1.75 px-3 align-middle';
+const NAME_CELL = `${CELL} text-left`;
+/** Cột ô tick Xem, Sửa, Xóa: hẹp, canh giữa. */
+const COL_CELL = `staff-matrix-col ${CELL} w-23 text-center max-[760px]:w-16`;
+/** Dòng tên nhóm (chọn cả cột cho nhóm): vạch trên, chữ in hoa nhỏ. */
+const GROUP_CELL = 'border-t border-t-line text-primary text-[12px] font-semibold uppercase tracking-[0.02em]';
+const CHECKBOX = 'w-4 h-4 accent-brand cursor-pointer disabled:cursor-not-allowed';
+
+/**
+ * Ô không có quyền tương ứng: ô tick mờ, không bấm được, rê chuột để biết lý do.
+ * Mờ hẳn (0.35) để khác ô bị khóa tạm khi đang lưu.
+ */
 function PlaceholderBox({ reason }: { reason: string }) {
-  return <input type="checkbox" className="staff-matrix-placeholder" checked={false} disabled title={reason} aria-label={reason} readOnly />;
+  return (
+    <input
+      type="checkbox"
+      className={`staff-matrix-placeholder ${CHECKBOX} opacity-[0.35]`}
+      checked={false}
+      disabled
+      title={reason}
+      aria-label={reason}
+      readOnly
+    />
+  );
+}
+
+interface GroupCheckboxProps {
+  checked: boolean;
+  /** Chỉ một phần chức năng trong nhóm được chọn. */
+  partial: boolean;
+  disabled: boolean;
+  label: string;
+  onChange: (checked: boolean) => void;
+}
+
+/**
+ * Ô chọn cả cột của một nhóm. Chọn một phần thì ô ở trạng thái `indeterminate` (gạch ngang) để không trông như "chưa
+ * chọn gì"; bấm vào lúc đó thì chọn hết. `indeterminate` không có thuộc tính HTML nên phải gán qua DOM.
+ */
+function GroupCheckbox({ checked, partial, disabled, label, onChange }: GroupCheckboxProps) {
+  const ref = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (ref.current) ref.current.indeterminate = partial;
+  }, [partial]);
+  return (
+    <input
+      ref={ref}
+      type="checkbox"
+      className={CHECKBOX}
+      checked={checked}
+      disabled={disabled}
+      aria-label={label}
+      onChange={(event) => onChange(event.target.checked)}
+    />
+  );
 }
 
 const NO_EDIT = 'Chức năng này chỉ có quyền Xem';
@@ -77,64 +131,70 @@ export function PermissionMatrix({ functions, selected, disabled = false, onChan
   };
 
   return (
-    <div className="ui-table-wrap staff-matrix-wrap">
+    <div className="ui-table-wrap staff-matrix-wrap border border-line rounded-md">
       <table className="ui-table staff-matrix">
         <thead>
           <tr>
-            <th scope="col">Chức năng</th>
-            <th scope="col" className="staff-matrix-col">Xem</th>
-            <th scope="col" className="staff-matrix-col">Sửa</th>
-            <th scope="col" className="staff-matrix-col">Xóa</th>
+            <th scope="col" className={`${NAME_CELL} bg-surface-muted`}>Chức năng</th>
+            <th scope="col" className={`${COL_CELL} bg-surface-muted`}>Xem</th>
+            <th scope="col" className={`${COL_CELL} bg-surface-muted`}>Sửa</th>
+            <th scope="col" className={`${COL_CELL} bg-surface-muted`}>Xóa</th>
           </tr>
         </thead>
         {groupFunctions(functions).map(([group, items]) => {
           const actionable = items.filter((item) => item.action);
-          const allView = items.every((item) => selected.has(item.view));
-          const allAction = actionable.length > 0 && actionable.every((item) => item.action && selected.has(item.action));
+          const viewCount = items.filter((item) => selected.has(item.view)).length;
+          const actionCount = actionable.filter((item) => item.action && selected.has(item.action)).length;
+          const allView = viewCount === items.length;
+          const allAction = actionable.length > 0 && actionCount === actionable.length;
+          // Nền xanh nhạt của dòng nhóm; ô tick nhường nền rê chuột chung của bảng (ui-table) như trước.
+          const groupTick = `${COL_CELL} ${GROUP_CELL} [tr:not(:hover)>&]:bg-brand-50`;
           return (
             <tbody key={group}>
               <tr className="staff-matrix-group">
-                <th scope="rowgroup">{group}</th>
-                <td className="staff-matrix-col">
-                  <input
-                    type="checkbox"
+                <th scope="rowgroup" className={`${NAME_CELL} ${GROUP_CELL} bg-brand-50`}>{group}</th>
+                <td className={groupTick}>
+                  <GroupCheckbox
                     checked={allView}
+                    partial={viewCount > 0 && !allView}
                     disabled={disabled}
-                    aria-label={`Xem mọi chức năng nhóm ${group}`}
-                    onChange={(event) => toggleGroup(items, 'view', event.target.checked)}
+                    label={`Xem mọi chức năng nhóm ${group}`}
+                    onChange={(checked) => toggleGroup(items, 'view', checked)}
                   />
                 </td>
-                <td className="staff-matrix-col">
+                <td className={groupTick}>
                   {actionable.length > 0 ? (
-                    <input
-                      type="checkbox"
+                    <GroupCheckbox
                       checked={allAction}
+                      partial={actionCount > 0 && !allAction}
                       disabled={disabled}
-                      aria-label={`Sửa mọi chức năng nhóm ${group}`}
-                      onChange={(event) => toggleGroup(items, 'action', event.target.checked)}
+                      label={`Sửa mọi chức năng nhóm ${group}`}
+                      onChange={(checked) => toggleGroup(items, 'action', checked)}
                     />
                   ) : <PlaceholderBox reason={NO_EDIT} />}
                 </td>
-                <td className="staff-matrix-col"><PlaceholderBox reason={NO_DELETE} /></td>
+                <td className={groupTick}><PlaceholderBox reason={NO_DELETE} /></td>
               </tr>
               {items.map((item) => {
                 const action = item.action;
                 return (
                   <tr key={item.code}>
-                    <th scope="row" className="staff-matrix-name">{item.label}</th>
-                    <td className="staff-matrix-col">
+                    <th scope="row" className={`staff-matrix-name ${NAME_CELL}`}>{item.label}</th>
+                    <td className={COL_CELL}>
                       <input
                         type="checkbox"
+                        className={CHECKBOX}
                         checked={selected.has(item.view)}
                         disabled={disabled}
                         aria-label={`Xem ${item.label}`}
                         onChange={(event) => toggleView(item, event.target.checked)}
                       />
                     </td>
-                    <td className="staff-matrix-col">
+                    <td className={COL_CELL}>
                       {action ? (
                         <input
                           type="checkbox"
+                          className={CHECKBOX}
                           checked={selected.has(action)}
                           disabled={disabled}
                           aria-label={`Sửa ${item.label}`}
@@ -142,7 +202,7 @@ export function PermissionMatrix({ functions, selected, disabled = false, onChan
                         />
                       ) : <PlaceholderBox reason={NO_EDIT} />}
                     </td>
-                    <td className="staff-matrix-col"><PlaceholderBox reason={NO_DELETE} /></td>
+                    <td className={COL_CELL}><PlaceholderBox reason={NO_DELETE} /></td>
                   </tr>
                 );
               })}

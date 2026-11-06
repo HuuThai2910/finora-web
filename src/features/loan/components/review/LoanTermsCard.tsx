@@ -4,6 +4,9 @@ import type { AdminLoanReviewDetail } from '../../types';
 import { RepaymentSchedule } from './RepaymentSchedule';
 import { ReviewCard } from './ReviewCard';
 import { DIRECTION_COPY, formatDecimal, policyLabel, rateDirection } from '../../mappers/reviewDisplay';
+import { FOOTNOTE, STRIP, VAL_HINT } from './reviewClassNames';
+
+const SUB_HEAD = 'lr-sub-head flex items-center gap-2 flex-wrap mt-4 mb-2 text-[14px] font-semibold';
 
 function termsTitle(status: AdminLoanReviewDetail['status']): string {
   if (status === 'PENDING_REVIEW') return 'Điều khoản nếu duyệt';
@@ -12,9 +15,9 @@ function termsTitle(status: AdminLoanReviewDetail['status']): string {
 }
 
 function DiffCell({ delta, format }: { delta: number; format: (value: number) => string }) {
-  if (delta === 0) return <td className="num lr-diff-same">Không đổi</td>;
+  if (delta === 0) return <td className="num lr-diff-same text-muted">Không đổi</td>;
   return (
-    <td className={`num ${delta < 0 ? 'lr-diff-lower' : 'lr-diff-higher'}`}>
+    <td className={delta < 0 ? 'num lr-diff-lower text-success' : 'num lr-diff-higher text-warning'}>
       {delta > 0 ? '+' : ''}{format(delta)}
     </td>
   );
@@ -33,8 +36,8 @@ function TermsComparison({ application }: { application: AdminLoanReviewDetail }
   if (finalRate == null || !finalSchedule) {
     return (
       <>
-        <h3 className="lr-sub-head">{title}<StatusPill tone="neutral" small>Chưa định giá</StatusPill></h3>
-        <p className="lr-footnote">
+        <h3 className={SUB_HEAD}>{title}<StatusPill tone="neutral" small>Chưa định giá</StatusPill></h3>
+        <p className={FOOTNOTE}>
           Chưa có lãi suất sau định giá. Lãi suất cơ sở lúc nộp là {formatPercent(application.annualInterestRate)}/năm.
         </p>
       </>
@@ -55,9 +58,10 @@ function TermsComparison({ application }: { application: AdminLoanReviewDetail }
 
   return (
     <>
-      <h3 className="lr-sub-head">{title}<StatusPill tone={copy.tone} small>{copy.label}</StatusPill></h3>
+      <h3 className={SUB_HEAD}>{title}<StatusPill tone={copy.tone} small>{copy.label}</StatusPill></h3>
+      {/* Bảng so sánh điều khoản thụt trong thẻ theo kiểu ui-table; cột hạng mục dùng màu chữ chính. */}
       <div className="ui-table-wrap">
-        <table className="ui-table lr-terms-table">
+        <table className="ui-table lr-terms-table [&_td:first-child]:text-primary">
           <thead>
             <tr>
               <th><span className="ui-sr-only">Hạng mục</span></th>
@@ -78,7 +82,7 @@ function TermsComparison({ application }: { application: AdminLoanReviewDetail }
           </tbody>
         </table>
       </div>
-      <p className="lr-footnote">
+      <p className={FOOTNOTE}>
         Lãi suất điều chỉnh {formatPercentagePoints(application.pricingAdjustmentPercentagePoints)}
         {application.pricingPolicyVersion ? ` theo ${policyLabel(application.pricingPolicyVersion)}` : ''}
         {application.pricingCreditGrade ? ` cho hạng ${application.pricingCreditGrade}` : ''}. Số tiền và kỳ hạn giữ nguyên.
@@ -93,12 +97,12 @@ export function LoanTermsCard({ application }: { application: AdminLoanReviewDet
   const suggestedLimit = application.assessment?.suggestedLimit;
   return (
     <ReviewCard title="Khoản vay" aside="Người vay chọn lúc nộp hồ sơ">
-      <dl className="lr-strip">
+      <dl className={STRIP}>
         <div>
           <dt>Số tiền đề nghị</dt>
           <dd>
             {formatMoney(application.requestedAmount)}
-            {suggestedLimit != null ? <span className="lr-val-hint">Hạn mức gợi ý {formatMoney(suggestedLimit)}</span> : null}
+            {suggestedLimit != null ? <span className={VAL_HINT}>Hạn mức gợi ý {formatMoney(suggestedLimit)}</span> : null}
           </dd>
         </div>
         <div><dt>Kỳ hạn</dt><dd>{application.requestedTermMonths} tháng</dd></div>
@@ -106,7 +110,7 @@ export function LoanTermsCard({ application }: { application: AdminLoanReviewDet
           <dt>Mục đích vay</dt>
           <dd>
             {formatBusinessLabel(application.purposeCode)}
-            {application.purposeDetail ? <span className="lr-val-hint">{application.purposeDetail}</span> : null}
+            {application.purposeDetail ? <span className={VAL_HINT}>{application.purposeDetail}</span> : null}
           </dd>
         </div>
         <div><dt>Phương thức trả</dt><dd>{formatBusinessLabel(application.repaymentMethod)}</dd></div>

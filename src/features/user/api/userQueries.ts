@@ -17,6 +17,10 @@ export interface UserListArgs {
   size: number;
   role: RoleType | 'ALL';
   ekycStatus: EkycStatusType | 'ALL';
+  /** Mã vai trò nhân viên; có thì chỉ lấy tài khoản nhân viên mang vai trò đó. */
+  staffRoleCode?: string;
+  /** Chuỗi tìm theo họ tên, email, số điện thoại hoặc CCCD. */
+  q?: string;
 }
 
 /**
@@ -34,7 +38,8 @@ async function run<T>(call: () => Promise<T>): Promise<{ data: T } | { error: un
 const userQueries = userServiceApi.injectEndpoints({
   endpoints: (builder) => ({
     getUsers: builder.query<PageResponse<UserItem>, UserListArgs>({
-      queryFn: ({ page, size, role, ekycStatus }) => run(() => userApi.getUsers(page, size, { role, ekycStatus })),
+      queryFn: ({ page, size, role, ekycStatus, staffRoleCode, q }) =>
+        run(() => userApi.getUsers(page, size, { role, ekycStatus, staffRoleCode, q })),
       providesTags: [{ type: 'UserList', id: 'LIST' }],
     }),
     /** Hồ sơ một người dùng; trang chi tiết khách hàng dùng, nên đổi vai trò/khóa phải làm mới cả tag này. */
@@ -54,8 +59,9 @@ const userQueries = userServiceApi.injectEndpoints({
       ],
     }),
     // Khóa/mở khóa không đổi số đếm, chỉ đổi cờ `locked` trên dòng.
-    setUserLocked: builder.mutation<void, { id: number; locked: boolean }>({
-      queryFn: ({ id, locked }) => run(() => (locked ? userApi.lockUser(id) : userApi.unlockUser(id))),
+    setUserLocked: builder.mutation<void, { id: number; locked: boolean; reason?: string }>({
+      queryFn: ({ id, locked, reason }) =>
+        run(() => (locked ? userApi.lockUser(id, reason ?? '') : userApi.unlockUser(id))),
       invalidatesTags: (_result, _error, { id }) => [{ type: 'UserList', id: 'LIST' }, { type: 'User', id: String(id) }],
     }),
     // Danh mục chức năng cố định trong code backend nên giữ cache lâu.

@@ -1,9 +1,11 @@
 import { useState, type FormEvent } from 'react';
 import { ErrorNotice } from '@/components/ErrorNotice';
+import { formatNumber } from '@/utils';
 import { Modal } from '@/components/Modal';
 import { useCreateStaffRoleMutation, useGetStaffPermissionsQuery, useUpdateStaffRoleMutation } from '../api/userQueries';
 import type { StaffRole, StaffRoleRequest } from '../types';
 import { PermissionMatrix } from './PermissionMatrix';
+import { ErrorToast } from '@/components/ErrorToast';
 
 interface StaffRoleModalProps {
   /** Vai trò đang sửa; không có thì là tạo mới. */
@@ -15,6 +17,17 @@ interface StaffRoleModalProps {
 const FORM_ID = 'staff-role-form';
 const NAME_MAX = 80;
 const DESCRIPTION_MAX = 255;
+
+const FIELD = 'staff-field grid gap-1';
+const FIELD_LABEL = 'text-secondary text-[13px] font-medium';
+/**
+ * Ô tên và ô mô tả, cỡ 14px; nhập sai (`aria-invalid`) thì viền đỏ, kể cả khi đang focus.
+ * Kế thừa font của form như `font: inherit`, ghi từng phần vì Tailwind xếp `[font:inherit]` sau `text-[14px]`.
+ */
+const INPUT = 'staff-input w-full min-h-8.5 py-1.75 px-2.5 border border-line-strong rounded-md bg-white text-primary'
+  + ' font-[inherit] [font-style:inherit] [font-weight:inherit] leading-[inherit] text-[14px] resize-y'
+  + ' focus:border-brand focus:shadow-[0_0_0_3px_rgba(29,86,196,0.15)] focus:[outline:0] aria-invalid:border-danger';
+const ERROR = 'staff-err text-danger text-[12px]';
 
 /**
  * Tạo hoặc sửa một vai trò nhân viên: tên, mô tả và ma trận quyền Xem/Thao tác theo danh mục chức năng của backend.
@@ -64,6 +77,7 @@ export function StaffRoleModal({ role, onClose, onDone }: StaffRoleModalProps) {
       subtitle={role ? role.name : 'Nhân viên được gán vai trò chỉ thấy các màn và nút được cấp quyền.'}
       onClose={onClose}
       busy={busy}
+      dismissOnBackdrop={false}
       footer={(
         <>
           <button type="button" className="ui-btn ghost" onClick={onClose} disabled={busy}>Hủy</button>
@@ -73,11 +87,11 @@ export function StaffRoleModal({ role, onClose, onDone }: StaffRoleModalProps) {
         </>
       )}
     >
-      <form id={FORM_ID} className="staff-form" onSubmit={submit} noValidate>
-        <label className="staff-field">
-          <span>Tên vai trò <b className="user-required" aria-hidden="true">*</b></span>
+      <form id={FORM_ID} className="staff-form grid gap-3" onSubmit={submit} noValidate>
+        <label className={FIELD}>
+          <span className={FIELD_LABEL}>Tên vai trò <b className="user-required text-danger font-bold" aria-hidden="true">*</b></span>
           <input
-            className="staff-input"
+            className={INPUT}
             value={name}
             maxLength={NAME_MAX}
             placeholder="Ví dụ: Chuyên viên thẩm định"
@@ -86,12 +100,12 @@ export function StaffRoleModal({ role, onClose, onDone }: StaffRoleModalProps) {
             onChange={(event) => setName(event.target.value)}
             autoFocus
           />
-          {touched && nameError && <small className="staff-err" role="alert">{nameError}</small>}
+          {touched && nameError && <small className={ERROR} role="alert">{nameError}</small>}
         </label>
-        <label className="staff-field">
-          <span>Mô tả</span>
+        <label className={FIELD}>
+          <span className={FIELD_LABEL}>Mô tả</span>
           <textarea
-            className="staff-input"
+            className={INPUT}
             value={description}
             maxLength={DESCRIPTION_MAX}
             rows={2}
@@ -101,11 +115,14 @@ export function StaffRoleModal({ role, onClose, onDone }: StaffRoleModalProps) {
           />
         </label>
 
-        <div className="staff-matrix-head">
+        <div className="staff-matrix-head flex items-center justify-between gap-2 mt-1 text-primary text-[13px] font-semibold">
           <span>Quyền theo chức năng</span>
           <span className="ui-tag">{viewCount} Xem, {actionCount} Sửa</span>
         </div>
-        <p className="staff-matrix-hint">Sửa (thêm, sửa, duyệt, xử lý, lưu cấu hình) luôn kèm quyền Xem của cùng chức năng.</p>
+        {/* Kéo sát lên tiêu đề ma trận (khoảng cách chung của form là 12px). */}
+        <p className="staff-matrix-hint -mt-1.5 text-muted text-[12px]">
+          Sửa (thêm, sửa, duyệt, xử lý, lưu cấu hình) luôn kèm quyền Xem của cùng chức năng.
+        </p>
         {catalog.error ? (
           <ErrorNotice error={catalog.error} onRetry={catalog.refetch} />
         ) : !catalog.data ? (
@@ -113,9 +130,15 @@ export function StaffRoleModal({ role, onClose, onDone }: StaffRoleModalProps) {
         ) : (
           <PermissionMatrix functions={catalog.data} selected={selected} disabled={busy} onChange={setSelected} />
         )}
-        {touched && permissionError && <small className="staff-err" role="alert">{permissionError}</small>}
+        {touched && permissionError && <small className={ERROR} role="alert">{permissionError}</small>}
 
-        {serverError ? <div className="user-modal-error"><ErrorNotice error={serverError} /></div> : null}
+        {/* Backend đăng xuất mọi thành viên khi sửa vai trò (token cũ mang bộ quyền cũ): báo trước khi bấm lưu. */}
+        {role && role.memberCount > 0 ? (
+          <p className="staff-logout-note rounded-md bg-warning-bg px-3 py-2.5 text-[13px] text-warning" role="note">
+            Lưu sẽ đăng xuất {formatNumber(role.memberCount)} nhân viên mang vai trò này; họ đăng nhập lại để nhận quyền mới.
+          </p>
+        ) : null}
+        {serverError ? <ErrorToast error={serverError} /> : null}
       </form>
     </Modal>
   );

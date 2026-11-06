@@ -9,7 +9,7 @@ export const CHART_PALETTE = {
   brand: '#1d56c4',
   ink: '#0a2c68',
   ink2: '#5f6b82',
-  muted: '#8a95ab',
+  muted: '#6b7690',
   grid: '#edf2fa',
   axis: '#dbe4f0',
   surface: '#ffffff',
@@ -27,7 +27,7 @@ export const CHART_PALETTE = {
   /** Chỉ cho bên Mua/Bán của sổ lệnh và trạng thái; luôn kèm chữ. */
   success: '#0a7d4f',
   danger: '#c2263a',
-  warning: '#c96a06',
+  warning: '#a85700',
 } as const;
 
 export const CHART_FONT = "'Be Vietnam Pro', system-ui, -apple-system, 'Segoe UI', sans-serif";

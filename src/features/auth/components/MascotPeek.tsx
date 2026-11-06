@@ -71,16 +71,46 @@ export function MascotPeek(props: MascotPeekProps) {
 
   return (
     <>
+      {/*
+        Lời mascot đặt bên trái đầu mascot, đuôi bóng thoại (::after) chĩa sang phải; viền và chữ đỏ khi chưa
+        đăng nhập được (data-mood của .login-stack).
+      */}
       {say && (
-        <div key={say} className="login-peek-say" aria-hidden="true">
+        <div
+          key={say}
+          className="login-peek-say absolute top-3 right-53.5 z-3 py-1.75 px-3 border border-[#e6edf8] rounded-[14px] bg-white text-primary text-[12.5px] font-semibold whitespace-nowrap origin-[100%_50%] animate-[login-say-in_0.4s_cubic-bezier(0.34,1.6,0.64,1)_both] in-data-[mood=error]:border-[#f6d3d8] in-data-[mood=error]:text-danger after:content-[''] after:absolute after:top-[calc(50%-6px)] after:-right-1.75 after:size-3 after:[border-right:inherit] after:[border-bottom:inherit] after:[border-top:0] after:[border-left:0] after:bg-white after:transform-[rotate(-45deg)]"
+          aria-hidden="true"
+        >
           {say}
         </div>
       )}
-      <div className="login-peek" data-shown={greeting !== 'before' || undefined} aria-hidden="true">
-        <div className="login-peek-body">
-          <div ref={rigRef} className="login-peek-rig">
+      {/* Khung mascot dừng đúng ở mép trên thẻ: phần thân dưới coi như nấp sau thẻ. */}
+      <div
+        className="login-peek absolute top-0 right-3.5 w-(--peek-w) aspect-240/132 overflow-hidden pointer-events-none"
+        data-shown={greeting !== 'before' || undefined}
+        aria-hidden="true"
+      >
+        {/*
+          Mọi biến dạng đều lấy gốc ở mép dưới (mép thẻ) và không đẩy thân lên cao hơn chỗ đứng, để phần thân bị
+          cắt ở mép ảnh không bao giờ lộ ra phía trên thẻ. Thân trồi lên từ sau thẻ lúc mở trang: vươn dài khi lao
+          lên, dẹt xuống khi dừng rồi nảy về dáng thường.
+        */}
+        <div className="login-peek-body absolute inset-0 origin-[50%_100%] transform-[translateY(100%)] in-data-shown:transform-none in-data-shown:animate-[login-peek-rise_0.9s_both]">
+          {/* Các tư thế chồng lên nhau; nhịp thụt-trồi đổi dáng chạy trên lớp này (useMascotPose). */}
+          <div ref={rigRef} className="login-peek-rig absolute inset-0 origin-[50%_100%]">
+            {/*
+              Đứng yên: lắc lư quanh mép thẻ kèm thở nhẹ. Không làm mờ chéo giữa các ảnh: ảnh đổi lúc robot
+              đang khuất sau thẻ.
+            */}
             {POSE_NAMES.map((name) => (
-              <img key={name} src={POSES[name]} alt="" draggable={false} data-active={name === shown || undefined} />
+              <img
+                key={name}
+                className="absolute inset-0 origin-[50%_100%] size-full opacity-0 animate-[login-peek-idle_3.6s_ease-in-out_infinite] select-none data-active:opacity-100"
+                src={POSES[name]}
+                alt=""
+                draggable={false}
+                data-active={name === shown || undefined}
+              />
             ))}
           </div>
         </div>

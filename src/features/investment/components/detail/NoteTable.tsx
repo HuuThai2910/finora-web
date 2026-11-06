@@ -6,6 +6,8 @@ import { FUNDING_PAGE_SIZE, NOTE_STATUS_LABEL, NOTE_STATUS_TONE } from '../../co
 import { useCommitmentNotes } from '../../hooks/useCommitmentNotes';
 import type { ListingInvestor, NoteStatus } from '../../types';
 import { formatMoney } from '../../formatters';
+import { TABLE_CARD } from '../../styles';
+import { InvestorLink } from '../InvestorLink';
 
 interface Props {
   /** Chỉ phần vốn đã khóa mới sinh Note. */
@@ -32,11 +34,11 @@ export function NoteTable({ commitments, nameOf }: Props) {
   const rows = notes.slice(current * FUNDING_PAGE_SIZE, (current + 1) * FUNDING_PAGE_SIZE);
 
   return (
-    <div className="ui-card fd-table-card">
-      <p className="fd-note-sum">
+    <div className={`ui-card fd-table-card ${TABLE_CARD}`}>
+      <p className="fd-note-sum flex flex-wrap gap-x-4.5 gap-y-1.5 mx-1 mb-2.5 text-secondary text-[13px]">
         {SUMMARY.map((status) => (
           <span key={status}>
-            {NOTE_STATUS_LABEL[status]} <b>{notes.filter((item) => item.note.status === status).length}</b>
+            {NOTE_STATUS_LABEL[status]} <b className="text-primary font-semibold">{notes.filter((item) => item.note.status === status).length}</b>
           </span>
         ))}
       </p>
@@ -56,7 +58,7 @@ export function NoteTable({ commitments, nameOf }: Props) {
             {rows.map(({ note, commitment }) => (
               <tr key={note.noteNumber}>
                 <td><span className="ui-mono">{note.noteNumber}</span></td>
-                <td>{nameOf(commitment.investorId)}</td>
+                <td><InvestorLink userId={commitment.investorId} name={nameOf(commitment.investorId)} /></td>
                 <td className="num">{formatMoney(note.principalAmount)} đ</td>
                 <td className="num">{formatMoney(note.outstandingPrincipal)} đ</td>
                 <td className="num">{formatMoney(note.interestReceived)} đ</td>

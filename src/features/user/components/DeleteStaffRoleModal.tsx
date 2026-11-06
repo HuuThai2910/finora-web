@@ -1,7 +1,7 @@
-import { ErrorNotice } from '@/components/ErrorNotice';
 import { Modal } from '@/components/Modal';
 import { useDeleteStaffRoleMutation } from '../api/userQueries';
 import type { StaffRole } from '../types';
+import { ErrorToast } from '@/components/ErrorToast';
 
 interface DeleteStaffRoleModalProps {
   role: StaffRole;
@@ -35,7 +35,7 @@ export function DeleteStaffRoleModal({ role, onClose, onDone }: DeleteStaffRoleM
       )}
     >
       <p>Bạn có chắc muốn xóa vai trò này? Bộ quyền của vai trò bị xóa khỏi hệ thống và không khôi phục được.</p>
-      {error ? <div className="user-modal-error"><ErrorNotice error={error} /></div> : null}
+      {error ? <ErrorToast error={error} /> : null}
     </Modal>
   );
 }

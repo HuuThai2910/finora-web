@@ -1,10 +1,12 @@
 import { useId, useState } from 'react';
-import { ErrorNotice } from '@/components/ErrorNotice';
 import { Modal } from '@/components/Modal';
 import { useDecideRescheduleMutation } from '../api/servicingApi';
 import { REJECT_REASON_SUGGESTIONS, RESCHEDULE_TYPE_LABEL } from '../constant';
 import { useIntentKey } from '../hooks/useIntentKey';
+import { rescheduleChangeText } from '../mappers/rescheduleDisplay';
+import { SVC_FIELD_ERROR, SVC_LABEL, SVC_TEXTAREA } from '../styles';
 import type { RescheduleDecision, RescheduleRequest } from '../types';
+import { ErrorToast } from '@/components/ErrorToast';
 
 interface Props {
   request: RescheduleRequest;
@@ -22,7 +24,8 @@ const COMMENT_MAX = 500;
  * Idempotency key gắn với ý định "quyết định này cho yêu cầu này" và giữ suốt lúc hộp thoại mở, kể cả
  * khi sửa lời nhắn rồi gửi lại: Loan Service trả lại kết quả cũ khi gặp đúng key quyết định đã ghi,
  * nên lỗi mạng sau khi backend đã xử lý không biến thành lỗi "không còn chờ duyệt". Từ chối bắt buộc có
- * lý do (backend cũng kiểm tra `REJECTION_REASON_REQUIRED`).
+ * lý do (backend cũng kiểm tra `REJECTION_REASON_REQUIRED`). Hộp nhắc lại nội dung xin thay đổi và lý do người vay nêu
+ * để người duyệt viết lý do đúng với đề nghị, không phải quay lại bảng.
  */
 export function RescheduleDecisionModal({ request, decision, onClose, onDone }: Props) {
   const fieldId = useId();
@@ -59,6 +62,7 @@ export function RescheduleDecisionModal({ request, decision, onClose, onDone }: 
       subtitle={`Khoản vay ${request.loanNumber}, ${typeLabel.toLowerCase()}`}
       onClose={onClose}
       busy={state.isLoading}
+      dismissOnBackdrop={false}
       footer={(
         <>
           <button type="button" className="ui-btn ghost" onClick={onClose} disabled={state.isLoading}>Hủy</button>
@@ -68,15 +72,19 @@ export function RescheduleDecisionModal({ request, decision, onClose, onDone }: 
         </>
       )}
     >
-      <div className="svc-modal-body">
+      <div className="svc-modal-body grid gap-3">
+        <dl className="svc-request ui-rows rounded-md bg-surface-muted px-3 py-0.5 [&_dd]:text-left [&_dd]:font-normal [&_dd]:text-primary [&_div]:grid [&_div]:grid-cols-[136px_minmax(0,1fr)] [&_div]:items-start max-[480px]:[&_div]:grid-cols-[minmax(0,1fr)] max-[480px]:[&_div]:gap-1">
+          <div><dt>Người vay xin</dt><dd>{rescheduleChangeText(request)}</dd></div>
+          <div><dt>Lý do người vay nêu</dt><dd className="whitespace-pre-line">{request.reasonComment}</dd></div>
+        </dl>
         {!isReject && (
-          <p>FINORA chỉ xác nhận đề nghị đạt điều kiện. Lịch cũ vẫn có hiệu lực; hệ thống chỉ gửi sang Fineract sau khi toàn bộ nhà đầu tư còn nắm dư nợ đồng ý.</p>
+          <p>FINORA chỉ xác nhận đề nghị đạt điều kiện. Lịch cũ vẫn có hiệu lực; hệ thống chỉ gửi sang hệ thống lõi sau khi toàn bộ nhà đầu tư còn nắm dư nợ đồng ý.</p>
         )}
         <div>
-          <label className="svc-label" htmlFor={fieldId}>{isReject ? 'Lý do từ chối' : 'Ghi chú (không bắt buộc)'}</label>
+          <label className={SVC_LABEL} htmlFor={fieldId}>{isReject ? 'Lý do từ chối' : 'Ghi chú (không bắt buộc)'}</label>
           <textarea
             id={fieldId}
-            className="svc-input"
+            className={SVC_TEXTAREA}
             rows={3}
             maxLength={COMMENT_MAX}
             value={comment}
@@ -84,18 +92,26 @@ export function RescheduleDecisionModal({ request, decision, onClose, onDone }: 
             aria-describedby={fieldError ? `${fieldId}-err` : undefined}
             onChange={(event) => setComment(event.target.value)}
           />
-          {fieldError && <p id={`${fieldId}-err`} className="svc-err" role="alert">{fieldError}</p>}
+          {fieldError && <p id={`${fieldId}-err`} className={SVC_FIELD_ERROR} role="alert">{fieldError}</p>}
         </div>
         {isReject && (
-          <div className="svc-chips" aria-label="Lý do gợi ý">
+          <div className="svc-chips flex flex-wrap gap-1.5" aria-label="Lý do gợi ý">
             {REJECT_REASON_SUGGESTIONS.map((reason) => (
-              <button key={reason} type="button" className="svc-chip" onClick={() => { setComment(reason); setFieldError(''); }}>
+              <button
+                key={reason}
+                type="button"
+                className={
+                  'svc-chip rounded-sm border border-line-strong bg-white px-2 py-1 text-left text-[12px] text-secondary '
+                  + 'hover:border-brand hover:text-primary'
+                }
+                onClick={() => { setComment(reason); setFieldError(''); }}
+              >
                 {reason}
               </button>
             ))}
           </div>
         )}
-        {state.error && <ErrorNotice error={state.error} />}
+        {state.error && <ErrorToast error={state.error} />}
       </div>
     </Modal>
   );

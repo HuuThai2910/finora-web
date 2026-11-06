@@ -31,11 +31,14 @@ export function formatMoney(value: string | number | null | undefined): string {
   return formatNumber(numeric);
 }
 
-/** Backend lưu lãi suất dạng tỷ lệ (0.1500 = 15%/năm). */
+/**
+ * Lãi suất năm. Backend lưu theo điểm phần trăm (`"12.5000"` = 12,5%/năm, trần 20.0000 theo
+ * `MarketListingServiceImpl.requireAnnualRate`), cùng đơn vị với chợ thứ cấp, nên không nhân 100.
+ */
 export function formatRate(value: string | null | undefined): string {
   const numeric = parseDecimal(value);
   if (numeric == null) return EMPTY;
-  return `${formatPercentBase(numeric * 100)}/năm`;
+  return `${formatPercentBase(numeric)}/năm`;
 }
 
 export function formatMonths(value: number | null | undefined): string {

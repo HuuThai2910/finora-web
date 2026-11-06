@@ -81,6 +81,8 @@ export interface ReconciliationIncident {
 
 export interface QuarantinedRepaymentEvent {
   eventId: string; loanApplicationId: number; repaymentId: string; status: 'PENDING' | 'RESOLVED';
+  /** Mã hồ sơ `LA-…` Loan trả kèm (đợt 2); null khi không tra được. */
+  applicationNumber?: string | null;
   reasonCode: string; attemptCount: number; receivedAt: string; lastAttemptAt: string | null; resolvedAt: string | null;
 }
 
@@ -96,6 +98,8 @@ export type DisbursementSagaStatus =
 /** `AdminDisbursementSagaResponse` (R2): tiền đã giải ngân, Fineract chưa ghi nhận khoản vay. */
 export interface DisbursementSagaRepair {
   sagaId: string; loanApplicationId: number; contractNumber: string; status: DisbursementSagaStatus;
+  /** Mã hồ sơ `LA-…` Loan trả kèm (đợt 2). */
+  applicationNumber?: string | null;
   amount: number; currency: string; paymentReference: string | null; fineractLoanId: number | null;
   attemptCount: number; attemptsSinceRepair: number; repairCount: number; nextRetryAt: string | null;
   lastErrorCode: string | null; lastErrorDetail: string | null; lastRepairBy: string | null;

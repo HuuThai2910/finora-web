@@ -1,117 +1,151 @@
-*,
-*::before,
-*::after {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
 /*
- * Token giao diện quản trị, theo finora-web-mockup (soft.css, 2026-10-07).
- * Màu lấy từ app mobile (finora-mobile/src/constants/colors.ts) nhưng trầm hơn một bậc cho màn lớn.
- * Màu chỉ để mang nghĩa: xanh nhấn cho hành động và mục đang chọn, xanh lá/cam/đỏ cho trạng thái.
+ * Điểm vào CSS của web quản trị: Tailwind CSS v4 cùng token giao diện FINORA (theo finora-web-mockup/soft.css).
+ *
+ * - Không nạp Preflight của Tailwind: bộ reset riêng ở layer base giữ nguyên giao diện đã duyệt.
+ * - Thứ tự layer: theme < base < components (lớp ui-* dùng chung ở styles/ui.css) < utilities. Utility trong JSX
+ *   luôn thắng lớp ui-*, nên muốn chỉnh riêng một chỗ thì thêm utility, không viết CSS mới.
+ * - Gốc chữ là 14px nên các thang tính bằng rem của Tailwind (cỡ chữ, bo góc, bóng, container, breakpoint) bị bỏ:
+ *   khoảng cách đặt lại 4px một bậc (p-4 = 16px), cỡ chữ và breakpoint ghi thẳng bằng px (text-[13px], max-[760px]:).
  */
-:root {
-  --brand: #1d56c4;
-  --brand-600: #1849a8;
-  --brand-50: #e7edf8;
+@layer theme, base, components, utilities;
+@import 'tailwindcss/theme.css' layer(theme);
+@import 'tailwindcss/utilities.css' layer(utilities) source(none);
+/* Chỉ quét mã nguồn trong src; thư mục tài liệu/skill có ví dụ Tailwind sẽ sinh utility thừa. */
+@source '../';
 
-  --content-bg: #edf2f9;
-  --card-bg: #ffffff;
-  --surface-muted: #f3f6fa;
-  --text-primary: #0a2c68;
-  --text-secondary: #5f6b82;
-  --text-muted: #8a95ab;
-  --border-color: #e3eaf4;
-  --border-strong: #d3dcea;
-  --row-divider: #eef2f8;
+/* Như :hover của CSS thường. Tailwind v4 mặc định chỉ áp hover khi thiết bị có chuột, giao diện cũ áp ở mọi thiết bị. */
+@custom-variant hover (&:hover);
 
-  --success: #0a7d4f;
-  --success-bg: #e2f6ec;
-  --warning: #c96a06;
-  --warning-bg: #fff3e3;
-  --danger: #c2263a;
-  --danger-bg: #ffeef0;
+@theme static {
+  --color-*: initial;
+  --text-*: initial;
+  --radius-*: initial;
+  --shadow-*: initial;
+  --container-*: initial;
+  --breakpoint-*: initial;
+
+  --spacing: 4px;
+  --font-sans: 'Be Vietnam Pro', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  /*
+   * Màu lấy từ app mobile (finora-mobile/src/constants/colors.ts) nhưng trầm hơn một bậc cho màn lớn.
+   * Màu chỉ để mang nghĩa: xanh nhấn cho hành động và mục đang chọn, xanh lá/cam/đỏ cho trạng thái.
+   * `muted` và `warning` đậm hơn bản cũ (#8a95ab, #c96a06) để chữ nhỏ đạt tương phản 4,5:1 trên nền trắng và nền nhãn.
+   */
+  --color-white: #fff;
+  --color-black: #000;
+  --color-brand: #1d56c4;
+  --color-brand-600: #1849a8;
+  --color-brand-50: #e7edf8;
+  --color-page: #edf2f9;
+  --color-card: #ffffff;
+  --color-surface-muted: #f3f6fa;
+  --color-primary: #0a2c68;
+  --color-secondary: #5f6b82;
+  --color-muted: #6b7690;
+  --color-line: #e3eaf4;
+  --color-line-strong: #d3dcea;
+  --color-divider: #eef2f8;
+  /* Nền trung tính của icon tròn, khung xương, ô mã: cùng giá trị với đường kẻ nhưng khác vai trò. */
+  --color-fill: #eef2f8;
+  --color-success: #0a7d4f;
+  --color-success-bg: #e2f6ec;
+  --color-warning: #a85700;
+  --color-warning-bg: #fff3e3;
+  --color-danger: #c2263a;
+  --color-danger-bg: #ffeef0;
+  --color-sidebar: #0b2660;
+  --color-sidebar-text: #dce6f7;
+  --color-sidebar-muted: #8aa0c8;
 
   --radius-sm: 6px;
   --radius-md: 8px;
   --radius-lg: 12px;
 
   --shadow-card: 0 1px 2px rgba(26, 79, 184, 0.04), 0 8px 24px rgba(26, 79, 184, 0.07);
-  --shadow: 0 12px 32px rgba(10, 44, 104, 0.18);
-  --ease: cubic-bezier(0.2, 0.8, 0.3, 1);
+  --shadow-pop: 0 12px 32px rgba(10, 44, 104, 0.18);
 
-  --sidebar-width: 236px;
-  --sidebar-bg: #0b2660;
-  --sidebar-text: #dce6f7;
-  --sidebar-muted: #8aa0c8;
-  --header-height: 56px;
-  --admin-page-inline-padding: 24px;
-
-  /* Tên cũ của các trang chưa chuyển sang giao diện mới: trỏ về token mới để không sinh màu thứ hai. */
-  --accent: var(--brand);
-  --cyan: var(--brand);
-  --cyan-bright: var(--brand);
-  --shadow-sm: var(--shadow-card);
-  --sidebar-active-bg: var(--brand);
-  --sidebar-border-right: transparent;
-  --admin-shell-gutter: 0px;
-  --admin-header-inline-padding: var(--admin-page-inline-padding);
-
-  font-family: 'Be Vietnam Pro', system-ui, -apple-system, 'Segoe UI', sans-serif;
-  font-size: 14px;
-  line-height: 1.5;
-  color: var(--text-primary);
-  background: var(--content-bg);
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  --ease-soft: cubic-bezier(0.2, 0.8, 0.3, 1);
+  /* Giống `transition` của CSS khi không ghi hàm thời gian. */
+  --default-transition-timing-function: ease;
 }
 
-body {
-  min-height: 100vh;
-  background: var(--content-bg);
-}
+@layer base {
+  *,
+  *::before,
+  *::after {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
 
-a {
-  text-decoration: none;
-  color: inherit;
-}
-
-button {
-  border: none;
-  background: none;
-  cursor: pointer;
-  font: inherit;
-  color: inherit;
-}
-
-ul, ol {
-  list-style: none;
-}
-
-:focus-visible {
-  outline: 2px solid var(--brand);
-  outline-offset: 2px;
-}
-
-::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
-}
-
-::-webkit-scrollbar-thumb {
-  background: #cfd6e2;
-  border: 3px solid transparent;
-  border-radius: 99px;
-  background-clip: padding-box;
-}
-
-@media (max-width: 760px) {
   :root {
-    --admin-page-inline-padding: 16px;
+    /* Kích thước khung quản trị, dùng qua utility dạng w-(--sidebar-width), px-(--admin-page-inline-padding). */
+    --sidebar-width: 236px;
+    --header-height: 56px;
+    --admin-page-inline-padding: 24px;
+
+    font-family: var(--font-sans);
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--color-primary);
+    background: var(--color-page);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    min-height: 100vh;
+    background: var(--color-page);
+  }
+
+  a {
+    text-decoration: none;
+    color: inherit;
+  }
+
+  button {
+    border: none;
+    background: none;
+    cursor: pointer;
+    font: inherit;
+    color: inherit;
+  }
+
+  ul, ol {
+    list-style: none;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-brand);
+    outline-offset: 2px;
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #cfd6e2;
+    border: 3px solid transparent;
+    border-radius: 99px;
+    background-clip: padding-box;
+  }
+
+  /* Cùng ngưỡng với utility max-[760px]: (Tailwind hiểu là width < 760px). */
+  @media (width < 760px) {
+    :root {
+      --admin-page-inline-padding: 16px;
+    }
   }
 }
 
+/*
+ * Ngoài layer có chủ đích: !important trong layer thắng !important ngoài layer, nên rule tắt chuyển động riêng của
+ * từng thành phần (vd. motion-reduce:transition-none!) vẫn thắng rule chung này, như trước khi dùng layer.
+ */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -120,3 +154,77 @@ ul, ol {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Keyframes cho utility animate-[…] của từng màn (tên giữ như trước khi chuyển sang Tailwind). */
+
+/* Màn đăng nhập */
+@keyframes lb-drift {
+  from { transform: translate3d(0, 0, 0) scale(1); }
+  to { transform: translate3d(-40px, 30px, 0) scale(1.12); }
+}
+
+@keyframes lb-slide {
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(-50%, 0, 0); }
+}
+
+@keyframes login-peek-rise {
+  0% { transform: translateY(100%) scale(0.92, 1.1); animation-timing-function: cubic-bezier(0.25, 0.7, 0.4, 1); }
+  52% { transform: translateY(0) scale(0.95, 1.07); animation-timing-function: ease-out; }
+  72% { transform: scale(1.06, 0.92); animation-timing-function: ease-in-out; }
+  88% { transform: scale(0.99, 1.015); animation-timing-function: ease-out; }
+  100% { transform: none; }
+}
+
+@keyframes login-peek-idle {
+  0%, 100% { transform: rotate(-1.2deg); }
+  25% { transform: rotate(0deg) scale(1.008, 1.018); }
+  50% { transform: rotate(1.2deg); }
+  75% { transform: rotate(0deg) scale(1.008, 1.018); }
+}
+
+@keyframes login-say-in {
+  from { opacity: 0; transform: scale(0.5); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes login-rise {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes ls-rise {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* Vòng xoay khi đang tải */
+@keyframes login-spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes auth-spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes dash-spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes lr-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Ngăn trượt riêng của Sản phẩm, Chợ thứ cấp, Vận hành khoản vay */
+@keyframes prod-in {
+  from { transform: translateX(16px); opacity: 0; }
+  to { transform: none; opacity: 1; }
+}
+
+@keyframes sd-in { from { transform: translateX(24px); opacity: 0; } to { transform: none; opacity: 1; } }
+
+@keyframes sd-fade { from { opacity: 0; } to { opacity: 1; } }
+
+@keyframes svc-in { from { transform: translateX(16px); opacity: 0; } to { transform: none; opacity: 1; } }
+
+@keyframes svc-fade { from { opacity: 0; } to { opacity: 1; } }

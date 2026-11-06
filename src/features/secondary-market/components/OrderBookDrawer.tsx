@@ -1,21 +1,29 @@
 import { useMemo } from 'react';
+import { Link } from 'react-router-dom';
+import { Drawer } from '@/components/Drawer';
 import { EChart } from '@/components/EChart';
 import { ErrorNotice } from '@/components/ErrorNotice';
 import { Icon } from '@/components/Icon';
 import { StatusPill } from '@/components/StatusPill';
+import { usePermission } from '@/features/auth';
+import { fundingDetailPath } from '@/features/investment';
 import { EMPTY, formatDateTime, formatNumber } from '@/utils';
 import { useGetOrderBookQuery } from '../api/orderBookApi';
 import { LADDER_DEPTH, SIDE_LABEL, SNAPSHOT_DEPTH } from '../constant';
 import { formatAnnualRate, formatMoneyVnd, formatPrice } from '../formatters';
 import { buildDepthOption } from '../mappers/depthChartOption';
+import { SIDE_TEXT } from '../styles';
 import type { OrderBookSnapshot, PriceLevel } from '../types';
 import { PriceLadder } from './PriceLadder';
-import { SideDrawer } from './SideDrawer';
 
 interface Props {
   listingId: number;
   onClose: () => void;
 }
+
+/** Đầu mỗi phần trong ngăn: tiêu đề bên trái, chú thích nhỏ bên phải. */
+const SECTION_HEAD = 'sm-sec-head flex items-baseline justify-between gap-3';
+const SECTION_NOTE = 'text-muted text-[12px]';
 
 const sum = (levels: PriceLevel[], key: 'quantity' | 'orderCount') =>
   levels.reduce((total, level) => total + level[key], 0);
@@ -45,22 +53,31 @@ function BookBody({ book }: { book: OrderBookSnapshot }) {
 
   return (
     <>
-      <dl className="sm-facts">
+      <dl className="sm-facts grid grid-cols-3 gap-x-4 gap-y-3 max-[760px]:grid-cols-2">
         {facts.map(([label, value]) => (
-          <div key={label}><dt>{label}</dt><dd>{value}</dd></div>
+          <div key={label}>
+            <dt className="text-muted text-[12px]">{label}</dt>
+            <dd className="mt-0.5 text-[14px] font-medium tabular-nums">{value}</dd>
+          </div>
         ))}
       </dl>
 
       {book.defaulted && book.defaultWarning && (
-        <div className="sm-warn" role="note"><Icon name="alert" /><span>{book.defaultWarning}</span></div>
+        <div
+          className="sm-warn flex gap-2 py-2.5 px-3 rounded-md bg-danger-bg text-danger text-[13px] [&_svg]:flex-none [&_svg]:size-4 [&_svg]:mt-0.5"
+          role="note"
+        >
+          <Icon name="alert" />
+          <span>{book.defaultWarning}</span>
+        </div>
       )}
 
       <section aria-labelledby="sm-depth-title">
-        <div className="sm-sec-head"><h3 id="sm-depth-title">Độ sâu sổ lệnh</h3><span>số Note cộng dồn</span></div>
-        <p className="sm-depth-lead">{depthLead(book)}</p>
+        <div className={SECTION_HEAD}><h3 id="sm-depth-title">Độ sâu sổ lệnh</h3><span className={SECTION_NOTE}>số Note cộng dồn</span></div>
+        <p className="sm-depth-lead mt-0.5 text-secondary text-[13px]">{depthLead(book)}</p>
         {hasDepth && (
           <EChart
-            className="sm-depth"
+            className="sm-depth h-50 mt-2"
             option={depthOption}
             notMerge
             ariaLabel="Biểu đồ độ sâu: số Note cộng dồn bên mua và bên bán theo giá, số liệu chi tiết ở thang giá bên dưới"
@@ -69,22 +86,32 @@ function BookBody({ book }: { book: OrderBookSnapshot }) {
       </section>
 
       <section aria-labelledby="sm-ladder-title">
-        <div className="sm-sec-head"><h3 id="sm-ladder-title">Thang giá</h3><span>tối đa {LADDER_DEPTH} mức mỗi bên</span></div>
+        <div className={SECTION_HEAD}>
+          <h3 id="sm-ladder-title">Thang giá</h3>
+          <span className={SECTION_NOTE}>tối đa {LADDER_DEPTH} mức mỗi bên</span>
+        </div>
         <PriceLadder book={book} />
       </section>
 
       <section aria-labelledby="sm-ticks-title">
-        <div className="sm-sec-head"><h3 id="sm-ticks-title">Khớp gần đây</h3><span>bên chủ động khớp</span></div>
+        <div className={SECTION_HEAD}><h3 id="sm-ticks-title">Khớp gần đây</h3><span className={SECTION_NOTE}>bên chủ động khớp</span></div>
         {book.recentTrades.length === 0 ? (
-          <p className="sm-dr-empty">Chưa có lần khớp nào.</p>
+          <p className="sm-dr-empty mt-1.5 text-muted text-[13px]">Chưa có lần khớp nào.</p>
         ) : (
-          <ol className="sm-ticks">
+          <ol className="sm-ticks mt-1.5">
             {book.recentTrades.map((tick, index) => (
-              <li key={`${tick.executedAt}-${index}`}>
-                <span className="t">{formatDateTime(tick.executedAt)}</span>
-                <span className={tick.aggressorSide === 'BID' ? 's sm-bid' : 's sm-ask'}>{SIDE_LABEL[tick.aggressorSide]}</span>
-                <span className="p">{formatPrice(tick.pricePercent)}</span>
-                <span className="q">{tick.quantity} Note</span>
+              <li
+                key={`${tick.executedAt}-${index}`}
+                className="grid grid-cols-[120px_44px_minmax(0,1fr)_72px] items-baseline gap-2 py-1.5 border-b border-b-divider text-[13px] tabular-nums last:[border-bottom:0]"
+              >
+                <span className="t text-muted text-[12px] whitespace-nowrap">{formatDateTime(tick.executedAt)}</span>
+                <span
+                  className={`text-[12px] font-medium ${tick.aggressorSide === 'BID' ? `s sm-bid ${SIDE_TEXT.bid}` : `s sm-ask ${SIDE_TEXT.ask}`}`}
+                >
+                  {SIDE_LABEL[tick.aggressorSide]}
+                </span>
+                <span className="p font-medium">{formatPrice(tick.pricePercent)}</span>
+                <span className="q text-secondary text-right">{tick.quantity} Note</span>
               </li>
             ))}
           </ol>
@@ -100,6 +127,8 @@ function BookBody({ book }: { book: OrderBookSnapshot }) {
  */
 export function OrderBookDrawer({ listingId, onClose }: Props) {
   const { data, isLoading, error, refetch } = useGetOrderBookQuery(listingId);
+  // Đợt của sổ lệnh chính là khoản gọi vốn đã phát hành Note: mở lại trang gọi vốn để xem nhà đầu tư, Note, tiến trình.
+  const canViewFunding = usePermission().canView('funding');
 
   const title = (
     <>
@@ -110,18 +139,34 @@ export function OrderBookDrawer({ listingId, onClose }: Props) {
   );
 
   return (
-    <SideDrawer
+    <Drawer
       title={title}
-      subtitle={<><span className="ui-mono">Đợt #{listingId}</span>, sổ lệnh tự cập nhật khi có lệnh mới</>}
+      subtitle={(
+        <span className="text-muted text-[12px]">
+          <span className="ui-mono">Đợt #{listingId}</span>, sổ lệnh tự cập nhật khi có lệnh mới
+          {canViewFunding && (
+            <>
+              {'. '}
+              <Link className="ui-link sm-funding-link" to={fundingDetailPath(listingId)}>Xem khoản gọi vốn</Link>
+            </>
+          )}
+        </span>
+      )}
       onClose={onClose}
     >
-      {error ? (
-        <ErrorNotice error={error} onRetry={refetch} />
-      ) : isLoading || !data ? (
-        <div className="ui-empty" aria-busy="true">Đang tải sổ lệnh...</div>
-      ) : (
-        <BookBody book={data} />
-      )}
-    </SideDrawer>
+      {/*
+        Lớp `sd-body` giữ làm mốc cho kịch bản kiểm thử (chờ `.sd-body .sm-facts`); `contents` để các khối vẫn là con
+        trực tiếp của thân ngăn chung và nhận khoảng cách của nó. Tiêu đề mục 14px như ngăn cũ.
+      */}
+      <div className="sd-body contents [&_h3]:mb-0 [&_h3]:text-[14px]">
+        {error ? (
+          <ErrorNotice error={error} onRetry={refetch} />
+        ) : isLoading || !data ? (
+          <div className="ui-empty" aria-busy="true">Đang tải sổ lệnh...</div>
+        ) : (
+          <BookBody book={data} />
+        )}
+      </div>
+    </Drawer>
   );
 }

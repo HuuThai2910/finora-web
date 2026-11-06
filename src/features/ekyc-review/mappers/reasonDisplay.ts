@@ -7,8 +7,10 @@ export interface ReasonView {
   code: string;
   label: string;
   tone: PillTone;
-  /** Mã chưa có trong danh mục: nhãn đang là mã gốc hoặc thông điệp backend. */
+  /** Mã chưa có trong danh mục: nhãn là câu chung "Lý do khác". */
   known: boolean;
+  /** Mã gốc (kèm thông điệp backend với mã lạ), chỉ đặt ở `title` để đối chiếu nhật ký. */
+  detail: string;
 }
 
 /*
@@ -81,10 +83,22 @@ const REASON_CATALOG: Record<string, PillDisplay> = {
   MEDIA_REPLAYED: { label: 'Video đã được dùng ở lượt trước', tone: 'danger' },
 };
 
+/** Nhãn của mã chưa có trong danh mục: không đưa mã kỹ thuật hay thông điệp tiếng Anh của AI ra giao diện. */
+export const UNKNOWN_REASON_LABEL = 'Lý do khác (chưa có mô tả)';
+
 function describe(code: string, message: string | null): ReasonView {
   const known = Object.prototype.hasOwnProperty.call(REASON_CATALOG, code);
-  if (known) return { code, ...REASON_CATALOG[code], known };
-  return { code, label: message || code, tone: 'neutral', known };
+  if (known) return { code, ...REASON_CATALOG[code], known, detail: code };
+  // Mã gốc (và thông điệp backend nếu có) để ở `title` cho người cần đối chiếu nhật ký.
+  return { code, label: UNKNOWN_REASON_LABEL, tone: 'neutral', known, detail: message ? `${code}: ${message}` : code };
+}
+
+/** Số lý do theo tông: đỏ là dấu hiệu trượt, cam là cần xem thêm. Chỉ đếm, không kết luận. */
+export function countReasonTones(reasons: readonly ReasonView[]): { danger: number; warning: number } {
+  return {
+    danger: reasons.filter((reason) => reason.tone === 'danger').length,
+    warning: reasons.filter((reason) => reason.tone === 'warning').length,
+  };
 }
 
 /** Chuẩn hoá mảng lý do (mã hoặc `{code, message}`) thành danh sách hiển thị, bỏ mã trùng và mã rỗng. */

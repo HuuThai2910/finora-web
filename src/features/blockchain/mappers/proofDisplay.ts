@@ -18,6 +18,10 @@ const raw = (value: string): Tagged => ({ label: value, tone: 'neutral' });
 export const proofTypeLabel = (value: string): string => lookup(PROOF_TYPE_LABEL, value) ?? value;
 export const aggregateLabel = (value: string): string => lookup(AGGREGATE_LABEL, value) ?? value;
 export const providerLabel = (value: string): string => lookup(PROVIDER_LABEL, value) ?? value;
+/** Đường dẫn trang này lọc mọi bằng chứng của một hồ sơ vay (theo ID số). */
+export const loanProofsPath = (loanApplicationId: number): string =>
+  `/blockchain/proofs?referenceType=LOAN_APPLICATION&referenceId=${loanApplicationId}`;
+
 /** Loại tham chiếu viết thường để đặt trong câu ("Đang tra theo hồ sơ vay 123"). */
 export const referenceNoun = (value: string): string =>
   REFERENCE_TYPES.find((item) => item.value === value)?.noun ?? value;
@@ -58,9 +62,12 @@ export function receiptView(proof: Proof): ReceiptView {
   return { kind: 'unknown', label: receipt.kind };
 }
 
-/** Dòng phụ của cột trạng thái: lần gửi, lượt kế tiếp hoặc mã lỗi khiến proof dừng gửi. */
+/**
+ * Dòng phụ của cột trạng thái: lần gửi, lượt kế tiếp, hoặc số lần đã gửi khi dừng gửi. Mã lỗi kỹ thuật (FABRIC_…) chỉ
+ * hiện trong ngăn chi tiết, không ở bảng.
+ */
 export function statusHint(proof: Proof): string | null {
-  if (proof.status === 'DEAD_LETTER') return proof.lastErrorCode ?? `Đã gửi ${proof.attemptCount} lần`;
+  if (proof.status === 'DEAD_LETTER') return `Đã gửi ${proof.attemptCount} lần, cần xử lý lỗi`;
   if (proof.status === 'PENDING' && proof.nextAttemptAt) {
     return `Lần gửi ${proof.attemptCount}, lượt sau ${formatDateTime(proof.nextAttemptAt)}`;
   }

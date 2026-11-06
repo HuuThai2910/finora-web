@@ -25,13 +25,21 @@ export const userApi = {
   getUsers: (
     page = 0,
     size = 20,
-    filters: { role?: RoleType | 'ALL'; ekycStatus?: EkycStatusType | 'ALL' } = {}
+    filters: {
+      role?: RoleType | 'ALL';
+      ekycStatus?: EkycStatusType | 'ALL';
+      staffRoleCode?: string;
+      q?: string;
+    } = {}
   ): Promise<PageResponse<UserItem>> => {
     const params = new URLSearchParams({ page: String(page), size: String(size) });
     if (filters.role && filters.role !== 'ALL') params.set('role', filters.role);
     if (filters.ekycStatus && filters.ekycStatus !== 'ALL') {
       params.set('ekycStatus', filters.ekycStatus);
     }
+    if (filters.staffRoleCode) params.set('staffRoleCode', filters.staffRoleCode);
+    // Tìm theo một phần họ tên/email hoặc đúng số điện thoại/CCCD (backend tự băm để so).
+    if (filters.q) params.set('q', filters.q);
     return apiFetch<PageResponse<UserItem>>(`/api/v1/admin/users?${params}`);
   },
 
@@ -41,9 +49,11 @@ export const userApi = {
   getUserById: (id: number | string): Promise<UserItem> =>
     apiFetch<UserItem>(`/api/v1/admin/users/${id}`),
 
-  lockUser: (id: number): Promise<void> =>
+  /** Khóa tài khoản: lý do bắt buộc; backend đăng xuất mọi phiên đang mở của người dùng. */
+  lockUser: (id: number, reason: string): Promise<void> =>
     apiFetch<void>(`/api/v1/admin/users/${id}/lock`, {
       method: 'POST',
+      body: JSON.stringify({ reason }),
     }),
 
   unlockUser: (id: number): Promise<void> =>

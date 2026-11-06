@@ -1,3 +1,4 @@
+import { formatNumber } from '@/utils/format';
 import { Icon } from './Icon';
 
 interface PagerProps {
@@ -39,7 +40,7 @@ export function Pager({ page, size, total, unit, onPage, disabled = false }: Pag
 
   return (
     <footer className="ui-pager">
-      <span>Hiển thị {from} đến {to} trong {total} {unit}</span>
+      <span>Hiển thị {formatNumber(from)} đến {formatNumber(to)} trong {formatNumber(total)} {unit}</span>
       {count > 1 && (
         <nav aria-label="Phân trang">
           <button type="button" aria-label="Trang trước" disabled={disabled || current === 0} onClick={() => onPage(current - 1)}>

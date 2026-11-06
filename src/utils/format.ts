@@ -28,24 +28,35 @@ export function formatCurrency(value: number | null | undefined): string {
   return new Intl.NumberFormat(VI, { style: 'currency', currency: 'VND' }).format(value);
 }
 
-/** Ngày giờ ngắn, ví dụ 25/9/26 23:36. */
+/**
+ * Ngày giờ nghiệp vụ luôn theo giờ Việt Nam, không theo múi giờ của máy đang mở trang: backend trả Instant (UTC),
+ * nhân viên đối chiếu với giờ thao tác ở Việt Nam.
+ */
+const VN_TIME_ZONE = 'Asia/Ho_Chi_Minh';
+const DATE_TIME = new Intl.DateTimeFormat(VI, {
+  timeZone: VN_TIME_ZONE, hour: '2-digit', minute: '2-digit', hourCycle: 'h23', day: '2-digit', month: '2-digit', year: 'numeric',
+});
+const DATE_ONLY = new Intl.DateTimeFormat(VI, { timeZone: VN_TIME_ZONE, day: '2-digit', month: '2-digit', year: 'numeric' });
+
+/** Ngày giờ một kiểu cho cả web, ví dụ 21:13 02/11/2026. */
 export function formatDateTime(value: string | null | undefined): string {
   if (!value) return EMPTY;
-  return new Intl.DateTimeFormat(VI, { dateStyle: 'short', timeStyle: 'short' })
-    .format(new Date(value));
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? EMPTY : DATE_TIME.format(date);
 }
 
-/** Chỉ ngày, không giờ. */
+/** Chỉ ngày, ví dụ 02/11/2026. */
 export function formatDate(value: string | null | undefined): string {
   if (!value) return EMPTY;
-  return new Intl.DateTimeFormat(VI, { dateStyle: 'short' }).format(new Date(value));
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? EMPTY : DATE_ONLY.format(date);
 }
 
 /**
  * Phần trăm đã ở dạng phần trăm (15 → "15%").
  *
- * Backend trả lãi suất dạng tỷ lệ (0.15), nên nơi gọi phải nhân 100 trước — cố ý không
- * nhận cờ chuyển đổi, để không đọc nhầm đơn vị tại chỗ gọi.
+ * Mỗi service trả lãi suất theo đơn vị riêng (Investment: điểm phần trăm "15.0000"; nơi trả tỷ lệ 0.15 thì nhân 100
+ * trước) — cố ý không nhận cờ chuyển đổi, để không đọc nhầm đơn vị tại chỗ gọi.
  */
 export function formatPercent(value: number | null | undefined): string {
   if (value == null || !Number.isFinite(value)) return EMPTY;

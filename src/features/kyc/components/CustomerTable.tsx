@@ -1,8 +1,9 @@
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { RowMenu, type RowMenuItem } from '@/components/RowMenu';
 import { StatusPill } from '@/components/StatusPill';
 import { ekycReviewDetailPath } from '@/features/ekyc-review';
-import type { UserItem } from '@/features/user';
+import { maskIdNumber, type UserItem } from '@/features/user';
+import { fromListState } from '@/lib/navigation';
 import type { KycFilter } from '../constants';
 import { ekycDisplay, formatDay, roleLabel } from '../mappers/customerDisplay';
 
@@ -21,6 +22,10 @@ interface CustomerTableProps {
 }
 
 const detailPath = (id: number) => `/customers/kyc/${id}`;
+
+/** Cột phụ ẩn bớt khi bảng hẹp; lớp `hide-md`/`hide-sm` giữ làm mốc. */
+const HIDE_MD = 'hide-md max-[1100px]:hidden';
+const HIDE_SM = 'hide-sm max-[760px]:hidden';
 
 function menuItems(customer: UserItem, review: CustomerReviewLookup | null): RowMenuItem[] {
   const items: RowMenuItem[] = [{ key: 'detail', label: 'Chi tiết', icon: 'eye', to: detailPath(customer.id) }];
@@ -45,6 +50,9 @@ function menuItems(customer: UserItem, review: CustomerReviewLookup | null): Row
 /** Bảng khách hàng. Cả dòng bấm được để mở hồ sơ; thao tác của dòng gom vào menu "⋯". */
 export function CustomerTable({ customers, filter, review }: CustomerTableProps) {
   const navigate = useNavigate();
+  const location = useLocation();
+  // Nhớ URL danh sách (tab, trang) để nút quay lại ở trang chi tiết về đúng chỗ.
+  const openDetail = (id: number) => navigate(detailPath(id), { state: fromListState(location) });
   const showStatus = filter === 'ALL';
   const showVerifiedAt = filter === 'VERIFIED';
 
@@ -54,17 +62,19 @@ export function CustomerTable({ customers, filter, review }: CustomerTableProps)
         <thead>
           <tr>
             <th>Khách hàng</th>
-            <th className="hide-md">Vai trò</th>
-            <th className="hide-sm">Số CCCD</th>
-            <th className="hide-md">Số điện thoại</th>
+            <th className={HIDE_MD}>Vai trò</th>
+            <th className={HIDE_SM}>Số CCCD</th>
+            <th className={HIDE_MD}>Số điện thoại</th>
             {showStatus && <th>Xác minh</th>}
-            {showVerifiedAt ? <th>Xác minh</th> : <th className={showStatus ? 'hide-sm' : undefined}>Đăng ký</th>}
+            {showVerifiedAt ? <th>Xác minh</th> : <th className={showStatus ? HIDE_SM : undefined}>Đăng ký</th>}
             <th className="act"><span className="ui-sr-only">Thao tác</span></th>
           </tr>
         </thead>
         <tbody>
           {customers.map((customer) => {
             const ekyc = ekycDisplay(customer.ekycStatus);
+            // Bảng chỉ hiện 4 số cuối; số đầy đủ ở trang chi tiết.
+            const idNumber = maskIdNumber(customer.idNumber);
             return (
               <tr
                 key={customer.id}
@@ -72,25 +82,25 @@ export function CustomerTable({ customers, filter, review }: CustomerTableProps)
                 tabIndex={0}
                 onClick={(event) => {
                   if ((event.target as HTMLElement).closest('button, a')) return;
-                  navigate(detailPath(customer.id));
+                  openDetail(customer.id);
                 }}
                 onKeyDown={(event) => {
-                  if (event.key === 'Enter' && event.target === event.currentTarget) navigate(detailPath(customer.id));
+                  if (event.key === 'Enter' && event.target === event.currentTarget) openDetail(customer.id);
                 }}
               >
                 <td>
-                  <span className={customer.fullName ? 'kyc-name' : 'kyc-name empty'}>
+                  <span className={customer.fullName ? 'kyc-name block font-medium text-primary' : 'kyc-name empty block font-normal text-muted'}>
                     {customer.fullName || 'Chưa có họ tên'}
                   </span>
                   <span className="ui-sub">{customer.email}</span>
                 </td>
-                <td className="hide-md">{roleLabel(customer.role)}</td>
-                <td className="hide-sm">{customer.idNumber ? <span className="ui-mono">{customer.idNumber}</span> : '-'}</td>
-                <td className="hide-md">{customer.phone || '-'}</td>
+                <td className={HIDE_MD}>{roleLabel(customer.role)}</td>
+                <td className={HIDE_SM}>{idNumber ? <span className="ui-mono">{idNumber}</span> : '-'}</td>
+                <td className={HIDE_MD}>{customer.phone || '-'}</td>
                 {showStatus && <td><StatusPill tone={ekyc.tone}>{ekyc.label}</StatusPill></td>}
                 {showVerifiedAt
                   ? <td>{formatDay(customer.ekycCompletedAt)}</td>
-                  : <td className={showStatus ? 'hide-sm' : undefined}>{formatDay(customer.createdAt)}</td>}
+                  : <td className={showStatus ? HIDE_SM : undefined}>{formatDay(customer.createdAt)}</td>}
                 <td className="act">
                   <RowMenu label={`Thao tác với ${customer.fullName || customer.email}`} items={menuItems(customer, review)} />
                 </td>

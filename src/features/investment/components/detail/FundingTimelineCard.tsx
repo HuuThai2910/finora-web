@@ -3,6 +3,7 @@ import { EChart } from '@/components/EChart';
 import { buildFundingTimeOption, buildFundingTimeline, timelineShare } from '../../mappers/fundingTimeline';
 import type { FundingProgress, ListingInvestor, MarketListing } from '../../types';
 import { formatDate, formatDateTime, formatMoney, formatPercent } from '../../formatters';
+import { CARD, CARD_TITLE } from '../../styles';
 
 interface Props {
   listing: MarketListing;
@@ -43,7 +44,7 @@ export function FundingTimelineCard({ listing, investors, progress, nameOf }: Pr
   let body;
   if (points.length === 0) {
     body = (
-      <p className="fd-chart-empty">
+      <p className="fd-chart-empty text-muted text-[13px]">
         {investors.length > 0
           ? 'Mọi phần góp đã bị hủy và hoàn về ví nhà đầu tư, không còn vốn góp.'
           : listing.status === 'OPEN'
@@ -54,21 +55,21 @@ export function FundingTimelineCard({ listing, investors, progress, nameOf }: Pr
   } else {
     body = (
       <>
-        <p className="fd-lead">
+        <p className="fd-lead -mt-1 mb-2 text-secondary text-[13px] [&_b]:text-primary [&_b]:font-semibold">
           Đã góp <b>{formatMoney(timeline.total)} đ</b>, đạt <b>{formatPercent(listing.fundedPercent)}</b> mục tiêu
           qua <b>{points.length} lần góp</b>
           {timeline.earlyDays ? `, đủ vốn sớm ${timeline.earlyDays} ngày so với hạn` : ''}
           {timeline.expired ? ', đã hết hạn gọi vốn' : ''}.
         </p>
         <EChart
-          className="fd-chart"
+          className="fd-chart h-55"
           option={option}
           notMerge
           ariaLabel={`Biểu đồ bậc thang vốn góp lũy kế từ ${formatDate(new Date(timeline.startAt).toISOString())} đến ${formatDate(new Date(timeline.endAt).toISOString())}: ${points.length} lần góp, mục tiêu ${formatMoney(target)} đồng.`}
         />
-        <details className="fd-data">
-          <summary>Xem số liệu</summary>
-          <div className="ui-table-wrap">
+        <details className="fd-data mt-2 text-[13px]">
+          <summary className="w-max text-brand font-medium cursor-pointer">Xem số liệu</summary>
+          <div className="ui-table-wrap mt-2">
             <table className="ui-table">
               <thead>
                 <tr>
@@ -98,8 +99,8 @@ export function FundingTimelineCard({ listing, investors, progress, nameOf }: Pr
   }
 
   return (
-    <section ref={cardRef} className="ui-card fd-card" aria-labelledby="fdTimelineTitle">
-      <h2 id="fdTimelineTitle" className="fd-card-title">Vốn góp theo thời gian</h2>
+    <section ref={cardRef} className={`ui-card fd-card ${CARD}`} aria-labelledby="fdTimelineTitle">
+      <h2 id="fdTimelineTitle" className={`fd-card-title ${CARD_TITLE}`}>Vốn góp theo thời gian</h2>
       {body}
     </section>
   );

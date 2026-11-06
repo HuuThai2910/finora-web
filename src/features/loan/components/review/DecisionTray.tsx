@@ -1,133 +1,113 @@
 import { useState, type ReactNode } from 'react';
 import { ErrorNotice } from '@/components/ErrorNotice';
-import { StatusPill } from '@/components/StatusPill';
 import { toUiApiError } from '@/lib/api/errors';
-import { APPLICATION_STATUS_LABELS, formatBusinessLabel, formatDateTime } from '../../formatters';
-import { applicationStatusTone } from '../../mappers/applicationListDisplay';
-import type { AdminLoanReviewDetail, TermsConfirmationStatus } from '../../types';
-import { REJECT_DETAIL_MAX, REJECT_REASONS } from '../../mappers/reviewDisplay';
+import { APPLICATION_STATUS_LABELS } from '../../formatters';
+import type { AdminLoanReviewDetail } from '../../types';
+import { ApproveForm, DECIDE_ROW, RejectForm } from './DecisionForms';
+import { DecisionOutcome } from './DecisionOutcome';
+
+// Khay nối dưới phiếu điểm: bỏ viền trên và bo góc trên, nền xám nhạt (nền trắng khi đang mở form duyệt/từ chối).
+// Dưới 1180px khay thành thẻ riêng, đủ viền, bo đủ bốn góc và xuống cuối trang (order 2).
+const TRAY =
+  'ui-card lr-slip-card lr-slip-decide py-4 px-4.5 [border-top:0] rounded-t-none bg-surface-muted [&.rejecting]:bg-card [&.confirming]:bg-card max-[1180px]:[border:1px_solid_var(--color-line)] max-[1180px]:rounded-lg max-[1180px]:order-2';
+
+const TRAY_NOTE = 'lr-tray-note mb-2.5 text-secondary text-[13px] leading-normal';
+
+type TrayForm = 'none' | 'approve' | 'reject';
 
 interface DecisionTrayProps {
   application: AdminLoanReviewDetail;
-  canDecide: boolean;
+  /** Lý do chưa duyệt được (chưa có lần chấm thành công mới nhất); `null` khi duyệt được. */
+  approveBlockedReason: string | null;
+  /** Hồ sơ đang chờ thẩm định: từ chối được kể cả khi lần chấm gần nhất lỗi. */
+  canReject: boolean;
   /** Có quyền Thao tác "Hồ sơ vay"; không có thì khay chỉ hiện trạng thái, không có nút duyệt/từ chối. */
   canAct: boolean;
   approving: boolean;
   rejecting: boolean;
   error: unknown;
   displayName: (actorId: string | null | undefined) => string;
-  onApprove: () => void;
+  /** Trả về true khi duyệt thành công để khay đóng form. */
+  onApprove: (reasonDetail?: string) => Promise<boolean>;
   /** Tải lại chi tiết hồ sơ khi version đã đổi (người khác vừa xử lý). */
   onReload: () => void;
   /** Trả về true khi từ chối thành công để khay đóng form. */
   onReject: (reasonCode: string, reasonDetail?: string) => Promise<boolean>;
 }
 
-const TERMS_COPY: Record<TermsConfirmationStatus, string> = {
-  AUTO_AUTHORIZED: 'Tự tiếp tục vì điều khoản cuối không bất lợi hơn và người vay đã chấp thuận cơ chế này lúc nộp hồ sơ.',
-  PENDING: 'Đang chờ người vay xác nhận điều khoản cuối trước khi tạo hợp đồng.',
-  ACCEPTED: 'Người vay đã chấp nhận điều khoản cuối, hợp đồng đã được tạo.',
-  DECLINED: 'Người vay đã từ chối điều khoản cuối, không tạo hợp đồng.',
-  EXPIRED: 'Đã hết hạn phản hồi điều khoản, không tạo hợp đồng.',
-};
-
-function Outcome({ application, displayName }: Pick<DecisionTrayProps, 'application' | 'displayName'>) {
-  const who = application.adminDecidedBy
-    ? `${displayName(application.adminDecidedBy)}, ${formatDateTime(application.adminDecidedAt)}`
-    : application.decisionSource ? formatBusinessLabel(application.decisionSource) : '';
-  const last = application.recentHistory.find((item) => item.toStatus === application.status);
-  const terms = application.termsConfirmationStatus;
-  return (
-    <>
-      <div className="lr-outcome">
-        <StatusPill tone={applicationStatusTone(application.status)}>{APPLICATION_STATUS_LABELS[application.status]}</StatusPill>
-        {who ? <span>{who}</span> : null}
-      </div>
-      {application.status === 'REJECTED' && last?.reasonDetail ? <p className="lr-outcome-reason">{last.reasonDetail}</p> : null}
-      {application.status === 'APPROVED' && terms ? (
-        <p className="lr-tray-note lr-tray-terms">
-          {TERMS_COPY[terms] ?? formatBusinessLabel(terms)}
-          {terms === 'PENDING' && application.termsExpiresAt ? ` Hạn ${formatDateTime(application.termsExpiresAt)}.` : ''}
-        </p>
-      ) : null}
-    </>
-  );
+/** Lời dẫn trên hai nút khi hồ sơ chờ thẩm định. */
+function pendingNote(application: AdminLoanReviewDetail, approveBlockedReason: string | null): string {
+  if (approveBlockedReason == null) {
+    return 'Duyệt theo điều khoản sau định giá. Nếu điều khoản bất lợi hơn lúc nộp, hệ thống chờ người vay xác nhận rồi mới tạo hợp đồng.';
+  }
+  // Phiếu điểm phía trên đã nói lý do chưa có điểm (lý do đủ nằm ở title của nút Duyệt), ở đây chỉ nói việc làm được.
+  // Lần chấm lỗi còn có nút "Yêu cầu chấm lại" ở phiếu điểm.
+  const retry = application.assessment?.status === 'FAILED' ? ' hoặc yêu cầu chấm lại' : '';
+  return `Cần kết quả chấm điểm thành công mới duyệt được. Vẫn có thể từ chối hồ sơ${retry}.`;
 }
 
 /**
- * Khay quyết định nối dưới phiếu điểm. Chỉ hồ sơ PENDING_REVIEW có nút duyệt/từ chối; trạng thái
- * cuối hiện kết quả và người quyết định. Form lý do từ chối là state cục bộ của khay.
+ * Khay quyết định nối dưới phiếu điểm. Hồ sơ PENDING_REVIEW có nút duyệt/từ chối, mỗi nút mở form xác nhận ngay trong
+ * khay; trạng thái cuối hiện kết quả và người quyết định. Form đang mở là state cục bộ của khay.
  */
 export function DecisionTray(props: DecisionTrayProps) {
-  const { application, canDecide, canAct, approving, rejecting, error, onApprove, onReject } = props;
-  const [rejectOpen, setRejectOpen] = useState(false);
-  const [reasonCode, setReasonCode] = useState(REJECT_REASONS[0].code);
-  const [reasonDetail, setReasonDetail] = useState('');
+  const { application, approveBlockedReason, canReject, canAct, approving, rejecting, error } = props;
+  const [form, setForm] = useState<TrayForm>('none');
   const busy = approving || rejecting;
-  const disabled = !canDecide || busy;
+  const canApprove = canReject && approveBlockedReason == null;
+  const pending = application.status === 'PENDING_REVIEW';
+  const closeForm = () => setForm('none');
 
   let body: ReactNode;
-  if (application.status === 'PENDING_REVIEW' && !canAct) {
+  if (pending && !canAct) {
     body = (
-      <p className="lr-tray-note">
+      <p className={TRAY_NOTE}>
         Hồ sơ đang chờ thẩm định. Vai trò của bạn chỉ được xem; cần quyền Sửa "Hồ sơ vay" để duyệt hoặc từ chối.
       </p>
     );
-  } else if (application.status === 'PENDING_REVIEW' && rejectOpen) {
+  } else if (pending && form === 'reject') {
+    body = <RejectForm canReject={canReject} rejecting={rejecting} busy={busy} onCancel={closeForm} onReject={props.onReject} />;
+  } else if (pending && form === 'approve') {
     body = (
-      <form
-        className="lr-reject-form"
-        onSubmit={async (event) => {
-          event.preventDefault();
-          const done = await onReject(reasonCode, reasonDetail.trim() || undefined);
-          if (done) setRejectOpen(false);
-        }}
-      >
-        <label>
-          <span>Lý do từ chối</span>
-          <select className="ui-select" value={reasonCode} disabled={disabled} onChange={(event) => setReasonCode(event.target.value)} autoFocus>
-            {REJECT_REASONS.map((reason) => <option key={reason.code} value={reason.code}>{reason.label}</option>)}
-          </select>
-        </label>
-        <label>
-          <span>Giải thích thêm</span>
-          <textarea
-            value={reasonDetail}
-            maxLength={REJECT_DETAIL_MAX}
-            placeholder="Ghi rõ để người kiểm tra sau hiểu quyết định"
-            disabled={disabled}
-            onChange={(event) => setReasonDetail(event.target.value)}
-          />
-        </label>
-        <div className="lr-decide-row">
-          <button type="button" className="ui-btn ghost" disabled={busy} onClick={() => setRejectOpen(false)}>Hủy</button>
-          <button type="submit" className="ui-btn danger lr-grow" disabled={disabled}>
-            {rejecting ? <><span className="lr-spinner" aria-hidden="true" />Đang từ chối...</> : 'Xác nhận từ chối'}
-          </button>
-        </div>
-      </form>
+      <ApproveForm
+        application={application}
+        canApprove={canApprove}
+        approving={approving}
+        busy={busy}
+        onCancel={closeForm}
+        onApprove={props.onApprove}
+      />
     );
-  } else if (application.status === 'PENDING_REVIEW') {
+  } else if (pending) {
     body = (
       <>
-        <p className="lr-tray-note">
-          {canDecide
-            ? 'Duyệt theo điều khoản sau định giá. Nếu điều khoản bất lợi hơn lúc nộp, hệ thống chờ người vay xác nhận rồi mới tạo hợp đồng.'
-            : 'Cần có kết quả chấm điểm trước khi duyệt hoặc từ chối.'}
-        </p>
-        <div className="lr-decide-row">
-          <button type="button" className="ui-btn lr-btn-danger-outline" disabled={disabled} onClick={() => setRejectOpen(true)}>Từ chối</button>
-          <button type="button" className="ui-btn primary lr-grow" disabled={disabled} onClick={onApprove}>
-            {approving ? <><span className="lr-spinner" aria-hidden="true" />Đang duyệt...</> : 'Duyệt hồ sơ'}
+        <p className={TRAY_NOTE}>{pendingNote(application, approveBlockedReason)}</p>
+        <div className={DECIDE_ROW}>
+          <button
+            type="button"
+            className="ui-btn lr-btn-danger-outline bg-white border-danger text-danger hover:not-disabled:bg-danger-bg"
+            disabled={!canReject || busy}
+            onClick={() => setForm('reject')}
+          >
+            Từ chối
+          </button>
+          <button
+            type="button"
+            className="ui-btn primary lr-grow flex-1"
+            disabled={!canApprove || busy}
+            title={approveBlockedReason ?? undefined}
+            onClick={() => setForm('approve')}
+          >
+            Duyệt hồ sơ
           </button>
         </div>
       </>
     );
   } else if (application.status === 'APPROVED' || application.status === 'REJECTED') {
-    body = <Outcome application={application} displayName={props.displayName} />;
+    body = <DecisionOutcome application={application} displayName={props.displayName} />;
   } else {
     body = (
-      <p className="lr-tray-note">
+      <p className={TRAY_NOTE}>
         {application.status === 'WITHDRAWN'
           ? 'Người vay đã rút hồ sơ.'
           : `Hồ sơ đang ở bước ${(APPLICATION_STATUS_LABELS[application.status] ?? application.status).toLocaleLowerCase('vi-VN')}.`}
@@ -136,10 +116,14 @@ export function DecisionTray(props: DecisionTrayProps) {
     );
   }
 
+  // Lớp `rejecting`/`confirming` cho biết đang mở form nào (nền trắng); chỉ tính khi form thật sự hiện.
+  const open = pending && canAct ? form : 'none';
+  const trayClass = open === 'reject' ? `${TRAY} rejecting` : open === 'approve' ? `${TRAY} confirming` : TRAY;
+
   return (
-    <section className={`ui-card lr-slip-card lr-slip-decide${rejectOpen ? ' rejecting' : ''}`} aria-label="Quyết định thẩm định">
+    <section className={trayClass} aria-label="Quyết định thẩm định">
       {error ? (
-        <div className="lr-tray-error">
+        <div className="lr-tray-error grid gap-2 justify-items-start mb-2.5 [&_.ui-alert]:w-full">
           <ErrorNotice error={error} />
           {/* 409: hồ sơ đã đổi version (người khác vừa xử lý). Không tự gửi lại, chỉ mời tải bản mới. */}
           {toUiApiError(error).status === 409 ? (

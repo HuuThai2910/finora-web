@@ -34,6 +34,14 @@ export function formatPercent(value: number | null | undefined, fraction = false
   return formatPercentBase(fraction ? value * 100 : value);
 }
 
+const SCORE = new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 1 });
+
+/** Điểm đánh giá (thang 100, backend làm tròn 2 chữ số) hiển thị một chữ số lẻ, ví dụ 63,5. */
+export function formatScore(value: number | null | undefined): string {
+  if (value == null || !Number.isFinite(value)) return EMPTY;
+  return SCORE.format(value);
+}
+
 export function formatPercentagePoints(value: number | null | undefined): string {
   if (value == null) return EMPTY;
   const sign = value > 0 ? '+' : '';
@@ -76,6 +84,8 @@ const LABELS: Record<string, string> = {
   FAILED: 'Chấm điểm chưa thành công',
   SELF_DECLARED: 'Người vay tự khai',
   MOCK_USER_PROFILE: 'Hồ sơ người vay đang giả lập',
+  // Nguồn tuổi và trạng thái xác minh danh tính: tài khoản người vay đã xác minh trên FINORA.
+  USER_SERVICE: 'Tài khoản người vay trên FINORA',
   NO_HISTORY: 'Chưa có lịch sử tín dụng tại FINORA',
   FINORA_INTERNAL: 'Lịch sử tín dụng nội bộ FINORA',
   BORROWER: 'Người vay',

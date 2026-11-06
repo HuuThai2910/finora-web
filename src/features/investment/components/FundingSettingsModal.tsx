@@ -3,19 +3,19 @@ import { ErrorNotice } from '@/components/ErrorNotice';
 import { Modal } from '@/components/Modal';
 import { usePermission } from '@/features/auth';
 import { useActorNames } from '@/features/loan';
-import {
-  useCloseExpiredListingsMutation,
-  useGetFundingSettingsQuery,
-  useUpdateFundingSettingsMutation,
-} from '../api/investmentApi';
+import { useGetFundingSettingsQuery, useUpdateFundingSettingsMutation } from '../api/investmentApi';
 import { DENOMINATION_OPTIONS, FUNDING_DAYS_MAX, FUNDING_DAYS_MIN } from '../constants';
 import type { FundingSettings } from '../types';
 import { formatDateTime, formatMoney, parseDecimal } from '../formatters';
+import { INPUT } from '../styles';
+import { ErrorToast } from '@/components/ErrorToast';
 
 interface Props {
   onClose: () => void;
   /** Báo kết quả lên trang để thông báo còn thấy được sau khi đóng hộp thoại. */
   onNotice: (text: string) => void;
+  /** Mở hộp xác nhận đóng khoản quá hạn (trang đóng hộp này trước); không có thì ẩn khối Bảo trì. */
+  onCloseExpired?: () => void;
 }
 
 interface FormValues {
@@ -27,6 +27,18 @@ interface FormValues {
 type FormErrors = Partial<Record<keyof FormValues, string>>;
 
 const FORM_ID = 'fundingSettingsForm';
+
+/** Một tham số: nhãn (span con trực tiếp hoặc legend) đậm vừa, cách ô 6px. */
+const FIELD = 'fu-field grid gap-1.5 min-w-0 [border:0] text-[13px]';
+const FIELD_LABEL = 'mb-1.5 font-medium';
+/** Dòng lỗi dưới ô; là span con trực tiếp của `fu-field` nên cũng đậm vừa như nhãn. */
+const FIELD_ERROR = `fu-err text-danger text-[12px] ${FIELD_LABEL}`;
+const FIELD_INPUT = `fu-input ${INPUT} w-full h-8.5`;
+/** Nút chọn nhanh mệnh giá; đang chọn thì nền xanh nhạt, viền đậm thêm một vòng 1px. */
+const CHIP =
+  'fu-chip min-w-22 h-8 px-2.5 border border-line-strong rounded-[999px] bg-white text-[13px] font-medium tabular-nums ' +
+  'hover:border-brand aria-pressed:border-brand aria-pressed:bg-brand-50 aria-pressed:text-brand ' +
+  'aria-pressed:shadow-[0_0_0_1px_var(--color-brand)]';
 
 const toForm = (settings: FundingSettings): FormValues => ({
   denomination: String(parseDecimal(settings.noteDenomination) ?? ''),
@@ -56,13 +68,13 @@ function validate(form: FormValues): FormErrors {
  * mệnh giá cũ. Khi tham số đã tải, phần biên tập dựng riêng với state khởi tạo từ bản
  * backend trả về, nên không cần effect đồng bộ.
  */
-export function FundingSettingsModal({ onClose, onNotice }: Props) {
+export function FundingSettingsModal({ onClose, onNotice, onCloseExpired }: Props) {
   // Form chỉ lấy giá trị một lần lúc dựng: phải chờ bản mới nhất, không dùng bản cache cũ (mở lại ngay sau khi lưu
   // sẽ hiện số cũ, bấm Lưu tiếp là ghi đè).
   const settings = useGetFundingSettingsQuery(undefined, { refetchOnMountOrArgChange: true });
 
   if (settings.data && !settings.isFetching) {
-    return <SettingsEditor current={settings.data} onClose={onClose} onNotice={onNotice} />;
+    return <SettingsEditor current={settings.data} onClose={onClose} onNotice={onNotice} onCloseExpired={onCloseExpired} />;
   }
 
   return (
@@ -76,23 +88,21 @@ export function FundingSettingsModal({ onClose, onNotice }: Props) {
   );
 }
 
-function SettingsEditor({ current, onClose, onNotice }: Props & { current: FundingSettings }) {
+function SettingsEditor({ current, onClose, onNotice, onCloseExpired }: Props & { current: FundingSettings }) {
   const [form, setForm] = useState<FormValues>(() => toForm(current));
   const [touched, setTouched] = useState(false);
   const [update, updateState] = useUpdateFundingSettingsMutation();
-  const [closeExpired, closeState] = useCloseExpiredListingsMutation();
   const { canAct } = usePermission();
   // Investment chỉ lưu mã người cập nhật; tra họ tên hoặc email từ finora-user. SYSTEM là giá trị khởi tạo.
   const updatedBy = current.updatedBy === 'SYSTEM' ? null : current.updatedBy;
   const { displayName } = useActorNames([updatedBy]);
-  // Lưu tham số cần quyền Thao tác "Cấu hình gọi vốn"; đóng khoản quá hạn là thao tác của "Gọi vốn & Notes".
+  // Lưu tham số cần quyền Thao tác "Cấu hình gọi vốn"; đóng khoản quá hạn (quyền "Gọi vốn & Notes") do trang quyết định.
   const canSave = canAct('funding-settings');
-  const canCloseExpired = canAct('funding');
 
   const errors = validate(form);
   const hasErrors = Object.keys(errors).length > 0;
   const show = (key: keyof FormValues) => (touched ? errors[key] : undefined);
-  const busy = updateState.isLoading || closeState.isLoading;
+  const busy = updateState.isLoading;
 
   const set = (patch: Partial<FormValues>) => {
     setForm((value) => ({ ...value, ...patch }));
@@ -117,25 +127,13 @@ function SettingsEditor({ current, onClose, onNotice }: Props & { current: Fundi
     }
   };
 
-  const handleCloseExpired = async () => {
-    try {
-      const result = await closeExpired().unwrap();
-      onNotice(
-        result.closedCount === 0
-          ? 'Không có khoản nào quá hạn gọi vốn.'
-          : `Đã đóng ${result.closedCount} khoản quá hạn, tiền giữ chỗ được trả về ví nhà đầu tư.`,
-      );
-    } catch {
-      // Lỗi hiện trong khối bảo trì qua `closeState.error`.
-    }
-  };
-
   return (
     <Modal
       title="Tham số sàn"
       subtitle="Áp dụng cho khoản vay lên sàn từ giờ; khoản đã niêm yết giữ nguyên."
       onClose={onClose}
       busy={busy}
+      dismissOnBackdrop={false}
       footer={(
         <>
           <button type="button" className="ui-btn ghost" onClick={onClose} disabled={busy}>{canSave ? 'Hủy' : 'Đóng'}</button>
@@ -149,23 +147,23 @@ function SettingsEditor({ current, onClose, onNotice }: Props & { current: Fundi
     >
       <form
         id={FORM_ID}
-        className="fu-settings"
+        className="fu-settings grid gap-3.5 text-primary"
         noValidate
         onSubmit={(event) => {
           event.preventDefault();
           void handleSubmit();
         }}
       >
-        {/* Chỉ có quyền Xem thì xem được tham số hiện hành, không sửa. */}
-        <fieldset className="fu-settings-fields" disabled={!canSave}>
-          <fieldset className="fu-field">
-            <legend>Mệnh giá Note mặc định</legend>
-            <div className="fu-chips">
+        {/* Chỉ có quyền Xem thì xem được tham số hiện hành, không sửa: khóa cả nhóm ô, bố cục form giữ nguyên. */}
+        <fieldset className="fu-settings-fields grid gap-3.5 min-w-0 m-0 p-0 [border:0]" disabled={!canSave}>
+          <fieldset className={FIELD}>
+            <legend className={FIELD_LABEL}>Mệnh giá Note mặc định</legend>
+            <div className="fu-chips flex flex-wrap gap-1.5">
               {DENOMINATION_OPTIONS.map((option) => (
                 <button
                   key={option}
                   type="button"
-                  className="fu-chip"
+                  className={CHIP}
                   aria-pressed={form.denomination === option}
                   onClick={() => set({ denomination: option })}
                 >
@@ -173,7 +171,7 @@ function SettingsEditor({ current, onClose, onNotice }: Props & { current: Fundi
                 </button>
               ))}
               <input
-                className="fu-input fu-denom-input"
+                className={`fu-input fu-denom-input ${INPUT} w-35 h-8`}
                 type="number"
                 inputMode="numeric"
                 min="1000"
@@ -185,14 +183,14 @@ function SettingsEditor({ current, onClose, onNotice }: Props & { current: Fundi
                 onChange={(event) => set({ denomination: event.target.value })}
               />
             </div>
-            {show('denomination') && <span className="fu-err" role="alert">{errors.denomination}</span>}
+            {show('denomination') && <span className={FIELD_ERROR} role="alert">{errors.denomination}</span>}
           </fieldset>
 
-          <div className="fu-form-2">
-            <label className="fu-field">
-              <span>Góp tối thiểu (đ)</span>
+          <div className="fu-form-2 grid grid-cols-2 gap-3 max-[760px]:grid-cols-[minmax(0,1fr)]">
+            <label className={FIELD}>
+              <span className={FIELD_LABEL}>Góp tối thiểu (đ)</span>
               <input
-                className="fu-input"
+                className={FIELD_INPUT}
                 type="number"
                 inputMode="numeric"
                 min="1000"
@@ -201,12 +199,12 @@ function SettingsEditor({ current, onClose, onNotice }: Props & { current: Fundi
                 aria-invalid={Boolean(show('minimum'))}
                 onChange={(event) => set({ minimum: event.target.value })}
               />
-              {show('minimum') && <span className="fu-err" role="alert">{errors.minimum}</span>}
+              {show('minimum') && <span className={FIELD_ERROR} role="alert">{errors.minimum}</span>}
             </label>
-            <label className="fu-field">
-              <span>Số ngày gọi vốn</span>
+            <label className={FIELD}>
+              <span className={FIELD_LABEL}>Số ngày gọi vốn</span>
               <input
-                className="fu-input"
+                className={FIELD_INPUT}
                 type="number"
                 inputMode="numeric"
                 min={FUNDING_DAYS_MIN}
@@ -215,26 +213,26 @@ function SettingsEditor({ current, onClose, onNotice }: Props & { current: Fundi
                 aria-invalid={Boolean(show('days'))}
                 onChange={(event) => set({ days: event.target.value })}
               />
-              {show('days') && <span className="fu-err" role="alert">{errors.days}</span>}
+              {show('days') && <span className={FIELD_ERROR} role="alert">{errors.days}</span>}
             </label>
           </div>
         </fieldset>
 
-        <p className="fu-meta">
+        <p className="fu-meta text-muted text-[12px]">
           Cập nhật lần cuối {formatDateTime(current.updatedAt)}
           {current.updatedBy === 'SYSTEM' ? ' bởi hệ thống' : updatedBy ? ` bởi ${displayName(updatedBy)}` : ''}
         </p>
 
-        {updateState.error ? <ErrorNotice error={updateState.error} /> : null}
+        {updateState.error ? <ErrorToast error={updateState.error} /> : null}
 
-        {canCloseExpired && (
-          <section className="fu-maintenance" aria-labelledby="fuMaintenanceTitle">
-            <h3 id="fuMaintenanceTitle">Bảo trì</h3>
-            <p>Khoản quá hạn gọi vốn được đóng tự động theo chu kỳ. Bấm để đóng ngay khi cần.</p>
-            <button type="button" className="ui-btn ghost" disabled={busy} onClick={() => void handleCloseExpired()}>
-              {closeState.isLoading ? 'Đang đóng...' : 'Đóng khoản quá hạn'}
-            </button>
-            {closeState.error ? <ErrorNotice error={closeState.error} /> : null}
+        {onCloseExpired && (
+          <section
+            className="fu-maintenance grid justify-items-start gap-2 pt-3.5 border-t border-t-divider [&_.ui-alert]:justify-self-stretch"
+            aria-labelledby="fuMaintenanceTitle"
+          >
+            <h3 id="fuMaintenanceTitle" className="text-[14px] font-semibold">Bảo trì</h3>
+            <p className="text-secondary text-[13px]">Khoản quá hạn gọi vốn được đóng tự động theo chu kỳ. Bấm để đóng ngay khi cần.</p>
+            <button type="button" className="ui-btn ghost" disabled={busy} onClick={onCloseExpired}>Đóng khoản quá hạn</button>
           </section>
         )}
       </form>

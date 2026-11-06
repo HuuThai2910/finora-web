@@ -1,17 +1,14 @@
 import { useState } from 'react';
-import {
-  useActivateNotesMutation,
-  useCloseExpiredListingsMutation,
-  useFinalizeCommitmentsMutation,
-} from '../api/investmentApi';
+import { useActivateNotesMutation, useFinalizeCommitmentsMutation } from '../api/investmentApi';
 import type { MarketListing } from '../types';
 import { formatNumber } from '@/utils';
 
-export type FundingActionKind = 'finalize' | 'activate' | 'close';
+export type FundingActionKind = 'finalize' | 'activate';
 
 /**
- * Ba thao tác quản trị trên trang chi tiết một khoản gọi vốn. Khóa vốn và phát hành Note chạy tự động khi
- * finora-loan xác nhận giải ngân; hai nút đó chỉ là thao tác sửa lỗi và backend từ chối nếu chưa giải ngân.
+ * Hai thao tác sửa lỗi trên trang chi tiết một khoản gọi vốn. Khóa vốn và phát hành Note chạy tự động khi Loan xác
+ * nhận giải ngân; hai nút này chỉ dùng khi bước tự động không chạy, backend từ chối nếu chưa giải ngân. Đóng khoản quá
+ * hạn có hộp xác nhận riêng (`CloseExpiredDialog`).
  *
  * Chỉ một thao tác chạy tại một thời điểm (`busy`), để không bấm chồng hai bước của cùng
  * khoản. Lỗi giữ theo đúng thao tác gây ra để hiện ngay dưới nút đó; thành công trả câu
@@ -21,7 +18,6 @@ export type FundingActionKind = 'finalize' | 'activate' | 'close';
 export function useFundingActions(listing: MarketListing | undefined, onSuccess: (message: string) => void) {
   const [finalize] = useFinalizeCommitmentsMutation();
   const [activate] = useActivateNotesMutation();
-  const [closeExpired] = useCloseExpiredListingsMutation();
   const [busy, setBusy] = useState<FundingActionKind | null>(null);
   const [failure, setFailure] = useState<{ kind: FundingActionKind; error: unknown } | null>(null);
 
@@ -56,13 +52,6 @@ export function useFundingActions(listing: MarketListing | undefined, onSuccess:
         return issuedNoteCount === 0
           ? 'Note đã được phát hành trước đó, không tạo thêm.'
           : `Đã phát hành ${formatNumber(issuedNoteCount)} Note.`;
-      }),
-    closeExpired: () =>
-      run('close', async () => {
-        const { closedCount } = await closeExpired().unwrap();
-        return closedCount === 0
-          ? 'Không có khoản nào quá hạn gọi vốn.'
-          : `Đã đóng ${closedCount} khoản quá hạn, tiền giữ chỗ đã trả về ví nhà đầu tư.`;
       }),
   };
 }

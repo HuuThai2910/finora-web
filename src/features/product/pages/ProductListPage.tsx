@@ -1,26 +1,27 @@
 import { useCallback, useState } from 'react';
-import { createPortal } from 'react-dom';
 import { useDispatch } from 'react-redux';
 import { useSearchParams } from 'react-router-dom';
 import type { AppDispatch } from '@/app/store';
 import { ErrorNotice } from '@/components/ErrorNotice';
 import { Icon } from '@/components/Icon';
 import { Pager } from '@/components/Pager';
-import { Toast } from '@/components/Toast';
+import { toast } from '@/lib/toast';
 import { usePermission } from '@/features/auth';
 import { loanApi } from '@/lib/api/loanApi';
 import { useGetAdminProductsQuery } from '../api/productApi';
-import { ActionError } from '../components/ActionError';
+import { ErrorToast } from '@/components/ErrorToast';
 import { CreateProductModal } from '../components/CreateProductModal';
 import { ProductDetailDrawer } from '../components/ProductDetailDrawer';
+import type { ConfirmAction } from '../components/ProductDrawerActions';
 import { ProductOverview } from '../components/ProductOverview';
 import { ProductTable } from '../components/ProductTable';
 import { PRODUCT_FILTERS, PRODUCT_LIST_PAGE_SIZE, isProductFilter, type ProductFilter } from '../constants';
 import { useCreateAndSyncProduct } from '../hooks/useCreateAndSyncProduct';
 import { useProductAction } from '../hooks/useProductAction';
 import { useProductStatusCounts } from '../hooks/useProductStatusCounts';
-import type { CreateLoanProductRequest, LoanProduct } from '../types';
-import './ProductListPage.css';
+import { useUpdateProduct } from '../hooks/useUpdateProduct';
+import { productToForm, toCreateRequest, toUpdateRequest, type ProductForm } from '../mappers/productForm';
+import type { LoanProduct } from '../types';
 
 /** Đọc số trang từ URL (tính từ 1 cho dễ đọc), trả về chỉ số từ 0 như backend. */
 function readPage(raw: string | null): number {
@@ -28,16 +29,26 @@ function readPage(raw: string | null): number {
   return Number.isInteger(parsed) && parsed > 1 ? parsed - 1 : 0;
 }
 
-type OpenDrawer = { id: number; initial: LoanProduct | null; askArchive: boolean } | null;
+/** Mã sản phẩm đang mở trong ngăn chi tiết (`?product=12`); giá trị lạ coi như không mở. */
+function readProductId(raw: string | null): number | null {
+  const parsed = Number(raw);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
+}
+
+/** Hộp tạo/sửa đang mở: tạo trống, tạo bản sao (điền sẵn) hoặc sửa một bản nháp. */
+type Editor =
+  | { mode: 'create'; initial?: ProductForm }
+  | { mode: 'edit'; product: LoanProduct; initial: ProductForm };
 
 export default function ProductListPage() {
   const { canView, canAct } = usePermission();
   const dispatch = useDispatch<AppDispatch>();
-  // Tab và trang nằm trên URL để chia sẻ đường dẫn hoặc quay lại đúng chỗ đang xem.
+  // Tab, trang và sản phẩm đang mở nằm trên URL để chia sẻ đường dẫn hoặc quay lại đúng chỗ đang xem.
   const [searchParams, setSearchParams] = useSearchParams();
   const requested = searchParams.get('status');
   const filter: ProductFilter = isProductFilter(requested) ? requested : 'ALL';
   const page = readPage(searchParams.get('page'));
+  const openId = readProductId(searchParams.get('product'));
 
   const list = useGetAdminProductsQuery({
     status: filter === 'ALL' ? undefined : filter,
@@ -47,20 +58,40 @@ export default function ProductListPage() {
   const counts = useProductStatusCounts();
   const rowAction = useProductAction();
   const createAndSync = useCreateAndSyncProduct();
+  const update = useUpdateProduct();
 
-  const [drawer, setDrawer] = useState<OpenDrawer>(null);
-  const [showCreate, setShowCreate] = useState(false);
-  const [notice, setNotice] = useState<string | null>(null);
-  const dismissNotice = useCallback(() => setNotice(null), []);
+  // Bước xác nhận chọn từ menu dòng chỉ là ý định tạm thời nên không lên URL; gắn với đúng sản phẩm đã chọn.
+  const [ask, setAsk] = useState<{ id: number; action: ConfirmAction } | null>(null);
+  const [editor, setEditor] = useState<Editor | null>(null);
+  // Kết quả thao tác báo bằng toast dùng chung (`@/lib/toast`).
+  const setNotice = useCallback((message: string | null) => { if (message) toast.success(message); }, []);
 
   const products = list.data?.data ?? [];
+  const canEditProducts = canAct('loan-product');
 
-  const updateQuery = (nextFilter: ProductFilter, nextPage: number) => {
+  const writeQuery = (next: { filter?: ProductFilter; page?: number; productId?: number | null }) => {
     const params: Record<string, string> = {};
+    const nextFilter = next.filter ?? filter;
+    const nextPage = next.page ?? page;
+    const nextProduct = next.productId === undefined ? openId : next.productId;
     if (nextFilter !== 'ALL') params.status = nextFilter;
     if (nextPage > 0) params.page = String(nextPage + 1);
-    rowAction.clearError();
+    if (nextProduct != null) params.product = String(nextProduct);
     setSearchParams(params);
+  };
+
+  const updateQuery = (nextFilter: ProductFilter, nextPage: number) => {
+    rowAction.clearError();
+    writeQuery({ filter: nextFilter, page: nextPage });
+  };
+
+  const openDrawer = (productId: number, action: ConfirmAction | null = null) => {
+    setAsk(action ? { id: productId, action } : null);
+    writeQuery({ productId });
+  };
+  const closeDrawer = () => {
+    setAsk(null);
+    writeQuery({ productId: null });
   };
 
   // Làm mới bảng, số đếm trên tab và ngăn chi tiết đang mở trong một lần.
@@ -68,25 +99,40 @@ export default function ProductListPage() {
     dispatch(loanApi.util.invalidateTags([{ type: 'LoanProductList', id: 'ADMIN' }, 'LoanProduct']));
   };
 
-  const runRowAction = async (product: LoanProduct, action: 'activate' | 'deactivate' | 'core-sync') => {
-    const message = await rowAction.run(product, action);
+  const runSync = async (product: LoanProduct) => {
+    const message = await rowAction.run(product, 'core-sync');
     if (message) setNotice(message);
   };
 
-  const handleCreate = async (request: CreateLoanProductRequest) => {
+  const openEditor = (next: Editor) => {
+    createAndSync.clearError();
+    update.clearError();
+    setEditor(next);
+  };
+
+  const handleSubmit = async (form: ProductForm) => {
+    if (!editor) return;
     try {
-      const result = await createAndSync.execute(request);
-      setShowCreate(false);
+      if (editor.mode === 'edit') {
+        await update.execute(editor.product, toUpdateRequest(form, editor.product.version));
+        setEditor(null);
+        setNotice('Đã lưu bản nháp. Đồng bộ lại sang hệ thống lõi trước khi kích hoạt.');
+        return;
+      }
+      const result = await createAndSync.execute(toCreateRequest(form));
+      setEditor(null);
+      setAsk(null);
       // Sản phẩm mới nhất đứng đầu tab "Tất cả" (backend sắp theo ngày tạo giảm dần); mở luôn ngăn chi tiết.
-      updateQuery('ALL', 0);
-      setDrawer({ id: result.product.id, initial: result.product, askArchive: false });
+      writeQuery({ filter: 'ALL', page: 0, productId: result.product.id });
       setNotice(result.sync?.commandStatus === 'SUCCEEDED'
-        ? 'Đã tạo sản phẩm và đồng bộ sang Fineract.'
-        : 'Đã tạo sản phẩm; Fineract chưa đồng bộ xong, có thể đồng bộ lại trong ngăn chi tiết.');
+        ? 'Đã tạo sản phẩm và đồng bộ sang hệ thống lõi.'
+        : 'Đã tạo sản phẩm; hệ thống lõi chưa đồng bộ xong, có thể đồng bộ lại trong ngăn chi tiết.');
     } catch {
       // Hook đã chuẩn hóa lỗi để hộp thoại hiển thị; giữ hộp thoại mở cho quản trị viên sửa hoặc gửi lại.
     }
   };
+
+  const editing = editor?.mode === 'edit';
 
   return (
     <section className="ui-page">
@@ -94,20 +140,13 @@ export default function ProductListPage() {
         <div className="ui-title">
           <h1>Sản phẩm vay</h1>
         </div>
-        <div className="prod-head-actions">
+        <div className="prod-head-actions flex gap-2 flex-wrap">
           <button type="button" className="ui-btn ghost" onClick={refreshAll} disabled={list.isFetching}>
             <Icon name="refresh" />
             {list.isFetching ? 'Đang tải...' : 'Làm mới'}
           </button>
-          {canAct('loan-product') && (
-            <button
-              type="button"
-              className="ui-btn primary"
-              onClick={() => {
-                createAndSync.clearError();
-                setShowCreate(true);
-              }}
-            >
+          {canEditProducts && (
+            <button type="button" className="ui-btn primary" onClick={() => openEditor({ mode: 'create' })}>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
                 <path d="M12 5v14" />
                 <path d="M5 12h14" />
@@ -119,10 +158,13 @@ export default function ProductListPage() {
       </header>
 
       {/* Hai thẻ đầu trang đọc API thống kê, cần quyền Xem "Tổng quan & thống kê". */}
-      {canView('dashboard') && <ProductOverview onOpenProduct={(id) => setDrawer({ id, initial: null, askArchive: false })} />}
+      {canView('dashboard') && <ProductOverview onOpenProduct={(id) => openDrawer(id)} />}
 
-      <section className="ui-card prod-list" aria-label="Danh sách sản phẩm vay">
-        <div className="prod-list-bar">
+      <section
+        className="ui-card prod-list pt-3.5 px-3.5 pb-3 max-[760px]:px-2.5 max-[760px]:pb-2.5"
+        aria-label="Danh sách sản phẩm vay"
+      >
+        <div className="prod-list-bar flex items-center justify-between gap-3 flex-wrap mb-3">
           <div className="ui-tabs" role="tablist" aria-label="Lọc trạng thái sản phẩm">
             {PRODUCT_FILTERS.map((item) => (
               <button
@@ -139,7 +181,7 @@ export default function ProductListPage() {
           </div>
         </div>
 
-        {rowAction.error && <div className="prod-list-alert"><ActionError error={rowAction.error} /></div>}
+        {rowAction.error && <ErrorToast error={rowAction.error} />}
 
         {list.error ? (
           <ErrorNotice error={list.error} onRetry={list.refetch} />
@@ -149,18 +191,20 @@ export default function ProductListPage() {
           <div className="ui-empty">
             {filter !== 'ALL'
               ? 'Chưa có sản phẩm ở trạng thái này.'
-              : canAct('loan-product') ? 'Chưa có sản phẩm vay nào. Bấm "Tạo sản phẩm" để bắt đầu.' : 'Chưa có sản phẩm vay nào.'}
+              : canEditProducts ? 'Chưa có sản phẩm vay nào. Bấm "Tạo sản phẩm" để bắt đầu.' : 'Chưa có sản phẩm vay nào.'}
           </div>
         ) : (
           <div className={list.isFetching ? 'ui-busy' : undefined}>
             <ProductTable
               products={products}
-              openId={drawer?.id ?? null}
+              openId={openId}
               busy={rowAction.isBusy}
-              canAct={canAct('loan-product')}
-              onOpen={(product) => setDrawer({ id: product.id, initial: product, askArchive: false })}
-              onAskArchive={(product) => setDrawer({ id: product.id, initial: product, askArchive: true })}
-              onAction={(product, action) => void runRowAction(product, action)}
+              canAct={canEditProducts}
+              onOpen={(product) => openDrawer(product.id)}
+              onAsk={(product, action) => openDrawer(product.id, action)}
+              onSync={(product) => void runSync(product)}
+              onEdit={(product) => openEditor({ mode: 'edit', product, initial: productToForm(product) })}
+              onCopy={(product) => openEditor({ mode: 'create', initial: productToForm(product, true) })}
             />
             <Pager
               page={page}
@@ -174,26 +218,30 @@ export default function ProductListPage() {
         )}
       </section>
 
-      {drawer && (
+      {openId != null && (
         <ProductDetailDrawer
-          key={`${drawer.id}-${drawer.askArchive}`}
-          productId={drawer.id}
-          initial={drawer.initial}
-          askArchive={drawer.askArchive}
-          onClose={() => setDrawer(null)}
+          key={`${openId}-${ask?.id === openId ? ask.action : ''}`}
+          productId={openId}
+          initial={products.find((product) => product.id === openId) ?? null}
+          ask={ask?.id === openId ? ask.action : null}
+          onClose={closeDrawer}
+          onEdit={(product) => openEditor({ mode: 'edit', product, initial: productToForm(product) })}
           onNotice={setNotice}
         />
       )}
-      {showCreate && (
+      {editor && (
         <CreateProductModal
-          saving={createAndSync.isLoading}
-          serverError={createAndSync.error}
-          onClose={() => setShowCreate(false)}
-          onCreate={handleCreate}
+          // Đổi sản phẩm hoặc chế độ thì dựng lại form với giá trị điền sẵn mới.
+          key={editor.mode === 'edit' ? `edit-${editor.product.id}` : `create-${editor.initial?.name ?? ''}`}
+          mode={editor.mode}
+          initial={editor.initial}
+          saving={editing ? update.isLoading : createAndSync.isLoading}
+          serverError={editing ? update.error : createAndSync.error}
+          onClose={() => setEditor(null)}
+          onSubmit={handleSubmit}
         />
       )}
       {/* Qua portal để thông báo nổi trên ngăn chi tiết (ngăn cũng vẽ ở body). */}
-      {notice && createPortal(<Toast message={notice} onDismiss={dismissNotice} />, document.body)}
     </section>
   );
 }

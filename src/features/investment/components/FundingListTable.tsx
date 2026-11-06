@@ -1,11 +1,12 @@
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { StatusPill } from '@/components/StatusPill';
+import { fromListState } from '@/lib/navigation';
 import type { ListingTab } from '../constants';
 import { useListingStage } from '../hooks/useListingStage';
 import { stepStatus } from '../mappers/listingDisplay';
 import { describeFundingWindow } from '../stage';
 import type { MarketListing } from '../types';
-import { formatDate, formatMoney, formatPercent } from '../formatters';
+import { formatDate, formatMoney, formatMonths, formatPercent, formatRate } from '../formatters';
 
 interface Props {
   listings: MarketListing[];
@@ -32,7 +33,9 @@ function LastCell({ listing, tab, now }: { listing: MarketListing; tab: ListingT
     return (
       <>
         {formatDate(listing.fundingClosesAt)}
-        <span className={`ui-sub fu-window ${fundingWindow.tone}`}>{fundingWindow.label}</span>
+        <span className={`ui-sub fu-window ${fundingWindow.tone} [&.warning]:text-warning [&.expired]:text-danger`}>
+          {fundingWindow.label}
+        </span>
       </>
     );
   }
@@ -48,17 +51,21 @@ function LastCell({ listing, tab, now }: { listing: MarketListing; tab: ListingT
  */
 export function FundingListTable({ listings, tab }: Props) {
   const navigate = useNavigate();
+  const location = useLocation();
+  // Trang chi tiết nhớ URL danh sách (tab, bộ lọc, trang) để nút "Về danh sách" quay lại đúng chỗ.
+  const listState = fromListState(location);
   const now = new Date();
 
   return (
     <div className="ui-table-wrap">
-      <table className="ui-table list fu-table">
+      {/* Ô bảng đệm ngang 10px thay cho 12px của bảng chung; dưới 760px ẩn hai cột số tiền. */}
+      <table className="ui-table list fu-table [&_td]:px-2.5 [&_th]:px-2.5">
         <thead>
           <tr>
-            <th>Khoản vay</th>
-            <th className="num hide-sm">Mục tiêu</th>
-            <th className="hide-sm">Đã góp</th>
-            <th className="fu-last">{tab === 'OPEN' ? 'Hạn gọi vốn' : 'Trạng thái'}</th>
+            <th className="w-[46%] max-[760px]:w-auto">Khoản vay</th>
+            <th className="num hide-sm w-[16%] max-[760px]:hidden">Mục tiêu</th>
+            <th className="hide-sm w-[20%] max-[760px]:hidden">Đã góp</th>
+            <th className="fu-last text-right">{tab === 'OPEN' ? 'Hạn gọi vốn' : 'Trạng thái'}</th>
           </tr>
         </thead>
         <tbody>
@@ -68,30 +75,42 @@ export function FundingListTable({ listings, tab }: Props) {
               className="clickable"
               onClick={(event) => {
                 if ((event.target as HTMLElement).closest('a')) return;
-                navigate(fundingDetailPath(listing.listingId));
+                navigate(fundingDetailPath(listing.listingId), { state: listState });
               }}
             >
-              <td className="fu-name">
-                <Link className="fu-title" to={fundingDetailPath(listing.listingId)}>{listing.purpose}</Link>
+              {/* max-width 0: tên dài bị cắt bằng dấu ba chấm thay vì đẩy rộng bảng. */}
+              <td className="fu-name max-w-0 max-[760px]:whitespace-normal">
+                <Link
+                  className="fu-title block overflow-hidden text-ellipsis font-medium text-primary in-[tr.clickable:hover]:text-brand focus-visible:text-brand max-[760px]:whitespace-normal"
+                  to={fundingDetailPath(listing.listingId)}
+                  state={listState}
+                >
+                  {listing.purpose}
+                </Link>
                 <span className="ui-sub">
-                  <span className="ui-mono fu-code">#{listing.loanId}</span>, hạng {listing.creditGrade}
+                  {/* Mã khoản vay dưới tên (chữ đơn cách nhỏ như mockup .gv-code), kèm điều khoản chính để so các khoản. */}
+                  <span className="ui-mono fu-code text-[12px]">#{listing.loanId}</span>, hạng {listing.creditGrade},
+                  {' '}{formatRate(listing.annualInterestRate)}, {formatMonths(listing.termMonths)}
                 </span>
               </td>
-              <td className="num hide-sm">{formatMoney(listing.targetAmount)} đ</td>
-              <td className="hide-sm">
+              <td className="num hide-sm max-[760px]:hidden">{formatMoney(listing.targetAmount)} đ</td>
+              <td className="hide-sm max-[760px]:hidden">
                 {listing.status === 'DRAFT' ? (
-                  <span className="fu-muted">Chưa lên sàn</span>
+                  <span className="fu-muted text-muted">Chưa lên sàn</span>
                 ) : (
-                  <div className="fu-progress">
-                    <span className="fu-thin" aria-hidden="true">
+                  <div className="fu-progress grid grid-cols-[minmax(0,1fr)_56px] items-center gap-2.5 text-[13px] tabular-nums text-right">
+                    <span className="fu-thin block h-1.5 overflow-hidden rounded-[999px] bg-[#eef0f3]" aria-hidden="true">
                       {/* Bề rộng lấy thẳng `fundedPercent` của backend, không tính lại từ số tiền. */}
-                      <i style={{ width: `${Math.min(Math.max(listing.fundedPercent, 0), 100)}%` }} />
+                      <i
+                        className="block h-full rounded-[999px] bg-brand"
+                        style={{ width: `${Math.min(Math.max(listing.fundedPercent, 0), 100)}%` }}
+                      />
                     </span>
                     <span>{formatPercent(listing.fundedPercent)}</span>
                   </div>
                 )}
               </td>
-              <td className="fu-last">
+              <td className="fu-last text-right">
                 <LastCell listing={listing} tab={tab} now={now} />
               </td>
             </tr>

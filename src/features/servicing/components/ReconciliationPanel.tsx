@@ -1,11 +1,13 @@
 import { useState } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import { ErrorNotice } from '@/components/ErrorNotice';
-import { StatusPill } from '@/components/StatusPill';
 import { usePermission } from '@/features/auth';
+import { fromListState } from '@/lib/navigation';
 import { formatDateTime } from '@/utils';
 import { useReconcileLoanMutation, useReconciliationIncidentsQuery, useStaleLoansQuery } from '../api/servicingApi';
 import { INCIDENT_LABEL, LOAN_STATUS_LABEL, SERVICING_PAGE_SIZE } from '../constant';
 import { money } from '../formatters';
+import { SVC_ACT_CELL, SVC_ACT_HEAD, SVC_NOTE, SVC_SUBHEAD, SVC_WRAP_CELL } from '../styles';
 import { QueueBody } from './QueueBody';
 
 interface Props {
@@ -24,7 +26,11 @@ export function ReconciliationPanel({ page, onPage, onDone }: Props) {
   const [incidentPage, setIncidentPage] = useState(0);
   const incidents = useReconciliationIncidentsQuery({ page: incidentPage, size: SERVICING_PAGE_SIZE });
   const [reconcile, state] = useReconcileLoanMutation();
-  const canReconcile = usePermission().canAct('reconciliation');
+  const { canAct, canView } = usePermission();
+  const canReconcile = canAct('reconciliation');
+  // Mã hồ sơ mở trang thẩm định khi tài khoản xem được hồ sơ vay; quay lại thì về đúng tab đối soát đang xem.
+  const canOpenApplication = canView('loan-application');
+  const location = useLocation();
   const [running, setRunning] = useState<string | null>(null);
   const [failed, setFailed] = useState<{ loanNumber: string; error: unknown } | null>(null);
 
@@ -46,9 +52,9 @@ export function ReconciliationPanel({ page, onPage, onDone }: Props) {
 
   return (
     <>
-      <p className="svc-note">Số liệu FINORA lưu lại từ hệ thống lõi đã cũ hơn lịch đồng bộ. Đối soát lại để lấy số mới nhất.</p>
+      <p className={SVC_NOTE}>Số liệu FINORA lưu lại từ hệ thống lõi đã cũ hơn lịch đồng bộ. Đối soát lại để lấy số mới nhất.</p>
       {failed && (
-        <div className="svc-pad">
+        <div className="svc-pad px-0.5 pb-3">
           <ErrorNotice error={failed.error} onRetry={() => run(failed.loanNumber)} />
         </div>
       )}
@@ -68,24 +74,36 @@ export function ReconciliationPanel({ page, onPage, onDone }: Props) {
             <thead>
               <tr>
                 <th>Khoản vay</th>
-                <th>Trạng thái khoản vay</th>
+                <th>Trạng thái</th>
                 <th className="num">Dư nợ</th>
                 <th className="num">Quá hạn</th>
                 <th>Đồng bộ lần cuối</th>
-                <th>Tình trạng</th>
-                <th className="act"><span className="ui-sr-only">Thao tác</span></th>
+                <th className={SVC_ACT_HEAD}><span className="ui-sr-only">Thao tác</span></th>
               </tr>
             </thead>
             <tbody>
               {(stale.data?.data ?? []).map((item) => (
                 <tr key={item.loanNumber}>
-                  <td><span className="ui-code">{item.loanNumber}</span><span className="ui-sub ui-mono">{item.applicationNumber}</span></td>
+                  <td>
+                    <span className="ui-code">{item.loanNumber}</span>
+                    <span className="ui-sub">
+                      {canOpenApplication ? (
+                        <Link
+                          className="ui-link"
+                          to={`/loans/${item.applicationNumber}/review`}
+                          state={fromListState(location)}
+                          aria-label={`Mở hồ sơ vay ${item.applicationNumber}`}
+                        >
+                          {item.applicationNumber}
+                        </Link>
+                      ) : item.applicationNumber}
+                    </span>
+                  </td>
                   <td>{LOAN_STATUS_LABEL[item.loanStatus] ?? item.loanStatus}</td>
                   <td className="num">{money(item.totalOutstanding)}</td>
-                  <td className={item.overdueAmount ? 'num' : 'num svc-muted'}>{money(item.overdueAmount)}</td>
+                  <td className={item.overdueAmount ? 'num' : 'num svc-muted text-muted'}>{money(item.overdueAmount)}</td>
                   <td>{formatDateTime(item.lastSyncedAt)}</td>
-                  <td>{item.stale ? <StatusPill tone="warning">Cần đối soát</StatusPill> : <StatusPill tone="success">Đã khớp</StatusPill>}</td>
-                  <td className="act">
+                  <td className={SVC_ACT_CELL}>
                     {canReconcile && (
                       <button
                         type="button"
@@ -104,7 +122,7 @@ export function ReconciliationPanel({ page, onPage, onDone }: Props) {
         </div>
       </QueueBody>
 
-      <div className="svc-subhead">
+      <div className={SVC_SUBHEAD}>
         <h2>Sai lệch đang mở</h2>
         {incidents.data && incidents.data.totalElements > 0 && (
           <span>{incidents.data.totalElements} sai lệch, cần kỹ thuật kiểm tra</span>
@@ -138,8 +156,8 @@ export function ReconciliationPanel({ page, onPage, onDone }: Props) {
                 <tr key={item.incidentId}>
                   <td><span className="ui-code">{item.loanNumber}</span></td>
                   <td>{INCIDENT_LABEL[item.type] ?? item.type}</td>
-                  <td className="svc-wrap">{item.expectedValue}</td>
-                  <td className="svc-wrap">{item.actualValue}</td>
+                  <td className={SVC_WRAP_CELL}>{item.expectedValue}</td>
+                  <td className={SVC_WRAP_CELL}>{item.actualValue}</td>
                   <td className="num">{item.occurrenceCount}</td>
                   <td>{formatDateTime(item.firstDetectedAt)}</td>
                 </tr>

@@ -25,6 +25,8 @@ Trạng thái trong bảng là trạng thái **nghiệm thu task**, không phả
 | WEB-LOAN-002 | Listing và theo dõi gọi vốn | LN-009–LN-010 | `BACKLOG` | Chưa tạo |
 | WEB-LOAN-003 | Giải ngân, servicing, repayment, overdue | LN-011–LN-017 | `READY_FOR_REVIEW` | [Plan](plans/WEB-LOAN-003-servicing-operations.md) |
 | WEB-UI-001 | Giao diện mềm theo finora-web-mockup, dữ liệu thật (toàn bộ trang quản trị) | API hiện có | `IN_PROGRESS` (chờ Thái xem) | [Plan](plans/WEB-UI-001-giao-dien-mem.md) |
+| WEB-UI-002 | Chuyển CSS viết tay sang Tailwind CSS v4, giữ nguyên giao diện | Không đổi API | `READY_FOR_REVIEW` | [Plan](plans/WEB-UI-002-tailwind.md) |
+| WEB-UX-001 | Rà soát UI/UX toàn web, sửa lỗi số liệu và bổ sung tính năng frontend dùng API có sẵn; đợt 2 (04/11): API mới ở User/Loan/Investment/AI/Gateway cho các mục "cần backend", thanh tải toàn trang, toast dùng chung | API hiện có + API đợt 2 (chưa deploy) | `READY_FOR_REVIEW` | [Báo cáo](docs/bao-cao-cap-nhat-web-2026-11-04.md) |
 | WEB-EKYC-002 | Duyệt eKYC: hàng chờ duyệt tay, xem ảnh/video bằng chứng, duyệt/từ chối có ghi chú | EKYC-002 §3.7 (finora-user) | `IN_PROGRESS` (code xong, chờ chạy với backend thật) | [Plan](plans/WEB-EKYC-002-duyet-ekyc.md) |
 | WEB-BLOCKCHAIN-001 | Trang "Bằng chứng blockchain": tra proof theo tham chiếu hoặc trạng thái, ngăn chi tiết, kiểm toàn vẹn (dữ liệu gốc → hash, cơ sở dữ liệu ↔ Fabric), đưa proof DEAD_LETTER về hàng đợi | Blockchain W3D (R6) `/api/v1/blockchain/proofs` | `READY_FOR_REVIEW` — build ngày 2026-10-17, chờ chạy với stack có Fabric | [Plan W3D](../finora-platform/.agents/plans/W3D-fabric-proofs.md) |
 

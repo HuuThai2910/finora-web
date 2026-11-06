@@ -6,6 +6,7 @@ import type {
   LoanProduct,
   LoanProductStatus,
   PageResponse,
+  UpdateLoanProductRequest,
 } from '../types';
 
 export interface ProductListParams {
@@ -31,6 +32,13 @@ const productApi = loanApi.injectEndpoints({
     createProduct: builder.mutation<LoanProduct, CreateLoanProductRequest>({
       query: (body) => ({ url: '/admin/loan-products', method: 'POST', body }),
       invalidatesTags: [{ type: 'LoanProductList', id: 'ADMIN' }],
+    }),
+    updateProduct: builder.mutation<LoanProduct, { id: number; body: UpdateLoanProductRequest }>({
+      query: ({ id, body }) => ({ url: `/admin/loan-products/${id}`, method: 'PUT', body }),
+      invalidatesTags: (_result, _error, { id }) => [
+        { type: 'LoanProduct', id },
+        { type: 'LoanProductList', id: 'ADMIN' },
+      ],
     }),
     syncProduct: builder.mutation<CoreProductSyncResponse, { id: number; version: number }>({
       query: ({ id, version }) => ({
@@ -65,6 +73,7 @@ export const {
   useGetAdminProductsQuery,
   useGetAdminProductQuery,
   useCreateProductMutation,
+  useUpdateProductMutation,
   useSyncProductMutation,
   useChangeProductStatusMutation,
 } = productApi;

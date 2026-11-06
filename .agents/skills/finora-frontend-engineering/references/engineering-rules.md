@@ -129,6 +129,8 @@ Chọn công cụ theo loại state:
 - Thứ tự tab, focus khi mở/đóng modal và focus lỗi đầu tiên phải hợp lý.
 - Giữ thuật ngữ nghiệp vụ nhất quán giữa web, mobile và backend; ưu tiên tiếng Việt dễ hiểu, thuật ngữ kỹ thuật đặt kèm khi cần.
 - Dùng token/design system thay vì hardcode màu/khoảng cách lặp lại.
+- Trên web, style viết bằng utility Tailwind CSS v4 trong JSX; token ở `src/styles/index.css`, lớp dùng chung `ui-*` ở
+  `src/styles/ui.css`, quy tắc quy đổi theo `plans/WEB-UI-002-tailwind.md`. Không thêm file CSS riêng cho từng trang.
 - Thiết kế responsive theo nội dung; không chỉ thu nhỏ giao diện desktop.
 
 ## 9. Bảo mật

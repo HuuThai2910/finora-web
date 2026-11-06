@@ -3,29 +3,38 @@ import { ErrorNotice } from '@/components/ErrorNotice';
 import { RowMenu } from '@/components/RowMenu';
 import { StatusPill } from '@/components/StatusPill';
 import { usePermission } from '@/features/auth';
+import { ApplicationRef, useApplicationNumbers } from '@/features/loan';
 import { formatDate, formatDateTime } from '@/utils';
 import {
   useDisbursementIncidentsQuery, useRecheckDisbursementMutation, useRecheckWithdrawalMutation,
   useReconcileRepaymentMutation, useRepaymentIncidentsQuery,
 } from '../api/paymentIncidentApi';
-import { useOrderIncidentsQuery, useRetryOrderIncidentMutation } from '../api/investmentIncidentApi';
+import { useRetryOrderIncidentMutation } from '../api/investmentIncidentApi';
 import { useRepairSagasQuery } from '../api/servicingApi';
 import { REPAYMENT_TYPE_LABEL, SERVICING_PAGE_SIZE } from '../constant';
 import { money } from '../formatters';
+import { SVC_ACT_CELL, SVC_ACT_HEAD, SVC_NOTE, SVC_SUBHEAD } from '../styles';
 import type {
   DisbursementIncident, DisbursementSagaRepair, OrderIncident, RepaymentIncident, WithdrawalIncident,
 } from '../types';
 import { ErrorCell } from './ErrorCell';
 import { LoanProofsLink } from './LoanProofsLink';
-import { QueueBody } from './QueueBody';
+import { OrderIncidentsSection } from './OrderIncidentsSection';
+import { QueueBody, QueueEmpty } from './QueueBody';
 import { RepaymentRepostModal } from './RepaymentRepostModal';
 import { SagaRequeueModal } from './SagaRequeueModal';
+import { UserName } from './UserName';
 import { WithdrawalIncidentsSection } from './WithdrawalIncidentsSection';
 
 interface Props {
   page: number;
   onPage: (page: number) => void;
   onDone: (message: string) => void;
+  /**
+   * Số đếm đầu trang (`useServicingCounts`) báo mọi hàng đợi tài khoản xem được đều rỗng: hiện một dòng chung thay cho
+   * năm khối "không có việc" nối nhau.
+   */
+  nothingOpen: boolean;
 }
 
 function RepaymentStatus({ item }: { item: RepaymentIncident }) {
@@ -49,12 +58,6 @@ function DisbursementStatus({ item }: { item: DisbursementIncident }) {
     : <StatusPill tone="warning">Đang tra cứu lại</StatusPill>;
 }
 
-function OrderIncidentIssue({ item }: { item: OrderIncident }) {
-  if (item.issue === 'RELEASE_BLOCKED') return <StatusPill tone="danger">Dừng nhả tiền giữ</StatusPill>;
-  if (item.issue === 'RELEASE_RETRYING') return <StatusPill tone="warning">Đang thử nhả tiền giữ</StatusPill>;
-  return <StatusPill tone="info">Chưa rõ đã giữ tiền</StatusPill>;
-}
-
 /**
  * Sự cố giao dịch (R2): tiền đã đi nhưng một bên chưa ghi xong. Các hàng đợi đều chỉ tra cứu hoặc chạy lại đúng
  * bước còn dở theo mã tham chiếu đã gửi, không bao giờ trừ tiền hay chuyển tiền lần hai:
@@ -67,7 +70,7 @@ function OrderIncidentIssue({ item }: { item: OrderIncident }) {
  * - lệnh góp vốn chưa khớp với ví (Investment, R3): "Thử lại" hẹn worker làm tiếp ngay sau khi đã xử lý nguyên nhân.
  * Một thao tác chạy tại một thời điểm để không gửi chồng.
  */
-export function IncidentsPanel({ page, onPage, onDone }: Props) {
+export function IncidentsPanel({ page, onPage, onDone, nothingOpen }: Props) {
   const { canView, canAct } = usePermission();
   // Bốn hàng đợi tiền/lõi thuộc "Đối soát & sự cố", lệnh rút tiền thuộc "Rút tiền": mỗi phần hiện theo quyền Xem riêng,
   // nút xử lý theo quyền Thao tác riêng.
@@ -79,8 +82,11 @@ export function IncidentsPanel({ page, onPage, onDone }: Props) {
   const disbursements = useDisbursementIncidentsQuery({ page: disbursementPage, size: SERVICING_PAGE_SIZE }, { skip });
   const [sagaPage, setSagaPage] = useState(0);
   const sagas = useRepairSagasQuery({ page: sagaPage, size: SERVICING_PAGE_SIZE }, { skip });
-  const [orderPage, setOrderPage] = useState(0);
-  const orders = useOrderIncidentsQuery({ page: orderPage, size: SERVICING_PAGE_SIZE }, { skip });
+  // Bảng của Payment chỉ có ID hồ sơ: tra mã LA-… cho cả hai trang đang hiện trong một request.
+  const numbers = useApplicationNumbers([
+    ...(repayments.data?.content ?? []).map((item) => item.loanApplicationId),
+    ...(disbursements.data?.content ?? []).map((item) => item.loanApplicationId),
+  ]);
   const [retryOrder] = useRetryOrderIncidentMutation();
   const [reconcile] = useReconcileRepaymentMutation();
   const [recheck] = useRecheckDisbursementMutation();
@@ -127,21 +133,23 @@ export function IncidentsPanel({ page, onPage, onDone }: Props) {
     return `Đã hẹn tra cứu lại lệnh rút ${item.withdrawalId} với nhà cung cấp; kết quả cập nhật sau lượt xử lý kế tiếp.`;
   });
 
+  if (nothingOpen && !failed) return <QueueEmpty text="Không có sự cố giao dịch cần xử lý." />;
+
   return (
     <>
-      <p className="svc-note">
+      <p className={SVC_NOTE}>
         Tiền đã đi nhưng một bên chưa ghi xong. Các thao tác ở đây chỉ tra cứu hoặc chạy lại đúng bước còn dở theo mã đã gửi,
         không trừ tiền hay chuyển tiền lần hai.
       </p>
       {failed && (
-        <div className="svc-pad">
+        <div className="svc-pad px-0.5 pb-3">
           <ErrorNotice error={failed.error} onRetry={failed.retry} />
         </div>
       )}
 
       {showReconciliation && (
         <>
-          <div className="svc-subhead">
+          <div className={SVC_SUBHEAD}>
             <h2>Trả nợ chưa ghi xong vào hệ thống lõi</h2>
             {repayments.data && repayments.data.totalElements > 0 && <span>Tiền đã trừ ví người vay</span>}
           </div>
@@ -161,12 +169,12 @@ export function IncidentsPanel({ page, onPage, onDone }: Props) {
                 <thead>
                   <tr>
                     <th>Giao dịch trả nợ</th>
-                    <th>Hồ sơ vay</th>
+                    <th>Người vay</th>
                     <th className="num">Số tiền</th>
                     <th>Ngày ghi nhận</th>
                     <th>Lỗi gần nhất</th>
                     <th>Tình trạng</th>
-                    <th className="act"><span className="ui-sr-only">Thao tác</span></th>
+                    <th className={SVC_ACT_HEAD}><span className="ui-sr-only">Thao tác</span></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -177,14 +185,16 @@ export function IncidentsPanel({ page, onPage, onDone }: Props) {
                         <span className="ui-sub">{REPAYMENT_TYPE_LABEL[item.repaymentType] ?? item.repaymentType}</span>
                       </td>
                       <td>
-                        Hồ sơ #{item.loanApplicationId}
-                        <span className="ui-sub"><LoanProofsLink loanApplicationId={item.loanApplicationId} /></span>
+                        <UserName userId={item.borrowerId} fallback={`Người vay #${item.borrowerId}`} />
+                        <span className="ui-sub">
+                          <ApplicationRef id={item.loanApplicationId} applicationNumber={numbers.get(item.loanApplicationId)} /><LoanProofsLink loanApplicationId={item.loanApplicationId} separated />
+                        </span>
                       </td>
                       <td className="num">{money(item.amount)}</td>
                       <td>{formatDate(item.transactionDate)}</td>
                       <ErrorCell code={item.errorCode} detail={item.errorDetail} />
                       <td><RepaymentStatus item={item} /></td>
-                      <td className="act">
+                      <td className={SVC_ACT_CELL}>
                         {item.status === 'RECONCILIATION_REQUIRED' && canFix && (() => {
                           const lockedUntil = repostLockedUntil(item, loadedAt);
                           return (
@@ -213,9 +223,9 @@ export function IncidentsPanel({ page, onPage, onDone }: Props) {
             </div>
           </QueueBody>
 
-          <div className="svc-subhead">
+          <div className={SVC_SUBHEAD}>
             <h2>Giải ngân chưa có kết quả chuyển tiền</h2>
-            {disbursements.data && disbursements.data.totalElements > 0 && <span>Chỉ tra cứu theo mã saga, không chuyển lại</span>}
+            {disbursements.data && disbursements.data.totalElements > 0 && <span>Chỉ tra cứu theo mã lệnh, không chuyển lại</span>}
           </div>
           <QueueBody
             error={disbursements.error}
@@ -238,7 +248,7 @@ export function IncidentsPanel({ page, onPage, onDone }: Props) {
                     <th>Lỗi gần nhất</th>
                     <th className="num">Lần tra cứu</th>
                     <th>Tình trạng</th>
-                    <th className="act"><span className="ui-sr-only">Thao tác</span></th>
+                    <th className={SVC_ACT_HEAD}><span className="ui-sr-only">Thao tác</span></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -247,7 +257,7 @@ export function IncidentsPanel({ page, onPage, onDone }: Props) {
                       <td>
                         <span className="ui-code">{item.contractNumber}</span>
                         <span className="ui-sub">
-                          Hồ sơ #{item.loanApplicationId}<LoanProofsLink loanApplicationId={item.loanApplicationId} separated />
+                          <ApplicationRef id={item.loanApplicationId} applicationNumber={numbers.get(item.loanApplicationId)} /><LoanProofsLink loanApplicationId={item.loanApplicationId} separated />
                         </span>
                       </td>
                       <td className="num">{money(item.amount)}</td>
@@ -264,7 +274,7 @@ export function IncidentsPanel({ page, onPage, onDone }: Props) {
                         <DisbursementStatus item={item} />
                         {item.nextAttemptAt && <span className="ui-sub">Lượt sau {formatDateTime(item.nextAttemptAt)}</span>}
                       </td>
-                      <td className="act">
+                      <td className={SVC_ACT_CELL}>
                         {item.status === 'RECONCILIATION_REQUIRED' && canFix && (
                           <button
                             type="button"
@@ -289,9 +299,9 @@ export function IncidentsPanel({ page, onPage, onDone }: Props) {
 
       {showReconciliation && (
         <>
-          <div className="svc-subhead">
+          <div className={SVC_SUBHEAD}>
             <h2>Đã giải ngân, hệ thống lõi chưa ghi khoản vay</h2>
-            {sagas.data && sagas.data.totalElements > 0 && <span>Cần kiểm tra Fineract theo số hợp đồng</span>}
+            {sagas.data && sagas.data.totalElements > 0 && <span>Cần kiểm tra hệ thống lõi theo số hợp đồng</span>}
           </div>
           <QueueBody
             error={sagas.error}
@@ -314,7 +324,7 @@ export function IncidentsPanel({ page, onPage, onDone }: Props) {
                     <th>Lỗi gần nhất</th>
                     <th className="num">Lần ghi lõi</th>
                     <th>Cập nhật</th>
-                    <th className="act"><span className="ui-sr-only">Thao tác</span></th>
+                    <th className={SVC_ACT_HEAD}><span className="ui-sr-only">Thao tác</span></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -323,18 +333,18 @@ export function IncidentsPanel({ page, onPage, onDone }: Props) {
                       <td>
                         <span className="ui-code">{item.contractNumber}</span>
                         <span className="ui-sub">
-                          Hồ sơ #{item.loanApplicationId}<LoanProofsLink loanApplicationId={item.loanApplicationId} separated />
+                          <ApplicationRef id={item.loanApplicationId} applicationNumber={item.applicationNumber} /><LoanProofsLink loanApplicationId={item.loanApplicationId} separated />
                         </span>
                       </td>
                       <td className="num">{money(item.amount)}</td>
-                      <td>{item.paymentReference ? <span className="ui-mono">{item.paymentReference}</span> : <span className="svc-muted">Không có</span>}</td>
+                      <td>{item.paymentReference ? <span className="ui-mono">{item.paymentReference}</span> : <span className="svc-muted text-muted">Không có</span>}</td>
                       <ErrorCell code={item.lastErrorCode} detail={item.lastErrorDetail} />
                       <td className="num">
                         {item.attemptsSinceRepair}
                         {item.repairCount > 0 && <span className="ui-sub">Đã sửa {item.repairCount} lần</span>}
                       </td>
                       <td>{formatDateTime(item.updatedAt)}</td>
-                      <td className="act">
+                      <td className={SVC_ACT_CELL}>
                         {canFix && (
                           <button
                             type="button"
@@ -353,69 +363,7 @@ export function IncidentsPanel({ page, onPage, onDone }: Props) {
             </div>
           </QueueBody>
 
-          <div className="svc-subhead">
-            <h2>Lệnh góp vốn chưa khớp với ví</h2>
-            {orders.data && orders.data.totalElements > 0 && <span>Tiền giữ của nhà đầu tư chưa xử lý xong</span>}
-          </div>
-          <QueueBody
-            error={orders.error}
-            isLoading={orders.isLoading}
-            isFetching={orders.isFetching}
-            onRetry={orders.refetch}
-            total={orders.data?.totalElements ?? 0}
-            emptyText="Không có lệnh góp vốn cần xử lý."
-            page={orderPage}
-            unit="lệnh"
-            onPage={setOrderPage}
-          >
-            <div className="ui-table-wrap">
-              <table className="ui-table list svc-table">
-                <thead>
-                  <tr>
-                    <th>Lệnh góp vốn</th>
-                    <th>Nhà đầu tư</th>
-                    <th className="num">Số tiền</th>
-                    <th>Lỗi gần nhất</th>
-                    <th className="num">Lần thử</th>
-                    <th>Tình trạng</th>
-                    <th className="act"><span className="ui-sr-only">Thao tác</span></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {(orders.data?.content ?? []).map((item) => (
-                    <tr key={item.orderReference}>
-                      <td>
-                        <span className="ui-mono">{item.orderReference}</span>
-                        <span className="ui-sub">Khoản vay trên sàn #{item.listingId}</span>
-                      </td>
-                      <td><span className="ui-mono">{item.investorId}</span></td>
-                      <td className="num">{money(item.amount)}</td>
-                      <ErrorCell code={item.releaseErrorCode ?? item.rejectedReasonCode} detail={null} />
-                      <td className="num">{item.issue === 'HOLD_PENDING' ? item.pendingAttemptCount : item.releaseAttemptCount}</td>
-                      <td>
-                        <OrderIncidentIssue item={item} />
-                        {(item.releaseNextAttemptAt ?? item.pendingNextAttemptAt) && item.issue !== 'RELEASE_BLOCKED' && (
-                          <span className="ui-sub">Lượt sau {formatDateTime(item.releaseNextAttemptAt ?? item.pendingNextAttemptAt)}</span>
-                        )}
-                      </td>
-                      <td className="act">
-                        {canFix && (
-                          <button
-                            type="button"
-                            className="ui-btn soft"
-                            disabled={running != null}
-                            onClick={() => retryOrderIncident(item)}
-                          >
-                            {running === item.orderReference ? 'Đang gửi...' : 'Thử lại'}
-                          </button>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </QueueBody>
+          <OrderIncidentsSection running={running} canFix={canFix} onRetry={retryOrderIncident} />
         </>
       )}
 

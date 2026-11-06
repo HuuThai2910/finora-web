@@ -1,13 +1,16 @@
 import { useCallback, useState } from 'react';
-import { Link, useParams, useSearchParams } from 'react-router-dom';
+import { Link, useLocation, useParams, useSearchParams } from 'react-router-dom';
 import { ErrorNotice } from '@/components/ErrorNotice';
 import { StatusPill } from '@/components/StatusPill';
-import { Toast } from '@/components/Toast';
+import { toast } from '@/lib/toast';
 import { usePermission } from '@/features/auth';
+import { useActorNames } from '@/features/loan';
+import { useBackToList } from '@/lib/navigation';
 import {
   useGetFundingProgressQuery,
   useGetMarketListingQuery,
 } from '../api/investmentApi';
+import { CloseExpiredDialog } from '../components/CloseExpiredDialog';
 import { FundingFlow } from '../components/detail/FundingFlow';
 import { FundingTimelineCard } from '../components/detail/FundingTimelineCard';
 import { InvestorTable } from '../components/detail/InvestorTable';
@@ -15,13 +18,10 @@ import { NoteTable } from '../components/detail/NoteTable';
 import { ProgressMeter } from '../components/detail/ProgressMeter';
 import { TermsCard } from '../components/detail/TermsCard';
 import { useFundingActions } from '../hooks/useFundingActions';
-import { useInvestorNames } from '../hooks/useInvestorNames';
 import { useListingStage } from '../hooks/useListingStage';
 import { stepStatus } from '../mappers/listingDisplay';
 import { STAGE_INDEX } from '../stage';
-// Ô nhập và dòng lỗi (`fu-input`, `fu-err`) dùng chung với trang danh sách.
-import './FundingPage.css';
-import './FundingDetailPage.css';
+import { HEAD_ACTIONS } from '../styles';
 
 type DetailTab = 'overview' | 'investors' | 'notes';
 
@@ -39,26 +39,32 @@ export default function FundingDetailPage() {
   const listingId = Number(params.listingId);
   const validId = Number.isInteger(listingId) && listingId > 0;
   const [searchParams, setSearchParams] = useSearchParams();
-  const [toast, setToast] = useState<string | null>(null);
+  const location = useLocation();
+  // Về đúng danh sách đã mở trang này (tab, bộ lọc, trang); mở thẳng bằng đường dẫn thì về danh sách trơn.
+  const backUrl = useBackToList(LIST_PATH);
+  // Kết quả thao tác báo bằng toast dùng chung (`@/lib/toast`).
+  const setToast = useCallback((message: string | null) => { if (message) toast.success(message); }, []);
+  const [closeOpen, setCloseOpen] = useState(false);
 
   const listingQuery = useGetMarketListingQuery(listingId, { skip: !validId });
   const listing = listingQuery.data;
   const progress = useGetFundingProgressQuery(listingId, { skip: !validId || !listing || listing.status === 'DRAFT' });
   const { stage, investors, investorsLoaded, investorsLoading, investorsError, refetchInvestors, probeNotes } =
     useListingStage(listing);
-  const { names, isLoading: namesLoading } = useInvestorNames(investors.map((item) => item.investorId));
-  const nameOf = useCallback((investorId: string) => names[investorId] ?? 'Không tra được tên', [names]);
+  // Tra tên theo đúng mã nhà đầu tư của khoản này (họ tên, không có thì email, chưa tra được thì mã số).
+  const { names, displayName } = useActorNames(investors.map((item) => item.investorId));
+  // Tham chiếu chỉ đổi khi có tên mới (`displayName` chỉ đọc `names`): biểu đồ vốn góp dựng lại option, kèm hoạt
+  // ảnh, mỗi khi hàm này đổi.
+  const nameOf = useCallback((investorId: string) => displayName(investorId), [names]);
   const actions = useFundingActions(listing, setToast);
   const { canAct: canActOn, canView } = usePermission();
   const canAct = canActOn('funding');
-  // Tham chiếu ổn định: Toast đặt lại hẹn giờ mỗi khi `onDismiss` đổi.
-  const dismissToast = useCallback(() => setToast(null), []);
 
   if (!validId) {
     return (
       <section className="ui-page">
         <div className="ui-card ui-empty">
-          Mã khoản gọi vốn không hợp lệ. <Link className="ui-link" to={LIST_PATH}>Về danh sách gọi vốn</Link>
+          Mã khoản gọi vốn không hợp lệ. <Link className="ui-link" to={backUrl}>Về danh sách gọi vốn</Link>
         </div>
       </section>
     );
@@ -68,7 +74,7 @@ export default function FundingDetailPage() {
     return (
       <section className="ui-page">
         <ErrorNotice error={listingQuery.error} onRetry={listingQuery.refetch} />
-        <Link className="ui-link" to={LIST_PATH}>Về danh sách gọi vốn</Link>
+        <Link className="ui-link" to={backUrl}>Về danh sách gọi vốn</Link>
       </section>
     );
   }
@@ -76,17 +82,20 @@ export default function FundingDetailPage() {
   if (!listing || !stage) {
     return (
       <section className="ui-page" aria-busy="true">
-        <div className="fd-head-skel"><span className="ui-skeleton fd-skel-title" /><span className="ui-skeleton fd-skel-meta" /></div>
+        <div className="fd-head-skel grid gap-2">
+          <span className="ui-skeleton fd-skel-title w-80 max-w-full h-5.5" />
+          <span className="ui-skeleton fd-skel-meta w-55 max-w-full" />
+        </div>
         <div className="ui-card ui-empty">Đang tải khoản gọi vốn...</div>
       </section>
     );
   }
 
   const notesIssued = stage.steps[STAGE_INDEX.NOTES_ISSUED] === 'done';
-  const live = investors.filter((item) => item.status !== 'CANCELLED');
   const finalized = investors.filter((item) => item.status === 'FINALIZED');
   const tabs: Array<{ id: DetailTab; label: string; count?: number }> = [{ id: 'overview', label: 'Tổng quan' }];
-  if (listing.status !== 'DRAFT') tabs.push({ id: 'investors', label: 'Nhà đầu tư', count: investorsLoaded ? live.length : undefined });
+  // Số trên tab bằng số dòng của bảng: bảng nhà đầu tư liệt kê cả phần vốn đã hủy (mờ đi) nên đếm cả chúng.
+  if (listing.status !== 'DRAFT') tabs.push({ id: 'investors', label: 'Nhà đầu tư', count: investorsLoaded ? investors.length : undefined });
   if (notesIssued) tabs.push({ id: 'notes', label: 'Note', count: finalized.reduce((sum, item) => sum + item.noteCount, 0) });
   const requestedTab = searchParams.get('tab');
   const tab: DetailTab = tabs.find((item) => item.id === requestedTab)?.id ?? 'overview';
@@ -96,7 +105,7 @@ export default function FundingDetailPage() {
     <section className="ui-page">
       <header className="ui-page-head">
         <div className="ui-title">
-          <div className="fd-title-row">
+          <div className="fd-title-row flex items-center gap-2.5 flex-wrap">
             <h1>{listing.purpose}</h1>
             <StatusPill tone={status.tone}>{status.label}</StatusPill>
           </div>
@@ -105,7 +114,17 @@ export default function FundingDetailPage() {
             {listing.creditScore != null ? `, điểm ${listing.creditScore}` : ''}, {listing.region}
           </p>
         </div>
-        <div className="fu-head-actions">
+        <div className={`fu-head-actions ${HEAD_ACTIONS}`}>
+          {/* Mã hồ sơ công khai (`applicationNumber`) mở đúng trang thẩm định của khoản vay; listing cũ thiếu mã thì ẩn. */}
+          {listing.applicationNumber && canView('loan-application') && (
+            <Link className="ui-btn ghost fd-loan-link" to={`/loans/${encodeURIComponent(listing.applicationNumber)}/review`}>
+              Hồ sơ vay
+            </Link>
+          )}
+          {/* Note chỉ giao dịch trên chợ thứ cấp sau khi phát hành. */}
+          {notesIssued && canView('secondary-market') && (
+            <Link className="ui-btn ghost fd-book-link" to={`/investments/secondary?book=${listing.listingId}`}>Sổ lệnh</Link>
+          )}
           {/* `loanId` của listing là ID hồ sơ vay bên Loan; proof chỉ có từ khi khoản vay đã có hợp đồng (W3D). */}
           {listing.contractNumber && canView('blockchain') && (
             <Link
@@ -115,20 +134,23 @@ export default function FundingDetailPage() {
               Xác minh dữ liệu
             </Link>
           )}
-          <Link className="ui-btn ghost" to={LIST_PATH}>Về danh sách</Link>
+          <Link className="ui-btn ghost" to={backUrl}>Về danh sách</Link>
         </div>
       </header>
 
-      <div className="fd-layout">
-        <div className="fd-main">
-          <div className="ui-line-tabs fd-tabs" role="tablist" aria-label="Nội dung khoản gọi vốn">
+      {/* Trái là thẻ theo tab, phải là tiến trình dọc; dưới 1180px một cột, tiến trình lên đầu. */}
+      <div className="fd-layout grid grid-cols-[minmax(0,1fr)_320px] gap-5 [align-items:start] max-[1180px]:grid-cols-[minmax(0,1fr)]">
+        <div className="fd-main grid gap-4 min-w-0">
+          <div className="ui-line-tabs fd-tabs border-b border-b-line" role="tablist" aria-label="Nội dung khoản gọi vốn">
             {tabs.map((item) => (
               <button
                 key={item.id}
                 type="button"
                 role="tab"
+                className="h-10.5"
                 aria-selected={tab === item.id}
-                onClick={() => setSearchParams(item.id === 'overview' ? {} : { tab: item.id }, { replace: true })}
+                // Giữ `state` để nút "Về danh sách" vẫn nhớ danh sách gốc sau khi đổi tab.
+                onClick={() => setSearchParams(item.id === 'overview' ? {} : { tab: item.id }, { replace: true, state: location.state })}
               >
                 {item.label}
                 {item.count != null && <span className="n">{item.count}</span>}
@@ -157,8 +179,7 @@ export default function FundingDetailPage() {
               isLoading={investorsLoading}
               error={investorsError}
               onRetry={refetchInvestors}
-              names={names}
-              namesLoading={namesLoading}
+              nameOf={nameOf}
             />
           )}
           {tab === 'notes' && <NoteTable commitments={finalized} nameOf={nameOf} />}
@@ -174,15 +195,16 @@ export default function FundingDetailPage() {
           probeNotes={probeNotes}
           busy={actions.busy}
           canAct={canAct}
+          canViewProofs={canView('blockchain')}
           errorOf={actions.errorOf}
           onFinalize={() => void actions.finalize()}
           onActivate={() => void actions.activate()}
-          onCloseExpired={() => void actions.closeExpired()}
+          onCloseExpired={() => setCloseOpen(true)}
         />
       </div>
 
       {listingQuery.isFetching && <span className="ui-sr-only" role="status">Đang cập nhật khoản gọi vốn</span>}
-      {toast && <Toast message={toast} onDismiss={dismissToast} />}
+      {closeOpen && <CloseExpiredDialog onClose={() => setCloseOpen(false)} onDone={setToast} />}
     </section>
   );
 }

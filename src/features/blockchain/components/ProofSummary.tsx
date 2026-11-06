@@ -1,7 +1,9 @@
 import { Icon } from '@/components/Icon';
 import { StatusPill, type PillTone } from '@/components/StatusPill';
 import { formatDateTime } from '@/utils';
+import { MOCK_LEDGER_NOTICE } from '../constants';
 import { aggregateLabel, proofTypeLabel } from '../mappers/proofDisplay';
+import { BC_ICON } from '../styles';
 import type { Proof } from '../types';
 
 interface SummaryCopy {
@@ -30,8 +32,9 @@ function summaryCopy(proof: Proof): SummaryCopy {
   }
   if (proof.provider === 'MOCK') {
     return {
-      title: 'Đã ghi nhận trong môi trường demo',
-      description: 'Dấu vân tay dữ liệu đã được tạo để thử luồng, nhưng chưa được ghi lên Hyperledger Fabric.',
+      // Câu cảnh báo duy nhất của bằng chứng MOCK (thay câu tiếng Anh backend gắn vào biên nhận).
+      title: 'Đã ghi nhận trong môi trường chạy thử',
+      description: MOCK_LEDGER_NOTICE,
       label: 'Bản demo', tone: 'warning', className: 'warning',
     };
   }
@@ -64,15 +67,32 @@ export function ProofSummary({ proof }: { proof: Proof }) {
   const recordedAt = proof.receipt?.confirmedAt ?? proof.createdAt;
 
   return (
-    <section className={`bc-summary ${summary.className}`} aria-labelledby="bc-summary-title">
-      <div className="bc-summary-icon"><Icon name="shieldCheck" /></div>
-      <div className="bc-summary-copy">
-        <div className="bc-summary-title-row">
-          <h3 id="bc-summary-title">{summary.title}</h3>
+    <section
+      className={
+        `bc-summary ${summary.className} grid grid-cols-[auto_minmax(0,1fr)] gap-3 rounded-lg border border-line bg-surface-muted p-3.5 `
+        + 'max-[520px]:grid-cols-[1fr] [&.danger]:border-[#edc3c9] [&.danger]:bg-[#fff6f7] [&.info]:border-[#bfd6f8] '
+        + '[&.info]:bg-[#f4f8ff] [&.success]:border-[#b9e4d0] [&.success]:bg-[#f2fbf7] [&.warning]:border-[#ead9aa] '
+        + '[&.warning]:bg-[#fffaf0]'
+      }
+      aria-labelledby="bc-summary-title"
+    >
+      <div
+        className={`bc-summary-icon ${BC_ICON} in-[.bc-summary.danger]:text-danger in-[.bc-summary.warning]:text-warning`}
+      >
+        <Icon name="shieldCheck" />
+      </div>
+      <div className="bc-summary-copy min-w-0">
+        <div className="bc-summary-title-row flex flex-wrap items-center justify-between gap-2">
+          <h3 id="bc-summary-title" className="text-[15px] font-bold">{summary.title}</h3>
           <StatusPill tone={summary.tone}>{summary.label}</StatusPill>
         </div>
-        <p>{summary.description}</p>
-        <dl className="bc-summary-facts">
+        <p className="mt-1 text-[13px] leading-normal text-secondary">{summary.description}</p>
+        <dl
+          className={
+            'bc-summary-facts mt-3 grid grid-cols-3 gap-2 max-[760px]:grid-cols-[1fr] [&_div]:min-w-0 [&_dt]:text-[11px] '
+            + '[&_dt]:text-muted [&_dd]:mt-0.5 [&_dd]:text-[12px] [&_dd]:font-semibold [&_dd]:text-primary [&_dd]:wrap-anywhere'
+          }
+        >
           <div><dt>Nghiệp vụ</dt><dd>{proofTypeLabel(proof.proofType)}</dd></div>
           <div><dt>{aggregateLabel(proof.aggregateType)}</dt><dd>{proof.aggregateId}</dd></div>
           <div><dt>Ghi nhận lúc</dt><dd>{formatDateTime(recordedAt)}</dd></div>

@@ -6,6 +6,8 @@ import {
   useRetryScoringMutation,
 } from '../api/loanReviewApi';
 import type { AdminLoanReviewDetail } from '../types';
+import { toUiApiError } from '@/lib/api/errors';
+import { toast } from '@/lib/toast';
 
 /** Khóa idempotency gắn với version hồ sơ lúc tạo khóa. */
 interface IntentKey {
@@ -30,7 +32,8 @@ function keyFor(ref: { current: IntentKey | null }, prefix: string, version: num
  * - Idempotency: mỗi ý định (duyệt, từ chối, chấm lại) giữ một khóa riêng. Bấm lại sau khi lỗi mạng
  *   dùng lại đúng khóa để backend trả kết quả cũ thay vì tạo hợp đồng thứ hai; thành công, hoặc dữ
  *   liệu đã tải lại sang version khác, thì sinh khóa mới. Tách khóa theo ý định để đổi từ duyệt sang
- *   từ chối không gửi cùng khóa với nội dung khác.
+ *   từ chối không gửi cùng khóa với nội dung khác. Backend băm cả nội dung (kể cả ghi chú): sửa ghi chú
+ *   sau một lần gửi đã được ghi nhận thì nhận 409, khay mời tải lại hồ sơ để thấy kết quả đã lưu.
  * - Version: gửi đúng `version` của hồ sơ mà backend vừa trả, kể cả khi chấm lại (Loan kiểm version hồ sơ
  *   ở `LoanApplication.reopenScoring`, không phải version của lần chấm); frontend không tự tăng. Mutation
  *   thành công invalidate cache chi tiết và danh sách (xem loanReviewApi).
@@ -42,30 +45,42 @@ export function useReviewDecision(application: AdminLoanReviewDetail | undefined
   const [approve, approveState] = useApproveApplicationMutation();
   const [reject, rejectState] = useRejectApplicationMutation();
   const [retryScoring, retryState] = useRetryScoringMutation();
-  const [notice, setNotice] = useState('');
   const [decisionError, setDecisionError] = useState<unknown>(null);
   const [retryError, setRetryError] = useState<unknown>(null);
   const approveKey = useRef<IntentKey | null>(null);
   const rejectKey = useRef<IntentKey | null>(null);
   const retryKey = useRef<IntentKey | null>(null);
 
-  async function handleApprove() {
+  /**
+   * 409 (người khác vừa xử lý hồ sơ) giữ trong khay kèm nút tải lại vì cần người dùng làm tiếp; lỗi khác chỉ là kết
+   * quả thao tác nên báo bằng toast, form vẫn mở để gửi lại.
+   */
+  function reportDecisionError(error: unknown) {
+    if (toUiApiError(error).status === 409) setDecisionError(error);
+    else toast.error(error);
+  }
+
+  /** Trả về true khi duyệt thành công để khay đóng form xác nhận. */
+  async function handleApprove(reasonDetail?: string): Promise<boolean> {
     const assessmentId = application?.assessment?.assessmentId;
-    if (!application || assessmentId == null) return;
+    if (!application || assessmentId == null) return false;
     setDecisionError(null);
     try {
       const result = await approve({
         applicationNumber: application.applicationNumber,
         applicationVersion: application.version,
         assessmentId,
+        decisionReasonDetail: reasonDetail,
         idempotencyKey: keyFor(approveKey, 'admin-approve', application.version),
       }).unwrap();
-      setNotice(result.contractNumber
+      toast.success(result.contractNumber
         ? `Đã duyệt hồ sơ và tạo hợp đồng ${result.contractNumber}.`
         : 'Đã duyệt hồ sơ. Điều khoản bất lợi hơn lúc nộp nên hệ thống đang chờ người vay xác nhận trước khi tạo hợp đồng.');
       approveKey.current = null;
+      return true;
     } catch (error) {
-      setDecisionError(error);
+      reportDecisionError(error);
+      return false;
     }
   }
 
@@ -81,11 +96,11 @@ export function useReviewDecision(application: AdminLoanReviewDetail | undefined
         reasonDetail,
         idempotencyKey: keyFor(rejectKey, 'admin-reject', application.version),
       }).unwrap();
-      setNotice('Đã từ chối hồ sơ.');
+      toast.success('Đã từ chối hồ sơ.');
       rejectKey.current = null;
       return true;
     } catch (error) {
-      setDecisionError(error);
+      reportDecisionError(error);
       return false;
     }
   }
@@ -100,16 +115,14 @@ export function useReviewDecision(application: AdminLoanReviewDetail | undefined
         version: application.version,
         idempotencyKey: keyFor(retryKey, 'scoring-retry', application.version),
       }).unwrap();
-      setNotice(accepted.message || 'Đã gửi yêu cầu chấm lại. Kết quả sẽ cập nhật khi hệ thống chấm xong.');
+      toast.success(accepted.message || 'Đã gửi yêu cầu chấm lại. Kết quả sẽ cập nhật khi hệ thống chấm xong.');
       retryKey.current = null;
     } catch (error) {
-      setRetryError(error);
+      toast.error(error);
     }
   }
 
   return {
-    notice,
-    dismissNotice: () => setNotice(''),
     clearDecisionError: () => setDecisionError(null),
     decisionError,
     retryError,

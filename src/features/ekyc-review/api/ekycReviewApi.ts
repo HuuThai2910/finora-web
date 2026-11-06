@@ -23,6 +23,12 @@ export const ekycReviewApi = {
     return apiFetch<PageResponse<EkycAttemptSummary>>(`${BASE}?${params.toString()}`, { signal });
   },
 
+  /** Mọi lượt xác minh của một khách, mới nhất trước (trang chi tiết khách hàng). */
+  listAttemptsOfUser: (userProfileId: number, signal?: AbortSignal): Promise<PageResponse<EkycAttemptSummary>> => {
+    const params = new URLSearchParams({ userProfileId: String(userProfileId), page: '0', size: '20' });
+    return apiFetch<PageResponse<EkycAttemptSummary>>(`${BASE}?${params.toString()}`, { signal });
+  },
+
   getAttempt: (attemptId: string, signal?: AbortSignal): Promise<EkycAttemptDetail> =>
     apiFetch<EkycAttemptDetail>(attemptPath(attemptId), { signal }),
 

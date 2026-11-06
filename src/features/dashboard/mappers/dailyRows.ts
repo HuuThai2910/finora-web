@@ -26,20 +26,20 @@ export interface DailyColumn {
   format: (value: number) => string;
 }
 
-/** Tiền rút gọn như mockup ("553 tr", "255 nghìn", "31,3 tỷ"); 0 ghi "0". */
+/**
+ * Tiền rút gọn như mockup ("553 tr", "255 nghìn", "31,3 tỷ"); 0 ghi "0". Dư nợ cũng dùng cách này: ghi theo tỷ cố định
+ * thì dư nợ nhỏ thành "0,05 tỷ", "0,00 tỷ" (đọc như bằng 0).
+ */
 const shortMoney = (value: number) => (value === 0 ? '0' : moneyShort(value));
 
 const TWO_DECIMALS = new Intl.NumberFormat('vi-VN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-
-/** Dư nợ theo tỷ, đủ 2 chữ số để cột thẳng hàng như mockup ("11,24 tỷ"). */
-const billions = (value: number) => `${TWO_DECIMALS.format(value / 1e9)} tỷ`;
 
 /**
  * Các cột theo thứ tự mockup. Dư nợ và nợ xấu là số cuối ngày backend tính lại từ lịch sử Fineract
  * (với cột tuần là số cuối tuần); các cột còn lại cộng trong ngày hoặc trong tuần.
  */
 export const DAILY_COLUMNS: DailyColumn[] = [
-  { key: 'outstanding', header: 'Dư nợ cuối ngày', weeklyHeader: 'Dư nợ cuối tuần', kpi: 'outstanding', format: billions },
+  { key: 'outstanding', header: 'Dư nợ cuối ngày', weeklyHeader: 'Dư nợ cuối tuần', kpi: 'outstanding', format: shortMoney },
   { key: 'committed', header: 'Vốn gọi được', kpi: 'committed', format: shortMoney },
   { key: 'disbursed', header: 'Giải ngân', format: shortMoney },
   { key: 'submitted', header: 'Hồ sơ nộp', format: formatNumber },

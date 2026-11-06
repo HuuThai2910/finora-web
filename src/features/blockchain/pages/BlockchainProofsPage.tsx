@@ -1,10 +1,10 @@
-import { useCallback, useState } from 'react';
+import { useCallback } from 'react';
 import { useDispatch } from 'react-redux';
 import type { AppDispatch } from '@/app/store';
 import { ErrorNotice } from '@/components/ErrorNotice';
 import { Icon } from '@/components/Icon';
 import { Pager } from '@/components/Pager';
-import { Toast } from '@/components/Toast';
+import { toast } from '@/lib/toast';
 import { usePermission } from '@/features/auth';
 import { blockchainApi } from '@/lib/api/blockchainApi';
 import { useSearchProofsQuery } from '../api/proofApi';
@@ -16,37 +16,44 @@ import { PROOF_LEGAL_NOTE, PROOF_PAGE_SIZE } from '../constants';
 import { useProofFilters, type ProofFilters } from '../hooks/useProofFilters';
 import { useProofRetry } from '../hooks/useProofRetry';
 import { referenceNoun, statusInfo } from '../mappers/proofDisplay';
+import { BC_DETAILS, BC_DETAILS_SUMMARY } from '../styles';
 import type { Proof } from '../types';
-import './BlockchainProofsPage.css';
 
 /** Câu báo khi danh sách rỗng, theo đúng bộ lọc đang áp dụng. */
 function emptyText(filters: ProofFilters): string {
   if (filters.reference) {
-    return `Chưa có proof nào cho ${referenceNoun(filters.reference.type)} ${filters.reference.id}. `
-      + 'Proof chỉ được tạo sau khi mốc nghiệp vụ hoàn tất (hợp đồng đủ chữ ký, giải ngân, trả nợ, Note, giấy xác nhận chuyển nhượng).';
+    return `Chưa có bằng chứng nào cho ${referenceNoun(filters.reference.type)} ${filters.reference.id}. `
+      + 'Bằng chứng chỉ được tạo sau khi mốc nghiệp vụ hoàn tất (hợp đồng đủ chữ ký, giải ngân, trả nợ, Note, giấy xác nhận chuyển nhượng).';
   }
-  if (filters.status) return `Không có proof nào ở trạng thái "${statusInfo(filters.status).label}".`;
-  return 'Chưa có proof nào.';
+  if (filters.status) return `Không có bằng chứng nào ở trạng thái "${statusInfo(filters.status).label}".`;
+  return 'Chưa có bằng chứng nào.';
 }
 
-/** Giải thích mục đích bằng ngôn ngữ nghiệp vụ; người dùng không cần hiểu event, hash hay Kafka để dùng trang. */
+/**
+ * Giải thích mục đích bằng ngôn ngữ nghiệp vụ (người dùng không cần hiểu event, hash hay Kafka) và giới hạn pháp lý của
+ * bằng chứng, gộp vào một mục gập nền phẳng: người dùng quen trang không phải cuộn qua mỗi lần mở.
+ */
 function ProofExplainer() {
   return (
-    <section className="bc-explainer" aria-labelledby="bc-explainer-title">
-      <div className="bc-explainer-icon"><Icon name="shieldCheck" /></div>
-      <div>
-        <h2 id="bc-explainer-title">Trang này giúp kiểm tra điều gì?</h2>
+    <details className={`bc-explainer ${BC_DETAILS}`}>
+      <summary className={`${BC_DETAILS_SUMMARY} flex w-full items-center gap-2 [&_svg]:size-4 [&_svg]:text-brand`}>
+        <Icon name="shieldCheck" />
+        Trang này kiểm tra gì?
+      </summary>
+      <div className="bc-explainer-body grid gap-2 px-3 pt-2.5 pb-3 text-[13px] leading-[1.55] text-secondary">
         <p>
           Mỗi khi hợp đồng, giải ngân, trả nợ hoặc quyền sở hữu khoản đầu tư thay đổi, FINORA tạo một dấu vân tay dữ liệu.
           Bạn chỉ cần chọn giao dịch và bấm <strong>Kiểm tra lại</strong>; hệ thống tự thực hiện phần kỹ thuật.
         </p>
-        <ul>
+        <ul className="ml-4.5 grid list-disc gap-0.75 text-[12px]">
           <li><strong>Đã xác minh:</strong> dữ liệu hiện tại vẫn khớp với bằng chứng đã ghi.</li>
           <li><strong>Bản demo:</strong> luồng chạy thử thành công nhưng chưa ghi lên mạng Fabric thật.</li>
           <li><strong>Cần xử lý:</strong> bằng chứng chưa gửi được hoặc kết quả đối chiếu không khớp.</li>
         </ul>
+        {/* Giới hạn của bằng chứng (W3D mục 12): nằm cùng phần giải thích để không trình bày quá giá trị thật. */}
+        <p className="bc-note" role="note">{PROOF_LEGAL_NOTE}</p>
       </div>
-    </section>
+    </details>
   );
 }
 
@@ -61,9 +68,8 @@ function ProofExplainer() {
 export default function BlockchainProofsPage() {
   const dispatch = useDispatch<AppDispatch>();
   const { filters, search, clearSearch, setStatus, setPage, openProof, closeProof } = useProofFilters();
-  const [toast, setToast] = useState('');
-  // Tham chiếu ổn định: Toast đặt lại giờ ẩn mỗi khi `onDismiss` đổi.
-  const dismissToast = useCallback(() => setToast(''), []);
+  // Kết quả thao tác báo bằng toast dùng chung (`@/lib/toast`).
+  const setToast = useCallback((message: string | null) => { if (message) toast.success(message); }, []);
   const { retry, runningId, failure } = useProofRetry(setToast);
   // Đưa proof dừng gửi về hàng đợi cần quyền Thao tác "Bằng chứng blockchain"; chỉ có quyền Xem thì chỉ tra cứu.
   const onRetry = usePermission().canAct('blockchain') ? (proof: Proof) => void retry(proof) : undefined;
@@ -96,10 +102,9 @@ export default function BlockchainProofsPage() {
       </header>
 
       <ProofExplainer />
-      <p className="bc-note" role="note">{PROOF_LEGAL_NOTE}</p>
 
-      <section className="ui-card bc-list" aria-label="Danh sách bằng chứng">
-        <div className="bc-list-bar">
+      <section className="ui-card bc-list px-3.5 pt-3.5 pb-3" aria-label="Danh sách bằng chứng">
+        <div className="bc-list-bar mb-3 flex flex-wrap items-start justify-between gap-3">
           <ProofStatusTabs
             active={filters.reference ? undefined : filters.status}
             deadLetterCount={deadLetters.data?.totalElements}
@@ -114,15 +119,11 @@ export default function BlockchainProofsPage() {
         </div>
 
         {filters.reference && (
-          <p className="bc-scope">
+          <p className="bc-scope mx-0.5 mb-3 text-[13px] text-secondary">
             Đang tra theo {referenceNoun(filters.reference.type)}{' '}
             <span className="ui-mono">{filters.reference.id}</span>: gồm mọi trạng thái, cũ nhất trước. Chọn một trạng
             thái ở trên sẽ bỏ tra cứu.
           </p>
-        )}
-        {/* Lỗi đưa lại hàng đợi của proof đang mở đã hiện trong ngăn chi tiết; ở đây chỉ hiện lỗi bấm từ menu dòng. */}
-        {failure && failure.proofId !== filters.proofId && (
-          <div className="bc-gap"><ErrorNotice error={failure.error} /></div>
         )}
 
         {list.error ? (
@@ -144,7 +145,7 @@ export default function BlockchainProofsPage() {
               page={filters.page}
               size={PROOF_PAGE_SIZE}
               total={list.data?.totalElements ?? 0}
-              unit="proof"
+              unit="bằng chứng"
               disabled={list.isFetching}
               onPage={setPage}
             />
@@ -162,7 +163,6 @@ export default function BlockchainProofsPage() {
           onClose={closeProof}
         />
       )}
-      {toast && <Toast message={toast} onDismiss={dismissToast} />}
     </section>
   );
 }

@@ -14,6 +14,8 @@ const loanReviewApi = loanApi.injectEndpoints({
   endpoints: (builder) => ({
     getAdminApplications: builder.query<AdminLoanReviewPage, {
       status?: LoanApplicationStatus;
+      /** ID hồ sơ người dùng ở finora-user: trang khách hàng và mục "Hồ sơ khác của cùng người vay". */
+      borrowerId?: string;
       page?: number;
       size?: number;
     }>({
@@ -26,6 +28,11 @@ const loanReviewApi = loanApi.injectEndpoints({
         })) ?? []),
       ],
     }),
+    /** Mã hồ sơ `LA-…` theo ID số, cho các bảng chỉ có ID (đối soát của Payment). Tối đa 100 ID một lần. */
+    getApplicationNumbers: builder.query<{ id: number; applicationNumber: string }[], number[]>({
+      query: (ids) => ({ url: '/admin/loan-applications/numbers', params: { ids: ids.join(',') } }),
+      keepUnusedDataFor: 600,
+    }),
     getReviewDetail: builder.query<AdminLoanReviewDetail, string>({
       query: (applicationNumber) => `/admin/loan-applications/${applicationNumber}/review`,
       providesTags: (_result, _error, applicationNumber) => [
@@ -36,7 +43,7 @@ const loanReviewApi = loanApi.injectEndpoints({
      * Giải thích của lần chấm điểm đã dùng để quyết định hồ sơ.
      *
      * Tách khỏi `getReviewDetail` vì payload lớn (SHAP từng đặc trưng + vết mọi
-     * luật) mà chỉ cần khi admin mở phần phân tích, không phải mỗi lần mở hồ sơ.
+     * luật): chỉ tải khi mở phần phân tích, hoặc ngay khi hồ sơ đang chờ thẩm định cần điểm CIC.
      */
     getAssessmentExplanation: builder.query<AdminAssessmentExplanation, string>({
       query: (applicationNumber) => `/admin/loan-applications/${applicationNumber}/explanation`,
@@ -80,6 +87,8 @@ const loanReviewApi = loanApi.injectEndpoints({
       applicationNumber: string;
       applicationVersion: number;
       assessmentId: number;
+      /** Ghi chú của người duyệt (tối đa 1000 ký tự), lưu vào lịch sử quyết định. */
+      decisionReasonDetail?: string;
       contractExpiresAt?: string;
       idempotencyKey: string;
     }>({
@@ -118,9 +127,12 @@ const loanReviewApi = loanApi.injectEndpoints({
 
 export const {
   useGetAdminApplicationsQuery,
+  useGetApplicationNumbersQuery,
   useGetReviewDetailQuery,
+  // Tra hồ sơ theo mã từ trang khác (vd. Xác minh giao dịch đổi mã LA-… ra ID số), chỉ gọi khi người dùng bấm tra.
+  useLazyGetReviewDetailQuery,
   useGetAssessmentsQuery,
-  // Lazy: chỉ tải khi admin mở phần phân tích, không phải mỗi lần mở hồ sơ.
+  // Lazy: tải khi mở phần phân tích hoặc khi hồ sơ chờ thẩm định đã chấm (xem useAssessmentExplanation).
   useLazyGetAssessmentExplanationQuery,
   useLazyGetAssessmentDetailQuery,
   useRetryScoringMutation,

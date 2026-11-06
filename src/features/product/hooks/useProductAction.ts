@@ -40,12 +40,12 @@ export function useProductAction() {
       if (result.commandStatus === 'FAILED') {
         setError({
           code: result.errorCode ?? 'CORE_SYNC_FAILED',
-          message: 'Đồng bộ sang Fineract không thành công. Kiểm tra cấu hình rồi đồng bộ lại.',
+          message: 'Đồng bộ sang hệ thống lõi không thành công. Kiểm tra cấu hình rồi đồng bộ lại.',
         });
         return null;
       }
       return result.commandStatus === 'SUCCEEDED'
-        ? 'Đã đồng bộ sang Fineract.'
+        ? 'Đã đồng bộ sang hệ thống lõi.'
         : 'Đã gửi lệnh đồng bộ, hệ thống đang xử lý.';
     } catch (requestError) {
       setError(toUiApiError(requestError));

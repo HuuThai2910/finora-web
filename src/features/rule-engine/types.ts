@@ -42,6 +42,8 @@ export interface AiPolicyConfigUpdate {
   grades: PolicyGrade[];
   approval_thresholds: ApprovalThresholds;
   model_weights?: ModelWeights;
+  /** Khóa chống ghi đè: phiên bản đã đọc; người khác vừa lưu thì finora-ai trả 409. */
+  expected_version?: string;
 }
 
 /* ── Bộ luật chấm điểm (finora-ai /api/v1/ai/config/rules) ───────────────── */
@@ -98,4 +100,6 @@ export interface AiRulesResponse {
 /** PUT thay TOÀN BỘ danh sách luật, theo đúng thứ tự gửi lên. */
 export interface AiRulesUpdate {
   rules: AiRule[];
+  /** Khóa chống ghi đè như `AiPolicyConfigUpdate.expected_version`. */
+  expected_version?: string;
 }

@@ -1,8 +1,10 @@
 import { lazy, useEffect, type ComponentType } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
-import type { AppDispatch } from '@/app/store';
-import { checkAuthSession, clearAuth, LoginPage, ProtectedRoute } from '@/features/auth';
+import { resetApiCaches, type AppDispatch } from '@/app/store';
+import { checkAuthSession, expireSession, LoginPage, ProtectedRoute } from '@/features/auth';
+import { GlobalProgressBar } from '@/components/GlobalProgressBar';
+import { Toaster } from '@/components/Toaster';
 import AdminLayout from '@/layouts/AdminLayout';
 import { PAGE_ACCESS } from '@/layouts/adminNavigation';
 import { AdminHomeRedirect, RequirePageAccess } from '@/layouts/RequirePageAccess';
@@ -29,6 +31,7 @@ const FundingDetailPage = page(() => import('@/features/investment'), 'FundingDe
 const SecondaryMarketPage = page(() => import('@/features/secondary-market'), 'SecondaryMarketPage');
 const ServicingOperationsPage = page(() => import('@/features/servicing'), 'ServicingOperationsPage');
 const BlockchainProofsPage = page(() => import('@/features/blockchain'), 'BlockchainProofsPage');
+const ActivityLogPage = page(() => import('@/features/activity-log'), 'ActivityLogPage');
 
 export default function App() {
   const dispatch = useDispatch<AppDispatch>();
@@ -36,8 +39,11 @@ export default function App() {
   useEffect(() => {
     dispatch(checkAuthSession());
 
+    // Làm mới phiên thất bại: báo hết phiên (màn đăng nhập hiện lời nhắc) và bỏ cache của phiên cũ. ProtectedRoute
+    // chuyển về /login kèm trang đang xem (cả bộ lọc trên URL) để đăng nhập lại thì về đúng chỗ.
     const handleUnauthorized = () => {
-      dispatch(clearAuth());
+      dispatch(expireSession());
+      resetApiCaches();
     };
 
     window.addEventListener('auth:unauthorized', handleUnauthorized);
@@ -83,10 +89,13 @@ export default function App() {
           <Route path="reconciliation" element={<RequirePageAccess access={PAGE_ACCESS.operations}><ServicingOperationsPage /></RequirePageAccess>} />
           <Route path="blockchain" element={<Navigate to="/blockchain/proofs" replace />} />
           <Route path="blockchain/proofs" element={<RequirePageAccess access={PAGE_ACCESS.blockchain}><BlockchainProofsPage /></RequirePageAccess>} />
+          <Route path="system/activity-logs" element={<RequirePageAccess access={PAGE_ACCESS.activityLogs}><ActivityLogPage /></RequirePageAccess>} />
         </Route>
 
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+      <Toaster />
+      <GlobalProgressBar />
     </BrowserRouter>
   );
 }

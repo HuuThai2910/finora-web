@@ -31,13 +31,26 @@ function PurposeIcon({ purpose }: { purpose: string | null }) {
   );
 }
 
+interface ApplicationPurposeCellProps {
+  applicationNumber: string;
+  purposeCode: string | null;
+  /** Tên người vay; chỉ hiện ở màn hẹp (dưới 760px), nơi cột Người vay bị ẩn. */
+  borrower: string;
+}
+
 /** Ô đầu dòng của bảng hồ sơ: icon và nhãn mục đích vay dưới mã hồ sơ (`purposeCode` có sẵn trong DTO danh sách). */
-export function ApplicationPurposeCell({ applicationNumber, purposeCode }: { applicationNumber: string; purposeCode: string | null }) {
+export function ApplicationPurposeCell({ applicationNumber, purposeCode, borrower }: ApplicationPurposeCellProps) {
   return (
     <div className="ui-row-main">
       <span className="ui-dot"><PurposeIcon purpose={purposeCode} /></span>
-      <div className="loan-app-main">
+      <div className="loan-app-main min-w-0">
         <span className="ui-code" title={applicationNumber}>{shortApplicationNumber(applicationNumber)}</span>
+        <span
+          className="ui-sub loan-borrower-sub hidden max-w-45 overflow-hidden text-ellipsis whitespace-nowrap text-secondary max-[760px]:block"
+          title={borrower}
+        >
+          {borrower}
+        </span>
         {purposeCode != null && <span className="ui-sub">{formatBusinessLabel(purposeCode)}</span>}
       </div>
     </div>

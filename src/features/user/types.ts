@@ -22,6 +22,9 @@ export interface UserItem {
   createdAt: string | null;
   /** Trạng thái khóa đọc từ Keycloak — null khi không tra cứu được */
   locked: boolean | null;
+  /** Lý do khóa do nhân viên nhập; null khi không khóa hoặc khóa từ trước khi có lý do. */
+  lockReason?: string | null;
+  lockedAt?: string | null;
   /** Vai trò nhân viên đang gán; chỉ có với tài khoản STAFF. */
   staffRoleCode?: string | null;
   staffRoleName?: string | null;

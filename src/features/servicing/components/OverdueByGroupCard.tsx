@@ -49,7 +49,7 @@ export function OverdueByGroupCard({ summary, isLoading, error, onRetry }: Props
             Dư nợ gốc quá hạn (nhóm 2 đến 5) <b>{money(overduePrincipal)}</b>; nợ xấu (nhóm 3 đến 5)
             {' '}<b>{money(portfolio.nplPrincipalOutstanding)}</b>, bằng <b>{formatPercent(portfolio.nplRatioPercent)}</b> dư nợ gốc.
           </p>
-          <EChart className="ui-chart-plot svc-overdue-plot" option={option} ariaLabel="Biểu đồ cột dư nợ gốc của khoản quá hạn theo nhóm nợ 2 đến 5, số hiện tại" />
+          <EChart className="ui-chart-plot svc-overdue-plot h-55" option={option} ariaLabel="Biểu đồ cột dư nợ gốc của khoản quá hạn theo nhóm nợ 2 đến 5, số hiện tại" />
           <p className="ui-chart-note">Số hiện tại; hệ thống chưa lưu lịch sử nên chưa có diễn biến 6 tháng.</p>
           <StaleProjectionNote count={portfolio.staleProjections} />
           <ChartDataTable

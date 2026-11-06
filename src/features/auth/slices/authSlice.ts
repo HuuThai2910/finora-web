@@ -8,6 +8,7 @@ const initialState: AuthState = {
   isAuthenticated: false,
   isLoading: true, // starts true until initial session check finishes
   error: null,
+  sessionExpired: false,
 };
 
 export const checkAuthSession = createAsyncThunk<CurrentUser | null>(
@@ -63,6 +64,18 @@ export const authSlice = createSlice({
     clearError: (state) => {
       state.error = null;
     },
+    /**
+     * Nhận `auth:unauthorized` (làm mới phiên thất bại). Chỉ báo "hết hạn" khi đang đăng nhập: lần kiểm tra phiên đầu
+     * của người chưa đăng nhập cũng phát sự kiện này nhưng không phải là hết phiên.
+     */
+    expireSession: (state) => {
+      if (state.isAuthenticated) state.sessionExpired = true;
+      state.user = null;
+      state.profile = null;
+      state.isAuthenticated = false;
+      state.error = null;
+      state.isLoading = false;
+    },
   },
   extraReducers: (builder) => {
     // checkAuthSession
@@ -109,6 +122,7 @@ export const authSlice = createSlice({
           roles: [action.payload.role],
         };
         state.error = null;
+        state.sessionExpired = false;
       })
       .addCase(loginUser.rejected, (state, action) => {
         state.isLoading = false;
@@ -124,9 +138,10 @@ export const authSlice = createSlice({
         state.isAuthenticated = false;
         state.isLoading = false;
         state.error = null;
+        state.sessionExpired = false;
       });
   },
 });
 
-export const { clearAuth, clearError } = authSlice.actions;
+export const { clearAuth, clearError, expireSession } = authSlice.actions;
 export default authSlice.reducer;

@@ -5,3 +5,7 @@ export { useActorNames } from './hooks/useActorNames';
 export { APPLICATION_STATUS_LABELS } from './formatters';
 export { applicationStatusTone, formatCompactDateTime, shortApplicationNumber } from './mappers/applicationListDisplay';
 export type { AdminLoanReviewSummary, LoanApplicationStatus } from './types';
+export { useGetAdminApplicationsQuery, useGetApplicationNumbersQuery, useLazyGetReviewDetailQuery } from './api/loanReviewApi';
+export { BorrowerApplicationsCard } from './components/BorrowerApplicationsCard';
+export { ApplicationRef } from './components/ApplicationRef';
+export { useApplicationNumbers } from './hooks/useApplicationNumbers';

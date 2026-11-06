@@ -16,7 +16,8 @@ const policyConfigApi = aiApi.injectEndpoints({
     }),
     updateAiPolicyConfig: builder.mutation<AiPolicyConfig, AiPolicyConfigUpdate>({
       query: (body) => ({ url: '/config/product', method: 'PUT', body }),
-      invalidatesTags: ['AiConfig'],
+      // Bộ luật dùng chung số phiên bản chính sách: lưu ở đây thì bộ luật cũng phải đọc lại phiên bản mới.
+      invalidatesTags: ['AiConfig', 'AiRules'],
     }),
   }),
 });

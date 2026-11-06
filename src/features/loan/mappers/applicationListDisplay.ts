@@ -1,4 +1,4 @@
-import type { LoanApplicationStatus } from '../types';
+import type { CreditAssessmentStatus, LoanApplicationStatus } from '../types';
 
 export type Tone = 'success' | 'warning' | 'danger' | 'neutral';
 
@@ -72,5 +72,24 @@ export function recommendationLabel(recommendation: string | null | undefined): 
       return 'Không đủ điều kiện theo chính sách';
     default:
       return recommendation ?? '-';
+  }
+}
+
+/**
+ * Chữ ở cột điểm khi hồ sơ chưa có điểm, theo trạng thái lần chấm gần nhất: lỗi hẳn thì "Chấm lỗi", còn đang chạy hoặc
+ * chờ hệ thống tự thử lại thì "Đang chấm". Chưa từng chấm (dừng ở bước điều kiện vay) thì "Chưa chấm".
+ */
+export function unscoredLabel(status: CreditAssessmentStatus | null): string {
+  switch (status) {
+    case 'FAILED':
+      return 'Chấm lỗi';
+    case 'PENDING':
+    case 'PROCESSING':
+    case 'RETRY_PENDING':
+      return 'Đang chấm';
+    case null:
+      return 'Chưa chấm';
+    default:
+      return 'Chưa có';
   }
 }

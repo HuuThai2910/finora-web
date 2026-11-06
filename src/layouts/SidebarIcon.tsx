@@ -19,6 +19,8 @@ const ICON_PATHS: Record<SidebarIconName, string[]> = {
   // Chìa khóa: vai trò nhân viên và quyền từng chức năng.
   key: ['M7.5 21a4.5 4.5 0 1 0 0-9 4.5 4.5 0 0 0 0 9', 'M10.7 12.8 21 2.5', 'M17 6.5l3 3', 'M14.5 9l2 2'],
   // Khung quét + khuôn mặt: duyệt eKYC (ảnh thẻ và kiểm tra khuôn mặt).
+  // Cửa sổ dòng lệnh: Nhật ký hoạt động.
+  terminal: ['M3 5h18v14H3Z', 'M7 10l3 2-3 2', 'M12 15h5'],
   faceScan: ['M3 7V3h4', 'M17 3h4v4', 'M21 17v4h-4', 'M7 21H3v-4', 'M9 9.5v1', 'M15 9.5v1', 'M9 15c1.7 1.3 4.3 1.3 6 0'],
 };
 

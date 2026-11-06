@@ -1,16 +1,19 @@
 import type { ReactNode } from 'react';
+import { Link } from 'react-router-dom';
 import { StatusPill } from '@/components/StatusPill';
 import { EMPTY, formatDateTime } from '@/utils';
 import {
-  aggregateLabel, chainResultInfo, proofTypeLabel, providerLabel, receiptView, statusInfo,
+  aggregateLabel, chainResultInfo, loanProofsPath, proofTypeLabel, providerLabel, receiptView, statusInfo,
 } from '../mappers/proofDisplay';
+import { BC_HASH, BC_MUTED, BC_STACK_ROW } from '../styles';
 import type { Proof } from '../types';
+import { CopyableCode } from './CopyButton';
 import { ReceiptBadge } from './ReceiptBadge';
 
 /** Một dòng nhãn: giá trị; `stack` xếp giá trị dài (hash, mã giao dịch) xuống dưới nhãn để xuống dòng đúng chỗ. */
 function Fact({ label, children, stack = false }: { label: string; children: ReactNode; stack?: boolean }) {
   return (
-    <div className={stack ? 'bc-stack' : undefined}>
+    <div className={stack ? BC_STACK_ROW : undefined}>
       <dt>{label}</dt>
       <dd>{children}</dd>
     </div>
@@ -20,10 +23,17 @@ function Fact({ label, children, stack = false }: { label: string; children: Rea
 function Overview({ proof }: { proof: Proof }) {
   const status = statusInfo(proof.status);
   return (
-    <dl className="ui-rows bc-rows">
+    <dl className="ui-rows bc-rows mt-1">
       <Fact label="Mốc">{proofTypeLabel(proof.proofType)}</Fact>
       <Fact label={aggregateLabel(proof.aggregateType)}><span className="ui-mono">{proof.aggregateId}</span></Fact>
-      <Fact label="Hồ sơ vay">{proof.loanApplicationId != null ? `#${proof.loanApplicationId}` : 'Không gắn hồ sơ vay'}</Fact>
+      <Fact label="Hồ sơ vay">
+        {proof.loanApplicationId != null ? (
+          // Lọc mọi bằng chứng của hồ sơ (hợp đồng, giải ngân, trả nợ, Note) trên chính trang này.
+          <Link className="ui-link" to={loanProofsPath(proof.loanApplicationId)} title="Xem mọi bằng chứng của hồ sơ này">
+            #{proof.loanApplicationId}
+          </Link>
+        ) : 'Không gắn hồ sơ vay'}
+      </Fact>
       <Fact label="Sổ cái">{providerLabel(proof.provider)}</Fact>
       <Fact label="Trạng thái gửi"><StatusPill tone={status.tone}>{status.label}</StatusPill></Fact>
       <Fact label="Số lần gửi">{proof.attemptCount}</Fact>
@@ -31,7 +41,9 @@ function Overview({ proof }: { proof: Proof }) {
       {proof.lastErrorCode && (
         <Fact label="Lỗi gần nhất" stack>
           <span className="ui-mono">{proof.lastErrorCode}</span>
-          {proof.lastErrorDetail && <span className="ui-sub bc-break">{proof.lastErrorDetail}</span>}
+          {proof.lastErrorDetail && (
+            <span className="ui-sub bc-break whitespace-normal wrap-anywhere">{proof.lastErrorDetail}</span>
+          )}
         </Fact>
       )}
       <Fact label="Tạo lúc">{formatDateTime(proof.createdAt)}</Fact>
@@ -42,10 +54,10 @@ function Overview({ proof }: { proof: Proof }) {
 
 function HashFacts({ proof }: { proof: Proof }) {
   return (
-    <dl className="ui-rows bc-rows">
-      <Fact label="SHA-256 đã neo" stack><span className="bc-hash">{proof.hash.value}</span></Fact>
+    <dl className="ui-rows bc-rows mt-1">
+      <Fact label="SHA-256 đã neo" stack><CopyableCode className={BC_HASH} value={proof.hash.value} label="Chép hash đã neo" /></Fact>
       <Fact label="Cách tính">{proof.hash.scheme} (phiên bản {proof.hash.version})</Fact>
-      <Fact label="Mô tả" stack><span className="bc-plain">{proof.hash.description}</span></Fact>
+      <Fact label="Mô tả" stack><span className="bc-plain text-secondary">{proof.hash.description}</span></Fact>
     </dl>
   );
 }
@@ -54,13 +66,13 @@ function SourceFacts({ proof }: { proof: Proof }) {
   const { source } = proof;
   return (
     <>
-      <p className="bc-muted">Thông tin truy vết dành cho kỹ thuật khi cần tìm lại sự kiện đã tạo bằng chứng.</p>
-      <dl className="ui-rows bc-rows">
+      <p className={BC_MUTED}>Thông tin truy vết dành cho kỹ thuật khi cần tìm lại sự kiện đã tạo bằng chứng.</p>
+      <dl className="ui-rows bc-rows mt-1">
         <Fact label="Service">{source.service}</Fact>
         <Fact label="Event">
           {source.eventType ? `${source.eventType}${source.eventVersion != null ? ` v${source.eventVersion}` : ''}` : 'Không ghi nhận'}
         </Fact>
-        <Fact label="Mã event" stack><span className="bc-hash">{source.eventId}</span></Fact>
+        <Fact label="Mã event" stack><span className={BC_HASH}>{source.eventId}</span></Fact>
         <Fact label="Xảy ra lúc">{source.occurredAt ? formatDateTime(source.occurredAt) : EMPTY}</Fact>
       </dl>
     </>
@@ -70,14 +82,18 @@ function SourceFacts({ proof }: { proof: Proof }) {
 function ReceiptFacts({ proof }: { proof: Proof }) {
   const view = receiptView(proof);
   if (view.kind === 'none') {
-    return <p className="bc-muted">Chưa có biên nhận: proof chưa được sổ cái xác nhận.</p>;
+    return <p className={BC_MUTED}>Chưa có biên nhận: bằng chứng chưa được sổ cái xác nhận.</p>;
   }
   return (
-    <dl className="ui-rows bc-rows">
+    <dl className="ui-rows bc-rows mt-1">
       <Fact label="Loại biên nhận"><ReceiptBadge proof={proof} /></Fact>
       {view.kind === 'fabric' && (
         <>
-          <Fact label="Mã giao dịch Fabric" stack><span className="bc-hash">{view.transactionId ?? EMPTY}</span></Fact>
+          <Fact label="Mã giao dịch Fabric" stack>
+            {view.transactionId
+              ? <CopyableCode className={BC_HASH} value={view.transactionId} label="Chép mã giao dịch" />
+              : <span className={BC_HASH}>{EMPTY}</span>}
+          </Fact>
           <Fact label="Block">{view.blockReference ?? EMPTY}</Fact>
           <Fact label="Xác nhận lúc">{formatDateTime(view.confirmedAt)}</Fact>
         </>
@@ -86,7 +102,7 @@ function ReceiptFacts({ proof }: { proof: Proof }) {
         <>
           {/* Mã biên nhận MOCK không phải giao dịch Fabric: ghi rõ ngay ở nhãn. */}
           <Fact label="Mã biên nhận MOCK (không phải giao dịch Fabric)" stack>
-            <span className="bc-hash">{view.receiptId ?? EMPTY}</span>
+            <span className={BC_HASH}>{view.receiptId ?? EMPTY}</span>
           </Fact>
           <Fact label="Ghi nhận lúc">{formatDateTime(view.confirmedAt)}</Fact>
         </>
@@ -97,12 +113,12 @@ function ReceiptFacts({ proof }: { proof: Proof }) {
 
 function ChainCheckFacts({ proof }: { proof: Proof }) {
   if (proof.provider !== 'HYPERLEDGER_FABRIC') {
-    return <p className="bc-muted">Proof MOCK không có bản ghi trên Fabric nên không đối chiếu với sổ cái.</p>;
+    return <p className={BC_MUTED}>Bằng chứng ghi trên sổ cái giả lập không có bản ghi trên Fabric nên không đối chiếu được.</p>;
   }
-  if (!proof.chainCheck) return <p className="bc-muted">Chưa đối chiếu với sổ cái. Bấm "Kiểm tra" bên dưới để đối chiếu.</p>;
+  if (!proof.chainCheck) return <p className={BC_MUTED}>Chưa đối chiếu với sổ cái. Bấm "Kiểm tra" bên dưới để đối chiếu.</p>;
   const check = chainResultInfo(proof.chainCheck.status);
   return (
-    <dl className="ui-rows bc-rows">
+    <dl className="ui-rows bc-rows mt-1">
       <Fact label="Kết quả"><StatusPill tone={check.tone}>{check.label}</StatusPill></Fact>
       <Fact label="Kiểm lúc">{formatDateTime(proof.chainCheck.checkedAt)}</Fact>
     </dl>

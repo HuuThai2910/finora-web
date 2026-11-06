@@ -68,6 +68,29 @@ export interface AdminTrade {
   lastSettlementError: string | null;
   executedAt: string;
   settledAt: string | null;
+  /** Số lần nhân viên đã gửi thanh toán lại và thời điểm gần nhất (đợt 2). */
+  settlementRequeueCount?: number;
+  settlementRequeuedAt?: string | null;
+}
+
+/** `AdminNoteOwnershipResponse` — một Note trong lần khớp, người đang giữ và lịch sử chuyển nhượng. */
+export interface TradeNoteOwnership {
+  noteId: number;
+  noteNumber: string;
+  listingId: number;
+  status: string;
+  currentHolderId: string;
+  principalAmount: string;
+  outstandingPrincipal: string;
+  issuedAt: string;
+  transfers: {
+    tradeReference: string | null;
+    sellerId: string;
+    buyerId: string;
+    price: string;
+    outstandingAtTransfer: string;
+    transferredAt: string;
+  }[];
 }
 
 /** `OrderBookAdminSummaryResponse` — số liệu trên toàn bộ dữ liệu, không phải trang đang xem. */

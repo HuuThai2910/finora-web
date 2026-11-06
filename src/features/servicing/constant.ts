@@ -42,6 +42,9 @@ export const COLLECTION_STAGES: ReadonlyArray<{
   { stage: 'LOSS', label: 'Có nguy cơ mất vốn', range: 'Trên 360 ngày', debtGroup: 5, tone: 'danger' },
 ];
 
+export const isCollectionStage = (value: string | null): value is CollectionStage =>
+  COLLECTION_STAGES.some((item) => item.stage === value);
+
 export const stageInfo = (stage: CollectionStage) =>
   COLLECTION_STAGES.find((item) => item.stage === stage)
   ?? { stage, label: stage, range: '', debtGroup: 0, tone: 'neutral' as PillTone };
@@ -56,15 +59,27 @@ export const ACTION_LABEL: Record<CollectionActionType, string> = {
   NOTE: 'Ghi chú nội bộ',
 };
 
-/** Ba loại ghi nhận quản trị viên nhập tay từ trang này (theo mockup); các loại khác do quy trình khác tạo. */
-export const MANUAL_ACTION_TYPES: ReadonlyArray<{ type: CollectionActionType; label: string; submit: string }> = [
-  { type: 'BORROWER_CONTACTED', label: 'Đã liên hệ', submit: 'Ghi nhận đã liên hệ' },
-  { type: 'PROMISE_TO_PAY', label: 'Hẹn trả', submit: 'Ghi nhận lời hẹn trả' },
-  { type: 'NOTE', label: 'Ghi chú', submit: 'Lưu ghi chú' },
+/**
+ * Các loại ghi nhận quản trị viên nhập tay từ trang này; "Gửi tin nhắc nợ" do worker tạo. Ba loại leo thang (`escalation`)
+ * Loan Service nhận như mọi ghi nhận khác (`LoanCollectionAction.record`): chỉ lưu vết, KHÔNG đổi trạng thái hồ sơ hay
+ * khoản vay, nên giao diện nói rõ điều đó và bắt buộc ghi nội dung để người sau biết vì sao leo thang. `label` là nhãn
+ * ngắn trên nút chọn (ba nút một hàng trong ngăn 440px); tên đầy đủ ở `ACTION_LABEL` và nút gửi.
+ */
+export const MANUAL_ACTION_TYPES: ReadonlyArray<{
+  type: CollectionActionType; label: string; submit: string; escalation: boolean;
+}> = [
+  { type: 'BORROWER_CONTACTED', label: 'Đã liên hệ', submit: 'Ghi nhận đã liên hệ', escalation: false },
+  { type: 'PROMISE_TO_PAY', label: 'Hẹn trả', submit: 'Ghi nhận lời hẹn trả', escalation: false },
+  { type: 'NOTE', label: 'Ghi chú', submit: 'Lưu ghi chú', escalation: false },
+  { type: 'LEGAL_REVIEW', label: 'Chuyển pháp lý', submit: 'Ghi nhận chuyển pháp lý', escalation: true },
+  { type: 'FIELD_COLLECTION', label: 'Thu hồi tận nơi', submit: 'Ghi nhận thu hồi tại địa chỉ', escalation: true },
+  { type: 'WRITE_OFF_RECOMMENDED', label: 'Đề xuất xóa nợ', submit: 'Ghi nhận đề xuất xóa nợ', escalation: true },
 ];
 
 /** Hành động do người thật thực hiện, chấm đậm trên dòng thời gian. */
-export const HUMAN_ACTIONS: ReadonlySet<CollectionActionType> = new Set(['BORROWER_CONTACTED', 'PROMISE_TO_PAY']);
+export const HUMAN_ACTIONS: ReadonlySet<CollectionActionType> = new Set([
+  'BORROWER_CONTACTED', 'PROMISE_TO_PAY', 'LEGAL_REVIEW', 'FIELD_COLLECTION', 'WRITE_OFF_RECOMMENDED',
+]);
 
 export const RESCHEDULE_TYPE_LABEL: Record<RescheduleType, string> = {
   TERM_EXTENSION: 'Gia hạn thêm kỳ',

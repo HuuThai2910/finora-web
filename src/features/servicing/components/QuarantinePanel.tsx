@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { ErrorNotice } from '@/components/ErrorNotice';
-import { StatusPill } from '@/components/StatusPill';
 import { usePermission } from '@/features/auth';
+import { ApplicationRef } from '@/features/loan';
 import { formatDateTime } from '@/utils';
 import { useQuarantinedEventsQuery, useReplayQuarantineMutation } from '../api/servicingApi';
 import { SERVICING_PAGE_SIZE, quarantineReasonLabel } from '../constant';
+import { SVC_ACT_CELL, SVC_ACT_HEAD, SVC_NOTE } from '../styles';
 import { QueueBody } from './QueueBody';
 
 interface Props {
@@ -14,8 +15,9 @@ interface Props {
 }
 
 /**
- * Sự kiện trả nợ đã vào hệ thống lõi nhưng chưa ghép được với khoản vay FINORA (backend chỉ trả các
- * sự kiện `PENDING`). "Chạy lại" xử lý lại đúng sự kiện đó; nút khóa trong lúc chạy để không gửi chồng.
+ * Sự kiện trả nợ đã vào hệ thống lõi nhưng chưa ghép được với khoản vay FINORA. Backend chỉ trả các sự kiện `PENDING`
+ * nên bảng không có cột tình trạng (mọi dòng như nhau). "Chạy lại" xử lý lại đúng sự kiện đó; nút khóa trong lúc chạy
+ * để không gửi chồng.
  */
 export function QuarantinePanel({ page, onPage, onDone }: Props) {
   const query = useQuarantinedEventsQuery({ page, size: SERVICING_PAGE_SIZE });
@@ -42,11 +44,11 @@ export function QuarantinePanel({ page, onPage, onDone }: Props) {
 
   return (
     <>
-      <p className="svc-note">
+      <p className={SVC_NOTE}>
         Tiền trả nợ đã vào hệ thống lõi nhưng chưa ghép được với khoản vay trên FINORA. Kiểm tra liên kết hồ sơ rồi chạy lại.
       </p>
       {failed && (
-        <div className="svc-pad">
+        <div className="svc-pad px-0.5 pb-3">
           <ErrorNotice error={failed.error} onRetry={() => run(failed.eventId)} />
         </div>
       )}
@@ -70,24 +72,18 @@ export function QuarantinePanel({ page, onPage, onDone }: Props) {
                 <th>Lý do</th>
                 <th className="num">Số lần thử</th>
                 <th>Nhận lúc</th>
-                <th>Tình trạng</th>
-                <th className="act"><span className="ui-sr-only">Thao tác</span></th>
+                <th className={SVC_ACT_HEAD}><span className="ui-sr-only">Thao tác</span></th>
               </tr>
             </thead>
             <tbody>
               {(query.data?.data ?? []).map((item) => (
                 <tr key={item.eventId}>
                   <td><span className="ui-mono">{item.repaymentId}</span></td>
-                  <td>Hồ sơ #{item.loanApplicationId}</td>
+                  <td><ApplicationRef id={item.loanApplicationId} applicationNumber={item.applicationNumber} /></td>
                   <td>{quarantineReasonLabel(item.reasonCode)}</td>
                   <td className="num">{item.attemptCount}</td>
                   <td>{formatDateTime(item.receivedAt)}</td>
-                  <td>
-                    {item.status === 'PENDING'
-                      ? <StatusPill tone="warning">Chờ ghép</StatusPill>
-                      : <StatusPill tone="success">Đã ghép</StatusPill>}
-                  </td>
-                  <td className="act">
+                  <td className={SVC_ACT_CELL}>
                     {item.status === 'PENDING' && canReplay && (
                       <button
                         type="button"

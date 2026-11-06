@@ -16,12 +16,38 @@ export interface ListingSearchParams {
   grade?: string;
   minRate?: string;
   maxTermMonths?: number;
+  /** Tìm theo một phần mã hồ sơ `LA-…` hoặc số hợp đồng. */
+  q?: string;
+  /** `rate` (lãi cao trước, mặc định), `newest`, `closing` (sắp hết hạn trước), `amount`. */
+  sort?: ListingSort;
   page?: number;
   size?: number;
 }
 
+export type ListingSort = 'rate' | 'newest' | 'closing' | 'amount';
+
+/** Một Note nhà đầu tư đang giữ (trang chi tiết khách hàng). */
+export interface AdminInvestorNote {
+  noteNumber: string;
+  listingId: number;
+  loanId: number;
+  principalAmount: string;
+  outstandingPrincipal: string;
+  interestReceived: string;
+  annualInterestRate: string;
+  termMonths: number;
+  status: string;
+  issuedAt: string;
+}
+
 export const investmentEndpoints = investmentApi.injectEndpoints({
   endpoints: (builder) => ({
+    getInvestorNotes: builder.query<PageResponse<AdminInvestorNote>, { investorId: string; page?: number; size?: number }>({
+      query: ({ investorId, ...params }) => ({
+        url: `/investments/admin/investors/${encodeURIComponent(investorId)}/notes`,
+        params,
+      }),
+    }),
     getMarketListings: builder.query<PageResponse<MarketListing>, ListingSearchParams>({
       query: (params) => ({ url: '/market/listings', params }),
       providesTags: (result) => [
@@ -108,6 +134,7 @@ export const investmentEndpoints = investmentApi.injectEndpoints({
 });
 
 export const {
+  useGetInvestorNotesQuery,
   useGetMarketListingsQuery,
   useGetMarketListingQuery,
   useGetFundingProgressQuery,

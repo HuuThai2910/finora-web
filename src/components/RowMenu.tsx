@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from 'react';
+import { useEffect, useId, useLayoutEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
 import { Icon, MoreIcon, type IconName } from './Icon';
@@ -26,6 +26,8 @@ interface RowMenuProps {
   buttonClassName?: string;
   /** Nội dung nút mở thay cho icon "⋯". */
   buttonContent?: ReactNode;
+  /** Khối thông tin đầu danh sách (không chọn được), ví dụ tên và quyền của tài khoản ở menu header. */
+  header?: ReactNode;
 }
 
 const MENU_GAP = 4;
@@ -37,10 +39,11 @@ const VIEWPORT_MARGIN = 8;
  * Danh sách vẽ qua portal với `position: fixed` để khung bảng (`overflow-x: auto`) không cắt mất.
  * Vì vị trí tính theo nút lúc mở, menu tự đóng khi cuộn hoặc đổi kích thước cửa sổ thay vì trôi lệch.
  */
-export function RowMenu({ label, items, buttonClassName = 'ui-rowmenu-btn', buttonContent }: RowMenuProps) {
+export function RowMenu({ label, items, buttonClassName = 'ui-rowmenu-btn', buttonContent, header }: RowMenuProps) {
   const [open, setOpen] = useState(false);
   const [position, setPosition] = useState<CSSProperties>({ visibility: 'hidden' });
   const buttonRef = useRef<HTMLButtonElement>(null);
+  const headerId = useId();
   const listRef = useRef<HTMLDivElement>(null);
   // Mở bằng bàn phím thì đưa focus vào mục đầu; mở bằng chuột thì không.
   const focusFirstRef = useRef(false);
@@ -76,11 +79,17 @@ export function RowMenu({ label, items, buttonClassName = 'ui-rowmenu-btn', butt
       close(false);
     };
     const onDismiss = () => close(false);
+    // Mở bằng chuột thì focus vẫn ở nút "⋯" (không ở trong danh sách), nên Esc phải bắt ở cấp trang.
+    const onKeyDown = (event: globalThis.KeyboardEvent) => {
+      if (event.key === 'Escape') close(true);
+    };
     document.addEventListener('pointerdown', onPointerDown);
+    document.addEventListener('keydown', onKeyDown);
     window.addEventListener('scroll', onDismiss, true);
     window.addEventListener('resize', onDismiss);
     return () => {
       document.removeEventListener('pointerdown', onPointerDown);
+      document.removeEventListener('keydown', onKeyDown);
       window.removeEventListener('scroll', onDismiss, true);
       window.removeEventListener('resize', onDismiss);
     };
@@ -132,7 +141,17 @@ export function RowMenu({ label, items, buttonClassName = 'ui-rowmenu-btn', butt
         {buttonContent ?? <MoreIcon />}
       </button>
       {open && createPortal(
-        <div ref={listRef} className="ui-rowmenu-list" role="menu" aria-label={label} style={position} onKeyDown={onListKeyDown}>
+        <div
+          ref={listRef}
+          className="ui-rowmenu-list"
+          role="menu"
+          aria-label={label}
+          // Khối thông tin không phải mục chọn: trình đọc màn hình đọc nó như phần mô tả của menu.
+          aria-describedby={header ? headerId : undefined}
+          style={position}
+          onKeyDown={onListKeyDown}
+        >
+          {header && <div id={headerId} role="none">{header}</div>}
           {items.map((item) => (
             <MenuEntry key={item.key} item={item} onDone={() => close(false)} />
           ))}
@@ -144,6 +163,7 @@ export function RowMenu({ label, items, buttonClassName = 'ui-rowmenu-btn', butt
 }
 
 function MenuEntry({ item, onDone }: { item: RowMenuItem; onDone: () => void }) {
+  const reasonId = useId();
   const className = item.danger ? 'danger' : undefined;
   const body = (
     <>
@@ -151,6 +171,8 @@ function MenuEntry({ item, onDone }: { item: RowMenuItem; onDone: () => void }) 
       {item.label}
     </>
   );
+  // Lý do khóa viết thành chữ dưới mục: `title` chỉ hiện khi rê chuột, bàn phím và màn cảm ứng không đọc được.
+  const reason = 'onSelect' in item && item.disabled ? item.disabledReason : undefined;
 
   return (
     <>
@@ -163,7 +185,7 @@ function MenuEntry({ item, onDone }: { item: RowMenuItem; onDone: () => void }) 
           role="menuitem"
           className={className}
           disabled={item.disabled}
-          title={item.disabled ? item.disabledReason : undefined}
+          aria-describedby={reason ? reasonId : undefined}
           onClick={() => {
             onDone();
             item.onSelect();
@@ -171,6 +193,11 @@ function MenuEntry({ item, onDone }: { item: RowMenuItem; onDone: () => void }) 
         >
           {body}
         </button>
+      )}
+      {reason && (
+        <p id={reasonId} className="ui-rowmenu-reason max-w-60 pr-2.5 pb-1.5 pl-9 text-[12px] leading-[1.4] whitespace-normal text-secondary">
+          {reason}
+        </p>
       )}
     </>
   );

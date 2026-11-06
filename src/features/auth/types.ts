@@ -48,4 +48,6 @@ export interface AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
+  /** Phiên đang dùng bị mất (làm mới token thất bại): màn đăng nhập báo hết hạn thay vì im lặng. */
+  sessionExpired: boolean;
 }

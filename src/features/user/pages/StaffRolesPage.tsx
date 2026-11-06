@@ -4,15 +4,13 @@ import { ErrorNotice } from '@/components/ErrorNotice';
 import { Icon } from '@/components/Icon';
 import { RowMenu } from '@/components/RowMenu';
 import { StatusPill } from '@/components/StatusPill';
-import { Toast } from '@/components/Toast';
+import { toast } from '@/lib/toast';
 import { formatNumber } from '@/utils';
 import { useGetStaffRolesQuery } from '../api/userQueries';
 import { DeleteStaffRoleModal } from '../components/DeleteStaffRoleModal';
 import { PermissionSectionTabs } from '../components/PermissionSectionTabs';
 import { StaffRoleModal } from '../components/StaffRoleModal';
 import type { StaffRole } from '../types';
-import './UserListPage.css';
-import './StaffRolesPage.css';
 
 type PendingAction = { kind: 'create' } | { kind: 'edit' | 'delete'; role: StaffRole } | null;
 
@@ -36,8 +34,8 @@ function permissionSummary(role: StaffRole): string {
 export default function StaffRolesPage() {
   const roles = useGetStaffRolesQuery();
   const [action, setAction] = useState<PendingAction>(null);
-  const [notice, setNotice] = useState<string | null>(null);
-  const dismissNotice = useCallback(() => setNotice(null), []);
+  // Kết quả thao tác báo bằng toast dùng chung (`@/lib/toast`).
+  const setNotice = useCallback((message: string | null) => { if (message) toast.success(message); }, []);
   const list = roles.data ?? [];
 
   const finish = (message: string) => {
@@ -52,7 +50,7 @@ export default function StaffRolesPage() {
           <h1>Phân quyền</h1>
           <p>Mỗi vai trò nhân viên quy định màn nào được xem và thao tác nào được làm trên web quản trị.</p>
         </div>
-        <div className="user-head-actions">
+        <div className="user-head-actions flex flex-wrap gap-2">
           <button type="button" className="ui-btn primary" onClick={() => setAction({ kind: 'create' })}>
             <Icon name="plus" />
             Tạo vai trò
@@ -62,8 +60,8 @@ export default function StaffRolesPage() {
 
       <PermissionSectionTabs />
 
-      <section className="ui-card user-card" aria-label="Danh sách vai trò nhân viên">
-        <div className="user-body">
+      <section className="ui-card user-card overflow-hidden" aria-label="Danh sách vai trò nhân viên">
+        <div className="user-body p-3 max-[760px]:py-2.5 max-[760px]:px-2">
           {roles.error ? (
             <ErrorNotice error={roles.error} onRetry={roles.refetch} />
           ) : roles.isLoading ? (
@@ -76,7 +74,8 @@ export default function StaffRolesPage() {
                 <thead>
                   <tr>
                     <th>Vai trò</th>
-                    <th>Mô tả</th>
+                    {/* Màn hẹp ẩn mô tả (đọc trong hộp Sửa quyền) để nút "⋯" không bị đẩy ra ngoài khung. */}
+                    <th className="staff-hide-sm max-[760px]:hidden">Mô tả</th>
                     <th>Quyền</th>
                     <th className="num">Thành viên</th>
                     <th className="act"><span className="ui-sr-only">Thao tác</span></th>
@@ -88,12 +87,12 @@ export default function StaffRolesPage() {
                     return (
                       <tr key={role.code}>
                         <td>
-                          <div className="user-name-row">
-                            <span className="user-name">{role.name}</span>
+                          <div className="user-name-row flex items-center gap-1.5">
+                            <span className="user-name font-medium">{role.name}</span>
                             {role.builtIn && <StatusPill tone="info" small>Mặc định</StatusPill>}
                           </div>
                         </td>
-                        <td className="staff-role-desc">{role.description || <span className="user-name empty">Chưa có mô tả</span>}</td>
+                        <td className="staff-role-desc max-[760px]:hidden max-w-90 text-secondary whitespace-normal">{role.description || <span className="user-name empty text-muted font-normal">Chưa có mô tả</span>}</td>
                         <td>{permissionSummary(role)}</td>
                         <td className="num">
                           {role.memberCount > 0
@@ -135,7 +134,6 @@ export default function StaffRolesPage() {
       {action?.kind === 'delete' && (
         <DeleteStaffRoleModal role={action.role} onClose={() => setAction(null)} onDone={finish} />
       )}
-      {notice && <Toast message={notice} onDismiss={dismissNotice} />}
     </section>
   );
 }

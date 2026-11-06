@@ -6,6 +6,7 @@ import { useWithdrawalIncidentsQuery } from '../api/paymentIncidentApi';
 import { SERVICING_PAGE_SIZE, WALLET_OWNER_LABEL } from '../constant';
 import { money } from '../formatters';
 import { useUserLabel } from '../hooks/useUserLabel';
+import { SVC_ACT_CELL, SVC_ACT_HEAD, SVC_SUBHEAD } from '../styles';
 import type { WithdrawalIncident } from '../types';
 import { ErrorCell } from './ErrorCell';
 import { QueueBody } from './QueueBody';
@@ -36,14 +37,24 @@ function WithdrawalStatus({ item }: { item: WithdrawalIncident }) {
     : <StatusPill tone="warning">Đang tra cứu lại</StatusPill>;
 }
 
-/** Ô "Chủ ví": họ tên (tra theo mã người dùng) và vai trò; ví của nền tảng không có người dùng để tra. */
+/** Số lần gửi provider và số lần tra cứu chưa ra kết quả cuối, kèm số lần vận hành bấm tra cứu tay. */
+function attemptText(item: WithdrawalIncident): string {
+  const base = `Gửi ${item.attemptCount} lần, tra cứu ${item.reconciliationAttemptCount} lần`;
+  return item.manualRecheckCount > 0 ? `${base} (${item.manualRecheckCount} lần thủ công)` : base;
+}
+
+/**
+ * Ô "Chủ ví": họ tên (tra theo mã người dùng) và vai trò. Ví của nền tảng không có người dùng để tra và mã ví là mã
+ * nội bộ, nên chỉ ghi "Ví nền tảng".
+ */
 function OwnerCell({ item }: { item: WithdrawalIncident }) {
+  const isPlatform = item.ownerType === 'PLATFORM';
   const role = WALLET_OWNER_LABEL[item.ownerType] ?? item.ownerType;
-  const name = useUserLabel(item.ownerType === 'PLATFORM' ? '' : item.ownerId, `${role} #${item.ownerId}`);
+  const name = useUserLabel(isPlatform ? '' : item.ownerId, isPlatform ? role : `${role} #${item.ownerId}`);
   return (
     <td>
-      <span className="svc-who">{name}</span>
-      <span className="ui-sub">{role}</span>
+      <span className="svc-who font-medium text-primary">{name}</span>
+      {!isPlatform && <span className="ui-sub">{role}</span>}
     </td>
   );
 }
@@ -60,7 +71,7 @@ export function WithdrawalIncidentsSection({ running, onRecheck }: Props) {
 
   return (
     <>
-      <div className="svc-subhead">
+      <div className={SVC_SUBHEAD}>
         <h2>Lệnh rút tiền chờ đối soát</h2>
         {withdrawals.data && withdrawals.data.totalElements > 0 && <span>Tiền đã trừ ví, chỉ tra cứu theo mã lệnh, không chi lại</span>}
       </div>
@@ -83,11 +94,9 @@ export function WithdrawalIncidentsSection({ running, onRecheck }: Props) {
                 <th>Chủ ví</th>
                 <th className="num">Số tiền</th>
                 <th>Tài khoản nhận</th>
-                <th>Nhà cung cấp</th>
                 <th>Lỗi gần nhất</th>
-                <th className="num">Lần gửi / tra cứu</th>
                 <th>Tình trạng</th>
-                <th className="act"><span className="ui-sr-only">Thao tác</span></th>
+                <th className={SVC_ACT_HEAD}><span className="ui-sr-only">Thao tác</span></th>
               </tr>
             </thead>
             <tbody>
@@ -99,27 +108,23 @@ export function WithdrawalIncidentsSection({ running, onRecheck }: Props) {
                   </td>
                   <OwnerCell item={item} />
                   <td className="num">{money(item.amount)}</td>
+                  {/* Nhà cung cấp và mã tham chiếu ở dòng phụ của tài khoản nhận; số lần gửi/tra cứu ở dòng phụ của tình
+                      trạng: bảng bớt hai cột nên vừa màn 1050px mà vẫn đủ thông tin. */}
                   <td>
                     <span className="ui-mono">{item.accountNumberMasked}</span>
-                    <span className="ui-sub">{item.bankCode}</span>
-                  </td>
-                  <td>
-                    {item.provider}
+                    <span className="ui-sub">{item.bankCode}, qua {item.provider}</span>
                     {item.providerReference && <span className="ui-sub ui-mono">{item.providerReference}</span>}
                   </td>
                   <ErrorCell code={item.errorCode} detail={item.errorDetail} />
-                  <td className="num">
-                    {item.attemptCount} / {item.reconciliationAttemptCount}
-                    {item.manualRecheckCount > 0 && <span className="ui-sub">{item.manualRecheckCount} lần thủ công</span>}
-                  </td>
-                  <td>
+                  <td className="min-w-50 whitespace-normal">
                     <WithdrawalStatus item={item} />
+                    <span className="ui-sub">{attemptText(item)}</span>
                     {item.nextAttemptAt && <span className="ui-sub">Lượt sau {formatDateTime(item.nextAttemptAt)}</span>}
                     {item.lastManualRecheckAt && (
                       <span className="ui-sub">Tra cứu thủ công {formatDateTime(item.lastManualRecheckAt)}</span>
                     )}
                   </td>
-                  <td className="act">
+                  <td className={SVC_ACT_CELL}>
                     {canRecheck && (
                       <button
                         type="button"

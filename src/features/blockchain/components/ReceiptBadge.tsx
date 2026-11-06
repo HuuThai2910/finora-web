@@ -24,7 +24,7 @@ export function ReceiptHint({ proof }: { proof: Proof }) {
     if (!proof.chainCheck) return <span className="ui-sub">Chưa đối chiếu với sổ cái</span>;
     const check = chainResultInfo(proof.chainCheck.status);
     return (
-      <span className={check.tone === 'danger' ? 'ui-sub bc-bad' : 'ui-sub'}>
+      <span className={check.tone === 'danger' ? 'ui-sub bc-bad text-danger' : 'ui-sub'}>
         Đối chiếu: {check.label}
         {proof.chainCheck.checkedAt ? `, ${formatDateTime(proof.chainCheck.checkedAt)}` : ''}
       </span>

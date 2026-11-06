@@ -4,6 +4,8 @@ import { usePermission } from '@/features/auth';
 import { EMPTY, formatDate, formatDateTime } from '@/utils';
 import { useRescheduleRequestsQuery } from '../api/servicingApi';
 import { RESCHEDULE_TYPE_LABEL, SERVICING_PAGE_SIZE } from '../constant';
+import { rescheduleChangeText } from '../mappers/rescheduleDisplay';
+import { SVC_ACT_CELL, SVC_ACT_HEAD, SVC_WRAP_CELL } from '../styles';
 import type { RescheduleDecision, RescheduleRequest } from '../types';
 import { QueueBody } from './QueueBody';
 import { RescheduleDecisionModal } from './RescheduleDecisionModal';
@@ -12,13 +14,6 @@ interface Props {
   page: number;
   onPage: (page: number) => void;
   onDone: (message: string) => void;
-}
-
-/** Nội dung đề nghị: thêm kỳ, hoặc dời một kỳ sang ngày mới. */
-function changeText(item: RescheduleRequest): string {
-  if (item.extraTerms) return `Thêm ${item.extraTerms} kỳ từ ${formatDate(item.rescheduleFromDate)}`;
-  if (item.adjustedDueDate) return `Kỳ ${formatDate(item.rescheduleFromDate)} sang ${formatDate(item.adjustedDueDate)}`;
-  return `Từ kỳ ${formatDate(item.rescheduleFromDate)}`;
 }
 
 function MaturityCell({ item }: { item: RescheduleRequest }) {
@@ -69,7 +64,7 @@ export function ReschedulePanel({ page, onPage, onDone }: Props) {
                 <th className="num">Ngày đáo hạn</th>
                 <th>Lý do người vay nêu</th>
                 <th>Gửi lúc</th>
-                <th className="act"><span className="ui-sr-only">Thao tác</span></th>
+                <th className={SVC_ACT_HEAD}><span className="ui-sr-only">Thao tác</span></th>
               </tr>
             </thead>
             <tbody>
@@ -77,11 +72,11 @@ export function ReschedulePanel({ page, onPage, onDone }: Props) {
                 <tr key={item.requestId}>
                   <td><span className="ui-code">{item.loanNumber}</span></td>
                   <td>{RESCHEDULE_TYPE_LABEL[item.requestType] ?? item.requestType}</td>
-                  <td>{changeText(item)}</td>
+                  <td>{rescheduleChangeText(item)}</td>
                   <td className="num"><MaturityCell item={item} /></td>
-                  <td className="svc-wrap">{item.reasonComment}</td>
+                  <td className={SVC_WRAP_CELL}>{item.reasonComment}</td>
                   <td>{formatDateTime(item.createdAt)}</td>
-                  <td className="act">
+                  <td className={SVC_ACT_CELL}>
                     {canDecide && (
                       <RowMenu
                         label={`Thao tác với yêu cầu cơ cấu khoản vay ${item.loanNumber}`}

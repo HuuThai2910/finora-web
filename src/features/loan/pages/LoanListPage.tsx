@@ -10,11 +10,22 @@ import { useGetAdminApplicationsQuery } from '../api/loanReviewApi';
 import { ApplicationTable } from '../components/ApplicationTable';
 import { PendingReviewCard } from '../components/PendingReviewCard';
 import { SubmittedValueCard } from '../components/SubmittedValueCard';
-import { APPLICATION_LIST_PAGE_SIZE, isApplicationFilter, type ApplicationFilter } from '../constant';
+import {
+  APPLICATION_LIST_PAGE_SIZE,
+  HIDDEN_FILTER_LABELS,
+  isApplicationFilter,
+  isHiddenApplicationFilter,
+  type ApplicationFilter,
+  type ApplicationListFilter,
+} from '../constant';
 import { useActorNames } from '../hooks/useActorNames';
 import { useApplicationStatusCounts } from '../hooks/useApplicationStatusCounts';
 import { usePendingReviewSummary } from '../hooks/usePendingReviewSummary';
-import './LoanListPage.css';
+
+// Hàng đầu: biểu đồ giá trị hồ sơ nộp 30 ngày + thẻ gọn chờ thẩm định (mockup .ln-top); màn dưới 1100px xếp dọc.
+// Nhân viên không có quyền Xem thống kê (lớp `single`): chỉ còn thẻ chờ thẩm định, chiếm cả hàng.
+const TOP_ROW =
+  'loan-top grid grid-cols-[minmax(0,1.75fr)_minmax(300px,1fr)] gap-4 *:min-w-0 [&.single]:grid-cols-[minmax(0,1fr)] max-[1100px]:grid-cols-[minmax(0,1fr)]';
 
 const FILTERS: Array<{ value: ApplicationFilter; label: string; icon: IconName }> = [
   { value: 'ALL', label: 'Tất cả', icon: 'list' },
@@ -34,7 +45,9 @@ export default function LoanListPage() {
   // Tab và trang nằm trên URL để chia sẻ đường dẫn hoặc quay lại đúng chỗ đang xem.
   const [searchParams, setSearchParams] = useSearchParams();
   const requested = searchParams.get('status');
-  const filter: ApplicationFilter = isApplicationFilter(requested) ? requested : 'ALL';
+  // Bộ lọc ẩn (vd. chờ chấm lại điểm) không có tab: không tab nào được chọn, thay bằng dòng "Đang lọc".
+  const hiddenFilter = isHiddenApplicationFilter(requested) ? requested : null;
+  const filter: ApplicationListFilter = hiddenFilter ?? (isApplicationFilter(requested) ? requested : 'ALL');
   const page = readPage(searchParams.get('page'));
 
   const list = useGetAdminApplicationsQuery({
@@ -48,7 +61,7 @@ export default function LoanListPage() {
   const applications = list.data?.data ?? [];
   const { displayName, names } = useActorNames(applications.map((item) => item.borrowerId));
 
-  const updateQuery = (nextFilter: ApplicationFilter, nextPage: number) => {
+  const updateQuery = (nextFilter: ApplicationListFilter, nextPage: number) => {
     const params: Record<string, string> = {};
     if (nextFilter !== 'ALL') params.status = nextFilter;
     if (nextPage > 0) params.page = String(nextPage + 1);
@@ -74,7 +87,7 @@ export default function LoanListPage() {
         </button>
       </header>
 
-      <div className={canStats ? 'loan-top' : 'loan-top single'}>
+      <div className={canStats ? TOP_ROW : `${TOP_ROW} single`}>
         {/* Biểu đồ giá trị hồ sơ đọc series thống kê, cần quyền Xem "Tổng quan & thống kê". */}
         {canStats && <SubmittedValueCard />}
         <PendingReviewCard
@@ -85,8 +98,11 @@ export default function LoanListPage() {
         />
       </div>
 
-      <section className="ui-card loan-list" aria-label="Danh sách hồ sơ vay">
-        <div className="loan-list-bar">
+      <section
+        className="ui-card loan-list pt-3.5 px-3.5 pb-3 max-[760px]:px-2.5 max-[760px]:pb-2.5"
+        aria-label="Danh sách hồ sơ vay"
+      >
+        <div className="loan-list-bar flex items-center justify-between gap-3 flex-wrap mb-3">
           <div className="ui-tabs" role="tablist" aria-label="Lọc trạng thái hồ sơ">
             {FILTERS.map((item) => (
               <button
@@ -102,6 +118,12 @@ export default function LoanListPage() {
               </button>
             ))}
           </div>
+          {hiddenFilter ? (
+            <div className="loan-filter-note flex items-center gap-2 flex-wrap text-secondary text-[13px]" role="status">
+              <span>Đang lọc: <b className="text-primary font-semibold">{HIDDEN_FILTER_LABELS[hiddenFilter]}</b></span>
+              <button type="button" className="ui-btn soft" onClick={() => updateQuery('ALL', 0)}>Bỏ lọc</button>
+            </div>
+          ) : null}
         </div>
 
         {list.error ? (
@@ -114,6 +136,8 @@ export default function LoanListPage() {
           <div className={list.isFetching ? 'ui-busy' : undefined}>
             <ApplicationTable
               applications={applications}
+              // Màu điểm chỉ giúp xếp ưu tiên khi thẩm định; ở các tab khác điểm chỉ để tra cứu nên giữ màu chữ thường.
+              toneScores={filter === 'PENDING_REVIEW'}
               displayName={displayName}
               isVerified={(borrowerId) => names[borrowerId]?.ekycVerified === true}
             />

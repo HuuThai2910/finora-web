@@ -2,7 +2,7 @@ import type { PageAccess } from '@/features/auth';
 
 export type SidebarIconName =
   | 'home' | 'chart' | 'file' | 'loan' | 'check' | 'clock' | 'workflow'
-  | 'grid' | 'identity' | 'users' | 'shield' | 'alert' | 'scan' | 'chain' | 'download' | 'faceScan' | 'key';
+  | 'grid' | 'identity' | 'users' | 'shield' | 'alert' | 'scan' | 'chain' | 'download' | 'faceScan' | 'key' | 'terminal';
 
 /**
  * Quyền cần để mở từng trang quản trị (khớp `OpsFunction` của backend). Menu ẩn mục không xem được, route hiện thẻ
@@ -23,6 +23,8 @@ export const PAGE_ACCESS = {
   staffRoles: { adminOnly: true },
   blockchain: { anyView: ['blockchain'] },
   aiPolicy: { anyView: ['ai-policy'] },
+  // Body gửi lên dù đã che vẫn có dữ liệu cá nhân nên chỉ ADMIN; finora-user cũng kiểm lại.
+  activityLogs: { adminOnly: true },
 } satisfies Record<string, PageAccess>;
 
 export interface AdminNavigationItem {
@@ -105,6 +107,12 @@ export const ADMIN_NAV_SECTIONS: AdminNavigationSection[] = [
     items: [
       { to: '/loans/evaluation', label: 'Chính sách đánh giá AI', icon: 'shield', access: PAGE_ACCESS.aiPolicy, matches: (pathname) => pathname === '/loans/evaluation' },    ],
   },
+  {
+    label: 'Hệ thống',
+    items: [
+      { to: '/system/activity-logs', label: 'Nhật ký hoạt động', icon: 'terminal', access: PAGE_ACCESS.activityLogs, matches: (pathname) => pathname === '/system/activity-logs' },
+    ],
+  },
 ];
 
 /** Menu theo quyền: bỏ mục không xem được, bỏ cả nhóm khi không còn mục nào. */
@@ -114,9 +122,14 @@ export function visibleNavSections(canAccess: (access: PageAccess) => boolean): 
     .filter((section) => section.items.length > 0);
 }
 
-/** Trang đầu tiên tài khoản mở được, theo thứ tự menu; null khi vai trò nhân viên chưa có quyền Xem nào. */
+/** Mục menu đầu tiên tài khoản mở được, theo thứ tự menu; null khi vai trò nhân viên chưa có quyền Xem nào. */
+export function firstAccessibleItem(canAccess: (access: PageAccess) => boolean): AdminNavigationItem | null {
+  return visibleNavSections(canAccess)[0]?.items[0] ?? null;
+}
+
+/** Đường dẫn của mục menu đầu tiên mở được (trang mặc định sau đăng nhập). */
 export function firstAccessiblePath(canAccess: (access: PageAccess) => boolean): string | null {
-  return visibleNavSections(canAccess)[0]?.items[0]?.to ?? null;
+  return firstAccessibleItem(canAccess)?.to ?? null;
 }
 
 export interface AdminBreadcrumb {

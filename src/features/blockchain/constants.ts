@@ -30,9 +30,9 @@ export const REFERENCE_TYPES: ReadonlyArray<{
   noun: string;
   placeholder: string;
 }> = [
-  { value: 'LOAN_APPLICATION', label: 'Hồ sơ vay', noun: 'hồ sơ vay', placeholder: 'ID hồ sơ vay, ví dụ 123' },
+  { value: 'LOAN_APPLICATION', label: 'Hồ sơ vay', noun: 'hồ sơ vay', placeholder: 'Mã hồ sơ LA-... hoặc ID số' },
   { value: 'LOAN_CONTRACT', label: 'Hợp đồng', noun: 'hợp đồng', placeholder: 'Số hợp đồng, ví dụ LC-...' },
-  { value: 'DISBURSEMENT_SAGA', label: 'Giải ngân', noun: 'saga giải ngân', placeholder: 'Mã saga giải ngân' },
+  { value: 'DISBURSEMENT_SAGA', label: 'Giải ngân', noun: 'lệnh giải ngân', placeholder: 'Mã lệnh giải ngân' },
   { value: 'REPAYMENT', label: 'Trả nợ', noun: 'giao dịch trả nợ', placeholder: 'Mã giao dịch trả nợ' },
   {
     value: 'NOTE_ISSUANCE',
@@ -57,7 +57,7 @@ export const REFERENCE_TYPES: ReadonlyArray<{
 /** Tên aggregate lưu trên proof (`aggregateType`); tên lạ hiện nguyên văn. */
 export const AGGREGATE_LABEL: Record<string, string> = {
   LoanContract: 'Hợp đồng',
-  DisbursementSaga: 'Saga giải ngân',
+  DisbursementSaga: 'Lệnh giải ngân',
   Repayment: 'Giao dịch trả nợ',
   NoteIssuance: 'Phát hành Note',
   NoteTransfer: 'Chuyển nhượng Note',
@@ -105,9 +105,12 @@ export const ARTIFACT_RESULT_INFO: Record<ArtifactResult, Tagged> = {
   MISMATCHED: { label: 'Không khớp hash đã neo', tone: 'danger' },
 };
 
-/** Dùng khi backend chưa trả câu cảnh báo của biên nhận MOCK (proof chưa xác nhận). */
+/**
+ * Câu cảnh báo duy nhất cho bằng chứng ghi trên sổ cái giả lập (MOCK). Dùng thay câu tiếng Anh backend gắn vào biên
+ * nhận ("Receipt MOCK…"), để trang chỉ nói một lần, bằng tiếng Việt.
+ */
 export const MOCK_LEDGER_NOTICE =
-  'Proof này ghi bằng ledger MOCK để demo. Biên nhận của nó không nằm trên Hyperledger Fabric và không dùng làm bằng chứng được.';
+  'Bằng chứng này được ghi trên sổ cái giả lập để chạy thử, không nằm trên Hyperledger Fabric nên không dùng làm bằng chứng được.';
 
 /** Giới hạn của bằng chứng (W3D mục 12, LEGAL-CONTRACT-01): nói rõ trên trang để không trình bày quá giá trị thật. */
 export const PROOF_LEGAL_NOTE =

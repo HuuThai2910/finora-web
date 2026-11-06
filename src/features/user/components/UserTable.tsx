@@ -1,7 +1,7 @@
 import { RowMenu, type RowMenuItem } from '@/components/RowMenu';
 import { StatusPill } from '@/components/StatusPill';
 import { usePermission } from '@/features/auth';
-import { ROLE_LABELS, formatGender } from '../constant';
+import { ROLE_LABELS, formatGender, maskIdNumber } from '../constant';
 import type { UserItem } from '../types';
 
 interface UserTableProps {
@@ -10,6 +10,19 @@ interface UserTableProps {
   currentAdminId: string | null;
   onChangeRole: (user: UserItem) => void;
   onToggleLock: (user: UserItem) => void;
+}
+
+/** Cột phụ ẩn khi bảng hẹp để cột vai trò và nút "⋯" vẫn nằm trong khung, không phải cuộn ngang mới thấy. */
+const HIDE_MD = 'user-hide-md max-[1100px]:hidden';
+const HIDE_SM = 'user-hide-sm max-[900px]:hidden';
+const HIDE_XS = 'user-hide-xs max-[600px]:hidden';
+
+/** Lý do khóa mục khóa/mở khóa; `null` khi bấm được. */
+function lockBlockedReason(user: UserItem, isSelf: boolean): string | null {
+  if (isSelf) return 'Không thể tự khóa tài khoản của chính bạn';
+  // Không biết đang khóa hay mở thì không biết bấm sẽ làm gì: chờ tra cứu được trạng thái (Làm mới).
+  if (user.locked == null) return 'Chưa đọc được trạng thái tài khoản, bấm Làm mới rồi thử lại';
+  return null;
 }
 
 /** Bảng người dùng; các thao tác của dòng gom vào menu "⋯". */
@@ -23,9 +36,9 @@ export function UserTable({ users, currentAdminId, onChangeRole, onToggleLock }:
         <thead>
           <tr>
             <th>Người dùng</th>
-            <th>Số điện thoại</th>
-            <th>Giới tính</th>
-            <th>Số CCCD</th>
+            <th className={HIDE_XS}>Số điện thoại</th>
+            <th className={HIDE_MD}>Giới tính</th>
+            <th className={HIDE_SM}>Số CCCD</th>
             <th>Vai trò</th>
             <th className="act"><span className="ui-sr-only">Thao tác</span></th>
           </tr>
@@ -35,11 +48,14 @@ export function UserTable({ users, currentAdminId, onChangeRole, onToggleLock }:
             const isSelf = currentAdminId != null && String(user.id) === currentAdminId;
             const isLocked = user.locked === true;
             const name = user.fullName || user.email;
+            const lockBlocked = lockBlockedReason(user, isSelf);
+            const idNumber = maskIdNumber(user.idNumber);
             return (
               <tr key={user.id}>
-                <td>
-                  <div className="user-name-row">
-                    <span className={user.fullName ? 'user-name' : 'user-name empty'}>
+                {/* Email dài xuống dòng ở màn hẹp thay vì đẩy cột vai trò và nút "⋯" ra ngoài khung. */}
+                <td className="max-[600px]:whitespace-normal max-[600px]:wrap-anywhere">
+                  <div className="user-name-row flex items-center gap-1.5">
+                    <span className={user.fullName ? 'user-name font-medium' : 'user-name empty text-muted font-normal'}>
                       {user.fullName || 'Chưa cập nhật tên'}
                     </span>
                     {isSelf && <StatusPill tone="neutral" small>Bạn</StatusPill>}
@@ -47,9 +63,9 @@ export function UserTable({ users, currentAdminId, onChangeRole, onToggleLock }:
                   </div>
                   <span className="ui-sub">{user.email}</span>
                 </td>
-                <td>{user.phone || '-'}</td>
-                <td>{formatGender(user.gender)}</td>
-                <td>{user.idNumber ? <span className="ui-mono">{user.idNumber}</span> : '-'}</td>
+                <td className={HIDE_XS}>{user.phone || '-'}</td>
+                <td className={HIDE_MD}>{formatGender(user.gender)}</td>
+                <td className={HIDE_SM}>{idNumber ? <span className="ui-mono">{idNumber}</span> : '-'}</td>
                 <td>
                   {ROLE_LABELS[user.role] ?? user.role}
                   {user.role === 'STAFF' && (
@@ -76,8 +92,8 @@ export function UserTable({ users, currentAdminId, onChangeRole, onToggleLock }:
                         danger: !isLocked,
                         separatorBefore: true,
                         onSelect: () => onToggleLock(user),
-                        disabled: isSelf,
-                        disabledReason: 'Không thể tự khóa tài khoản của chính bạn',
+                        disabled: lockBlocked != null,
+                        disabledReason: lockBlocked ?? undefined,
                       } satisfies RowMenuItem] : []),
                     ]}
                   />

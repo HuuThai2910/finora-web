@@ -5,8 +5,7 @@ import type { RootState } from '@/app/store';
 import { ADMIN_APP_ROLES } from '../permissions';
 import type { CurrentUser } from '../types';
 import { AccessDenied } from './AccessDenied';
-import { BrandMark } from './BrandMark';
-import './ProtectedRoute.css';
+import { AuthWait } from './AuthWait';
 
 interface ProtectedRouteProps {
   children: ReactNode;
@@ -29,17 +28,10 @@ export function ProtectedRoute({ children, allowedRoles = ADMIN_APP_ROLES }: Pro
   const location = useLocation();
   const { isAuthenticated, isLoading, profile } = useSelector((state: RootState) => state.auth);
 
-  if (isLoading) {
-    return (
-      <div className="auth-wait" role="status" aria-live="polite">
-        <span className="auth-wait-logo"><BrandMark /></span>
-        <span className="auth-wait-spinner" aria-hidden="true" />
-        <p>Đang kiểm tra phiên đăng nhập...</p>
-      </div>
-    );
-  }
+  if (isLoading) return <AuthWait />;
 
   if (!isAuthenticated) {
+    // `location` gồm cả pathname và search: đăng nhập lại thì về đúng trang, đúng bộ lọc.
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 

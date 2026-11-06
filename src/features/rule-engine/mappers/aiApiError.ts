@@ -30,6 +30,11 @@ function joinValidation(items: unknown[]): string {
  * Hàm này giữ `toUiApiError` làm gốc (status, code, traceId nếu Gateway bọc lại)
  * rồi chỉ thay câu thông báo bằng `detail` để admin thấy đúng lý do backend từ chối.
  */
+/** finora-ai trả 409 khi chính sách đã được người khác lưu sau lúc trang này đọc (khóa chống ghi đè). */
+export function isPolicyConflict(error: unknown): boolean {
+  return toUiApiError(error).status === 409;
+}
+
 export function toAiUiError(error: unknown): UiApiError {
   const base = toUiApiError(error);
   const data = isRecord(error) && isRecord(error.data) ? error.data : undefined;

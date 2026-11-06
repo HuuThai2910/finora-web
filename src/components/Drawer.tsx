@@ -19,8 +19,8 @@ const FOCUSABLE = 'button:not(:disabled), [href], input:not(:disabled), select:n
  * Ngăn trượt từ phải dùng chung: xem chi tiết một dòng mà vẫn thấy danh sách phía sau.
  *
  * Mở thì focus nút đóng, Tab chỉ đi vòng trong ngăn, Esc hoặc bấm nền để đóng, đóng thì trả focus về chỗ cũ và mở
- * lại cuộn trang. Cùng hành vi và kích thước với `SideDrawer` của Vận hành khoản vay và Chợ thứ cấp Notes; WEB-UI-001
- * ghi việc gộp hai bản đó về component này.
+ * lại cuộn trang. Ngăn thu hồi (Vận hành) và ngăn sổ lệnh (Chợ thứ cấp) đã dùng component này (WEB-UX-001); ngăn
+ * Sản phẩm vay còn bản riêng vì cần chân ngăn và khóa đóng khi đang gửi.
  */
 export function Drawer({ title, subtitle, onClose, children, wide = true }: DrawerProps) {
   const titleId = useId();

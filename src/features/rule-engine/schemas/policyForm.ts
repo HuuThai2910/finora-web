@@ -6,7 +6,8 @@ import type { ApprovalThresholds, ModelWeights, PolicyGrade } from '../types';
  * Chỉ gồm các ràng buộc rẻ, chắc chắn trùng backend (`config_router.py`). Ràng buộc
  * phụ thuộc cấu hình (bảng hạng phủ kín 0 đến 100, ngưỡng tự duyệt thuộc hai hạng
  * cao nhất, hạn mức không vượt trần nền tảng) để backend kiểm và hiện nguyên câu
- * backend trả về, tránh hai nơi diễn giải khác nhau.
+ * backend trả về, tránh hai nơi diễn giải khác nhau. Trọng số nhập theo phần trăm
+ * nên câu báo lỗi cũng nói theo phần trăm.
  */
 export function kiemTraChinhSach(
   grades: PolicyGrade[],
@@ -16,9 +17,10 @@ export function kiemTraChinhSach(
   if (thresholds.auto_reject >= thresholds.auto_approve) {
     return 'Ngưỡng tự động từ chối phải nhỏ hơn ngưỡng tự động đề xuất duyệt.';
   }
+  if (weights.pd_weight < 0 || weights.pd_weight > 1) return 'Trọng số PD phải từ 0% đến 100%.';
   const total = Math.round((weights.pd_weight + weights.risk_weight) * 10000) / 10000;
   if (total !== 1) {
-    return `Trọng số PD cộng trọng số điểm luật phải bằng 1 (hiện tại là ${total}).`;
+    return `Trọng số PD cộng trọng số điểm luật phải bằng 100% (hiện tại là ${Math.round(total * 10000) / 100}%).`;
   }
   for (const g of grades) {
     if (g.min_score >= g.max_score) {

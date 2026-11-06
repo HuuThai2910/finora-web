@@ -6,6 +6,7 @@ import { formatNumber, formatPercent } from '@/utils';
 import { PRODUCT_CHART_MONTHS, useProductStatistics } from '../hooks/useProductStatistics';
 import { buildDisbursedOption, disbursedByMonth } from '../mappers/productCharts';
 import { formatMoney } from '../mappers/productDisplay';
+import { CAPTION, DETAIL_LIST } from './drawerStyles';
 
 /**
  * Hai mục trong ngăn chi tiết sản phẩm (mockup products.html): "Khoản vay đang có" từ `portfolio.byProduct`
@@ -23,12 +24,12 @@ export function ProductPerformance({ productId }: { productId: number }) {
       {summary.error ? (
         <ErrorNotice error={summary.error} onRetry={summary.refetch} />
       ) : summary.isLoading ? (
-        <span className="ui-skeleton prod-perf-skel" aria-busy="true" />
+        <span className="ui-skeleton prod-perf-skel h-15" aria-busy="true" />
       ) : !stat || stat.outstandingLoans === 0 ? (
-        <p className="prod-cap">Sản phẩm hiện chưa có khoản vay nào còn dư nợ.</p>
+        <p className={CAPTION}>Sản phẩm hiện chưa có khoản vay nào còn dư nợ.</p>
       ) : (
         <>
-          <dl className="prod-dl">
+          <dl className={DETAIL_LIST}>
             <dt>Số khoản</dt>
             <dd>{formatNumber(stat.outstandingLoans)}</dd>
             <dt>Dư nợ gốc</dt>
@@ -44,13 +45,13 @@ export function ProductPerformance({ productId }: { productId: number }) {
       {series.error ? (
         <ErrorNotice error={series.error} onRetry={series.refetch} />
       ) : series.isLoading || !disbursed || !option ? (
-        <span className="ui-skeleton prod-perf-skel" aria-busy="true" />
+        <span className="ui-skeleton prod-perf-skel h-15" aria-busy="true" />
       ) : disbursed.values.every((value) => value === 0) ? (
-        <p className="prod-cap">Không giải ngân trong {PRODUCT_CHART_MONTHS} tháng qua.</p>
+        <p className={CAPTION}>Không giải ngân trong {PRODUCT_CHART_MONTHS} tháng qua.</p>
       ) : (
         <>
-          <EChart className="prod-dr-plot" option={option} ariaLabel={`Biểu đồ cột giải ngân ${PRODUCT_CHART_MONTHS} tháng của sản phẩm`} />
-          <p className="prod-cap">Tháng này tính đến hôm nay.</p>
+          <EChart className="prod-dr-plot h-37.5 mt-1 -mx-1.5" option={option} ariaLabel={`Biểu đồ cột giải ngân ${PRODUCT_CHART_MONTHS} tháng của sản phẩm`} />
+          <p className={CAPTION}>Tháng này tính đến hôm nay.</p>
         </>
       )}
     </>

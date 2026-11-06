@@ -1,6 +1,6 @@
 import type { PillTone } from '@/components/StatusPill';
 import { EKYC_DISPLAY, ROLE_LABELS, type EkycStatusType, type RoleType } from '@/features/user';
-import { EMPTY } from '@/utils';
+import { EMPTY, formatDate, formatDateTime } from '@/utils';
 
 /** Nhãn và màu trạng thái eKYC dùng chung với trang Người dùng; trạng thái lạ hiện nguyên mã, màu trung tính. */
 export function ekycDisplay(status: string): { label: string; tone: PillTone } {
@@ -26,21 +26,14 @@ export function formatBirthDate(value: string | null): string {
   return match ? `${match[3]}/${match[2]}/${match[1]}` : value;
 }
 
-const DAY = new Intl.DateTimeFormat('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
-const TIME = new Intl.DateTimeFormat('vi-VN', { hour: '2-digit', minute: '2-digit', hour12: false });
-
-/** Thời điểm (`Instant`) chỉ lấy ngày theo giờ máy người xem, ví dụ 24/09/2026. */
+/** Thời điểm (`Instant`) chỉ lấy ngày theo giờ Việt Nam, ví dụ 24/09/2026. */
 export function formatDay(value: string | null | undefined): string {
-  if (!value) return EMPTY;
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? EMPTY : DAY.format(date);
+  return formatDate(value);
 }
 
-/** Thời điểm đủ ngày giờ, ví dụ 24/09/2026 08:30. */
+/** Thời điểm đủ ngày giờ theo giờ Việt Nam, ví dụ 08:30 24/09/2026. */
 export function formatDayTime(value: string | null | undefined): string {
-  if (!value) return EMPTY;
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? EMPTY : `${DAY.format(date)} ${TIME.format(date)}`;
+  return formatDateTime(value);
 }
 
 /**

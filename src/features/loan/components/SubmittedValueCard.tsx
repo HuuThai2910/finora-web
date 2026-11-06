@@ -42,8 +42,8 @@ export function SubmittedValueCard() {
   const option = useMemo(() => (summary ? buildSubmittedValueOption(summary.points) : null), [summary]);
 
   return (
-    <section className="ui-card loan-top-card" aria-labelledby="loanSubmittedTitle">
-      <div className="ui-card-head">
+    <section className="ui-card loan-top-card py-4 px-4.5" aria-labelledby="loanSubmittedTitle">
+      <div className="ui-card-head flex-nowrap">
         <h2 id="loanSubmittedTitle">
           <span className="ui-ico"><BarsIcon /></span>
           Giá trị hồ sơ nộp {SUBMITTED_DAYS} ngày
@@ -52,14 +52,16 @@ export function SubmittedValueCard() {
       </div>
 
       {series.error ? (
-        <div className="loan-top-body"><ErrorNotice error={series.error} onRetry={series.refetch} /></div>
+        <div className="loan-top-body grid gap-2.5 mt-3"><ErrorNotice error={series.error} onRetry={series.refetch} /></div>
       ) : series.isLoading ? (
-        <div className="loan-top-body" aria-busy="true">
-          <span className="ui-skeleton loan-skel-big" />
-          <span className="ui-skeleton loan-skel-plot" />
+        <div className="loan-top-body grid gap-2.5 mt-3" aria-busy="true">
+          <span className="ui-skeleton loan-skel-big w-[55%] h-6.5" />
+          <span className="ui-skeleton loan-skel-plot h-37.5" />
         </div>
       ) : !summary || !option ? (
-        <p className="loan-top-empty">Máy chủ chưa trả số tiền đề nghị theo ngày, nên chưa vẽ được biểu đồ này.</p>
+        <p className="loan-top-empty mt-2.5 text-secondary text-[13px]">
+          Máy chủ chưa trả số tiền đề nghị theo ngày, nên chưa vẽ được biểu đồ này.
+        </p>
       ) : (
         <>
           <div className="ui-big">
@@ -80,7 +82,7 @@ export function SubmittedValueCard() {
             </span>
           </div>
           <EChart
-            className="loan-top-plot"
+            className="loan-top-plot h-42.5 mt-1"
             option={option}
             ariaLabel={`Biểu đồ cột số tiền đề nghị vay theo ngày, ${SUBMITTED_DAYS} ngày gần nhất`}
           />

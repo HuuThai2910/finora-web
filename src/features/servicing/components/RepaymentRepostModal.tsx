@@ -1,10 +1,11 @@
-import { ErrorNotice } from '@/components/ErrorNotice';
 import { Modal } from '@/components/Modal';
 import { formatDate } from '@/utils';
 import { useRepostRepaymentMutation } from '../api/paymentIncidentApi';
 import { REPAYMENT_TYPE_LABEL } from '../constant';
 import { money } from '../formatters';
 import type { RepaymentIncident } from '../types';
+import { toast } from '@/lib/toast';
+import { ErrorToast } from '@/components/ErrorToast';
 
 interface Props {
   item: RepaymentIncident;
@@ -28,9 +29,11 @@ export function RepaymentRepostModal({ item, onClose, onDone }: Props) {
     try {
       const result = await repost(item.repaymentId).unwrap();
       if (result.status === 'FAILED') {
-        onDone(`Hệ thống lõi từ chối giao dịch ${item.repaymentId} và không có bản ghi nào; tiền đã hoàn về ví người vay.`);
+        toast.warning(`Hệ thống lõi từ chối giao dịch ${item.repaymentId} và không có bản ghi nào; tiền đã hoàn về ví người vay.`);
+        onDone('');
       } else if (result.status === 'RECONCILIATION_REQUIRED') {
-        onDone(`Chưa xác định được kết quả ghi giao dịch ${item.repaymentId}; giao dịch vẫn chờ đối soát.`);
+        toast.warning(`Chưa xác định được kết quả ghi giao dịch ${item.repaymentId}; giao dịch vẫn chờ đối soát.`);
+        onDone('');
       } else {
         onDone(`Đã ghi giao dịch ${item.repaymentId} vào hệ thống lõi; tiền sẽ được chia cho nhà đầu tư ở lượt xử lý kế tiếp.`);
       }
@@ -54,13 +57,13 @@ export function RepaymentRepostModal({ item, onClose, onDone }: Props) {
         </>
       )}
     >
-      <div className="svc-modal-body">
+      <div className="svc-modal-body grid gap-3">
         <p>
-          FINORA tra Fineract theo mã giao dịch trước. Nếu hệ thống lõi đã có giao dịch, FINORA chỉ ghi nhận kết quả. Nếu chưa
+          FINORA tra hệ thống lõi theo mã giao dịch trước. Nếu hệ thống lõi đã có giao dịch, FINORA chỉ ghi nhận kết quả. Nếu chưa
           có, FINORA ghi với đúng mã, số tiền và ngày ghi nhận {formatDate(item.corePostingDate)}, nên không thể thành hai giao dịch.
         </p>
-        <p>Nếu Fineract từ chối và tra lại vẫn không có giao dịch, tiền được hoàn về ví người vay.</p>
-        {state.error && <ErrorNotice error={state.error} />}
+        <p>Nếu hệ thống lõi từ chối và tra lại vẫn không có giao dịch, tiền được hoàn về ví người vay.</p>
+        {state.error && <ErrorToast error={state.error} />}
       </div>
     </Modal>
   );

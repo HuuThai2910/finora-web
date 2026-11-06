@@ -126,6 +126,8 @@ export interface AdminLoanReviewDetail extends AdminLoanReviewSummary {
   id: number;
   /** Số hợp đồng; null cho tới khi hợp đồng được lập (sau khi khoản vay đủ vốn). */
   contractNumber: string | null;
+  /** Mã lý do AI chuyển hồ sơ cho người thẩm định; rỗng khi AI không chuyển hoặc lần chấm cũ chưa lưu lý do. */
+  aiReviewReasons?: string[];
   purposeDetail: string | null;
   pricingPolicyVersion: string | null;
   financialInformation: ApplicantFinancialInformation;

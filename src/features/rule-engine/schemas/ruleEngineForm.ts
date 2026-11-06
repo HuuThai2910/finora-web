@@ -15,9 +15,12 @@ export function laNguongVoCuc(nguong: number, moc: number) {
   return nguong >= moc;
 }
 
+const SO_VI = new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 4 });
+
+/** Ngưỡng bậc kiểu Việt Nam: "≥ 0,2", "≤ 15.000.000". */
 export function dinhDangNguong(nguong: number, moc: number, nghichDao: boolean) {
   if (laNguongVoCuc(nguong, moc)) return 'còn lại';
-  return `${nghichDao ? '≤' : '≥'} ${nguong}`;
+  return `${nghichDao ? '≤' : '≥'} ${SO_VI.format(nguong)}`;
 }
 
 /** Đơn vị ở cột ngưỡng; trường 0 đến 1 nói rõ là tỷ lệ để khỏi nhập 20 thay vì 0.2. */
@@ -168,41 +171,55 @@ function kiemTraBac(ten: string, r: AiRule, diemToiDa: number): string {
   return '';
 }
 
-/** Kiểm tra tại chỗ, cùng bộ luật với backend. Trả về thông báo lỗi đầu tiên hoặc ''. */
-export function kiemTra(rules: AiRule[], danhMuc: Map<string, AiTruong>, diemToiDa: number): string {
-  if (rules.length === 0) return 'Phải có ít nhất một luật.';
-  if (!rules.some(r => r.bat)) return 'Phải bật ít nhất một luật, nếu không hệ thống không còn cơ sở chấm điểm.';
+/** Kết quả kiểm tra: câu lỗi đầu tiên và vị trí luật gây lỗi (`null` khi lỗi thuộc cả bộ luật, ví dụ chưa bật luật nào). */
+export interface LoiBoLuat {
+  message: string;
+  index: number | null;
+}
 
+/** Kiểm tra một luật; trả câu lỗi đầu tiên hoặc ''. */
+function kiemTraMotLuat(r: AiRule, i: number, danhMuc: Map<string, AiTruong>, diemToiDa: number): string {
+  const ten = r.mo_ta.trim() || `Luật #${i + 1}`;
+  if (!r.mo_ta.trim()) return `Luật #${i + 1}: chưa có mô tả.`;
+  if (!MAU_MA_LUAT.test(r.ma)) {
+    return `${ten}: mã luật phải là chữ hoa, số, gạch dưới, bắt đầu bằng chữ, dài từ 3 đến 64 ký tự.`;
+  }
+  const truong = danhMuc.get(r.truong);
+  if (!truong) return `${ten}: trường "${r.truong}" không có trong danh mục.`;
+  if (r.trong_so < TRONG_SO_MIN || r.trong_so > TRONG_SO_MAX) {
+    return `${ten}: trọng số phải từ ${TRONG_SO_MIN} đến ${TRONG_SO_MAX}.`;
+  }
+  if (r.diem_khi_thieu < 0 || r.diem_khi_thieu > diemToiDa) {
+    return `${ten}: điểm khi thiếu dữ liệu phải từ 0 đến ${diemToiDa}.`;
+  }
+  if (r.goi_y) {
+    if (r.goi_y.length > GOI_Y_MAX) return `${ten}: gợi ý tối đa ${GOI_Y_MAX} ký tự.`;
+    const la = [...r.goi_y.matchAll(/\{([^{}]*)\}/g)].map(m => m[1]).filter(x => x !== 'moc');
+    if (la.length) return `${ten}: gợi ý chỉ được dùng chỗ trống {moc}, không hiểu {${la[0]}}.`;
+  }
+  return truong.kieu === 'phan_loai' ? kiemTraBangDiem(ten, r, truong, diemToiDa) : kiemTraBac(ten, r, diemToiDa);
+}
+
+/**
+ * Kiểm tra tại chỗ, cùng bộ luật với backend, kèm vị trí luật lỗi để giao diện cuộn tới đúng thẻ. Mã trùng báo ở
+ * luật xuất hiện sau (luật trước giữ mã của nó).
+ */
+export function kiemTraChiTiet(rules: AiRule[], danhMuc: Map<string, AiTruong>, diemToiDa: number): LoiBoLuat | null {
+  if (rules.length === 0) return { message: 'Phải có ít nhất một luật.', index: null };
+  if (!rules.some(r => r.bat)) {
+    return { message: 'Phải bật ít nhất một luật, nếu không hệ thống không còn cơ sở chấm điểm.', index: null };
+  }
   const daThay = new Set<string>();
   for (const [i, r] of rules.entries()) {
-    const ten = r.mo_ta.trim() || `Luật #${i + 1}`;
-
-    if (!r.mo_ta.trim()) return `Luật #${i + 1}: chưa có mô tả.`;
-    if (!MAU_MA_LUAT.test(r.ma)) {
-      return `${ten}: mã luật phải là chữ hoa, số, gạch dưới, bắt đầu bằng chữ, dài từ 3 đến 64 ký tự.`;
-    }
-    if (daThay.has(r.ma)) return `Mã luật ${r.ma} bị trùng.`;
+    const loi = kiemTraMotLuat(r, i, danhMuc, diemToiDa);
+    if (loi) return { message: loi, index: i };
+    if (daThay.has(r.ma)) return { message: `Mã luật ${r.ma} bị trùng.`, index: i };
     daThay.add(r.ma);
-
-    const truong = danhMuc.get(r.truong);
-    if (!truong) return `${ten}: trường "${r.truong}" không có trong danh mục.`;
-
-    if (r.trong_so < TRONG_SO_MIN || r.trong_so > TRONG_SO_MAX) {
-      return `${ten}: trọng số phải từ ${TRONG_SO_MIN} đến ${TRONG_SO_MAX}.`;
-    }
-    if (r.diem_khi_thieu < 0 || r.diem_khi_thieu > diemToiDa) {
-      return `${ten}: điểm khi thiếu dữ liệu phải từ 0 đến ${diemToiDa}.`;
-    }
-    if (r.goi_y) {
-      if (r.goi_y.length > GOI_Y_MAX) return `${ten}: gợi ý tối đa ${GOI_Y_MAX} ký tự.`;
-      const la = [...r.goi_y.matchAll(/\{([^{}]*)\}/g)].map(m => m[1]).filter(x => x !== 'moc');
-      if (la.length) return `${ten}: gợi ý chỉ được dùng chỗ trống {moc}, không hiểu {${la[0]}}.`;
-    }
-
-    const loi = truong.kieu === 'phan_loai'
-      ? kiemTraBangDiem(ten, r, truong, diemToiDa)
-      : kiemTraBac(ten, r, diemToiDa);
-    if (loi) return loi;
   }
-  return '';
+  return null;
+}
+
+/** Kiểm tra tại chỗ, cùng bộ luật với backend. Trả về thông báo lỗi đầu tiên hoặc ''. */
+export function kiemTra(rules: AiRule[], danhMuc: Map<string, AiTruong>, diemToiDa: number): string {
+  return kiemTraChiTiet(rules, danhMuc, diemToiDa)?.message ?? '';
 }

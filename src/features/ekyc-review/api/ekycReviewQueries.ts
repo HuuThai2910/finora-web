@@ -21,6 +21,10 @@ const ekycReviewQueries = userServiceApi.injectEndpoints({
       queryFn: (args, { signal }) => run(() => ekycReviewApi.listAttempts(args, signal)),
       providesTags: [{ type: 'EkycAttemptList', id: 'LIST' }],
     }),
+    getUserEkycAttempts: builder.query<PageResponse<EkycAttemptSummary>, number>({
+      queryFn: (userProfileId, { signal }) => run(() => ekycReviewApi.listAttemptsOfUser(userProfileId, signal)),
+      providesTags: [{ type: 'EkycAttemptList', id: 'LIST' }],
+    }),
     getEkycAttempt: builder.query<EkycAttemptDetail, string>({
       queryFn: (attemptId, { signal }) => run(() => ekycReviewApi.getAttempt(attemptId, signal)),
       providesTags: (_result, _error, attemptId) => [{ type: 'EkycAttempt', id: attemptId }],
@@ -49,4 +53,6 @@ const ekycReviewQueries = userServiceApi.injectEndpoints({
   }),
 });
 
-export const { useGetEkycAttemptsQuery, useGetEkycAttemptQuery, useDecideEkycAttemptMutation } = ekycReviewQueries;
+export const {
+  useGetEkycAttemptsQuery, useGetUserEkycAttemptsQuery, useGetEkycAttemptQuery, useDecideEkycAttemptMutation,
+} = ekycReviewQueries;

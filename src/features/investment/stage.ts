@@ -11,7 +11,8 @@ import type { ListingInvestor, ListingStatus } from './types';
 export type FundingStageKey = 'DRAFT' | 'OPEN' | 'FUNDED' | 'FINALIZED' | 'NOTES_ISSUED';
 
 export const FUNDING_STAGES: ReadonlyArray<{ key: FundingStageKey; label: string }> = [
-  { key: 'DRAFT', label: 'Chờ duyệt' },
+  // Bước đầu là lúc khoản vay lên sàn; luồng hiện hành không còn bước duyệt trên web (chỉ dữ liệu cũ còn bản nháp).
+  { key: 'DRAFT', label: 'Lên sàn' },
   { key: 'OPEN', label: 'Gọi vốn' },
   { key: 'FUNDED', label: 'Đủ vốn' },
   { key: 'FINALIZED', label: 'Khóa vốn' },

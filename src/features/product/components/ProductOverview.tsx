@@ -34,7 +34,7 @@ export function ProductOverview({ onOpenProduct }: Props) {
   const riskiest = riskRows[0];
 
   return (
-    <div className="prod-overview">
+    <div className="prod-overview grid grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)] gap-4 max-[1180px]:grid-cols-[minmax(0,1fr)]">
       <ChartCard
         id="prodDemandTitle"
         title="Hồ sơ nộp theo tháng"
@@ -66,7 +66,7 @@ export function ProductOverview({ onOpenProduct }: Props) {
               .
             </p>
             <EChart
-              className="ui-chart-plot"
+              className="ui-chart-plot h-59"
               option={demandOption}
               notMerge
               ariaLabel={`Biểu đồ cột chồng số hồ sơ vay nộp mỗi tháng theo sản phẩm, ${demand.months.length} tháng trọn gần nhất`}
@@ -100,7 +100,7 @@ export function ProductOverview({ onOpenProduct }: Props) {
               {' '}(<b>{formatPercent(riskiest.nplRatioPercent)}</b>).
             </p>
             <EChart
-              className="ui-chart-plot"
+              className="ui-chart-plot h-59"
               option={riskOption}
               notMerge
               ariaLabel="Biểu đồ cột tỷ lệ nợ xấu của từng sản phẩm, so với toàn danh mục"

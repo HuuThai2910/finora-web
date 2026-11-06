@@ -12,30 +12,35 @@ import {
 
 /** Giá trị trống hiện chữ mờ "Chưa cập nhật" thay vì ô rỗng. */
 function orMissing(value: ReactNode, missing = 'Chưa cập nhật') {
-  return value ? value : <span className="cust-missing">{missing}</span>;
+  return value ? value : <span className="cust-missing text-muted">{missing}</span>;
 }
 
 function Field({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <div className="cust-field">
-      <dt>{label}</dt>
-      <dd>{children}</dd>
+    <div className="cust-field grid grid-cols-[150px_minmax(0,1fr)] gap-3 items-baseline py-2.25 border-b border-b-divider last:[border-bottom:0] max-[760px]:grid-cols-[120px_minmax(0,1fr)]">
+      <dt className="text-muted text-[13px]">{label}</dt>
+      <dd className="min-w-0 text-primary text-[14px] wrap-anywhere">{children}</dd>
     </div>
   );
 }
+
+const CARD = 'ui-card cust-card overflow-hidden';
+const CARD_TITLE = 'cust-card-title flex items-center justify-between gap-2 pt-3.5 px-4.5 pb-2.5';
+const CARD_HEADING = 'text-[15px] font-semibold';
+const LIST = 'cust-dl px-4.5 pb-2';
 
 /** Hai thẻ hồ sơ khách hàng: thông tin định danh (từ eKYC) và tài khoản. Chỉ hiện field `UserProfileResponse` có. */
 export function CustomerProfileCards({ customer }: { customer: UserItem }) {
   const ekyc = ekycDisplay(customer.ekycStatus);
   const account = accountState(customer.locked);
   return (
-    <div className="cust-grid">
-      <article className="ui-card cust-card" aria-labelledby="custIdentityTitle">
-        <div className="cust-card-title">
-          <h2 id="custIdentityTitle">Thông tin định danh</h2>
+    <div className="cust-grid grid grid-cols-2 gap-4 [align-items:start] max-[960px]:grid-cols-[minmax(0,1fr)]">
+      <article className={CARD} aria-labelledby="custIdentityTitle">
+        <div className={CARD_TITLE}>
+          <h2 id="custIdentityTitle" className={CARD_HEADING}>Thông tin định danh</h2>
           <StatusPill tone={ekyc.tone}>{ekyc.label}</StatusPill>
         </div>
-        <dl className="cust-dl">
+        <dl className={LIST}>
           <Field label="Họ và tên">{orMissing(customer.fullName)}</Field>
           <Field label="Số CCCD">{orMissing(customer.idNumber && <span className="ui-mono">{customer.idNumber}</span>)}</Field>
           <Field label="Ngày sinh">{orMissing(customer.dateOfBirth && formatBirthDate(customer.dateOfBirth))}</Field>
@@ -47,11 +52,11 @@ export function CustomerProfileCards({ customer }: { customer: UserItem }) {
         </dl>
       </article>
 
-      <article className="ui-card cust-card" aria-labelledby="custAccountTitle">
-        <div className="cust-card-title">
-          <h2 id="custAccountTitle">Tài khoản và phân quyền</h2>
+      <article className={CARD} aria-labelledby="custAccountTitle">
+        <div className={CARD_TITLE}>
+          <h2 id="custAccountTitle" className={CARD_HEADING}>Tài khoản và phân quyền</h2>
         </div>
-        <dl className="cust-dl">
+        <dl className={LIST}>
           <Field label="Mã người dùng"><span className="ui-mono">#{customer.id}</span></Field>
           <Field label="Email đăng nhập">{customer.email}</Field>
           <Field label="Số điện thoại">{orMissing(customer.phone)}</Field>

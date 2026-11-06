@@ -45,10 +45,23 @@ const MILLION = new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 1 });
 const RATE = new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 4 });
 const MONEY = new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 0 });
 
-/** Hạn mức gọn cho bảng theo đơn vị triệu, ví dụ "5 - 100 tr". */
+/** Hạn mức gọn cho bảng theo đơn vị triệu, ví dụ "5 - 100 tr"; hai đầu bằng nhau thì một số ("1 tr"). */
 export function formatMillionRange(min: number, max: number): string {
   if (!Number.isFinite(min) || !Number.isFinite(max)) return EMPTY;
-  return `${MILLION.format(min / 1e6)} - ${MILLION.format(max / 1e6)} tr`;
+  const low = MILLION.format(min / 1e6);
+  const high = MILLION.format(max / 1e6);
+  return low === high ? `${high} tr` : `${low} - ${high} tr`;
+}
+
+/** Kỳ hạn "3 - 12 tháng"; kỳ hạn cố định thì "12 tháng". `joiner` là chữ nối (bảng dùng " - ", ngăn chi tiết " đến "). */
+export function formatTermRange(min: number, max: number, joiner = ' - '): string {
+  return min === max ? `${max} tháng` : `${min}${joiner}${max} tháng`;
+}
+
+/** Khung lãi suất dưới lãi cơ sở trong bảng: "khung 6 - 14%"; khung một giá trị thì "khung 9%". */
+export function formatRateFrame(min: number, max: number): string {
+  if (Number(min) === Number(max)) return `khung ${formatRate(max)}`;
+  return `khung ${formatRate(min).replace('%', '')} - ${formatRate(max)}`;
 }
 
 /** Lãi suất backend trả đã ở dạng phần trăm (12.5 nghĩa là 12,5%/năm). */
@@ -62,23 +75,6 @@ export function formatMoney(value: number | null | undefined): string {
   return `${MONEY.format(value)} đ`;
 }
 
-const DAY = new Intl.DateTimeFormat('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
-const TIME = new Intl.DateTimeFormat('vi-VN', { hour: '2-digit', minute: '2-digit', hour12: false });
-
-/** Ngày dạng 24/09/2026 theo giờ máy người xem. */
-export function formatDay(value: string | null | undefined): string {
-  if (!value) return EMPTY;
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? EMPTY : DAY.format(date);
-}
-
-/** Ngày giờ dạng 24/09/2026 08:30. */
-export function formatDayTime(value: string | null | undefined): string {
-  if (!value) return EMPTY;
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? EMPTY : `${DAY.format(date)} ${TIME.format(date)}`;
-}
-
 export interface AvailableActions {
   /** Nhãn nút đồng bộ, `null` khi không được đồng bộ ở trạng thái hiện tại. */
   syncLabel: string | null;
@@ -89,6 +85,8 @@ export interface AvailableActions {
   activateBlockedReason: string | null;
   canDeactivate: boolean;
   canArchive: boolean;
+  /** Sửa cấu hình: chỉ bản nháp không đang đồng bộ (`LoanProduct.updateConfiguration`). */
+  canEdit: boolean;
 }
 
 const SYNC_RUNNING: CoreSyncStatus[] = ['PENDING', 'PROCESSING', 'RETRY_PENDING'];
@@ -97,7 +95,8 @@ const SYNC_RUNNING: CoreSyncStatus[] = ['PENDING', 'PROCESSING', 'RETRY_PENDING'
  * Thao tác được phép theo chuyển trạng thái của `LoanProduct` ở finora-loan:
  * - đồng bộ chỉ cho bản nháp chưa đồng bộ hoặc lỗi đồng bộ (`markCoreSyncPending` chỉ nhận DRAFT);
  * - kích hoạt từ DRAFT/INACTIVE và phải đồng bộ xong;
- * - tạm dừng chỉ từ ACTIVE; lưu trữ từ DRAFT/INACTIVE (đang mở bán phải tạm dừng trước).
+ * - tạm dừng chỉ từ ACTIVE; lưu trữ từ DRAFT/INACTIVE (đang mở bán phải tạm dừng trước);
+ * - sửa cấu hình chỉ bản nháp và không trong lúc lệnh đồng bộ đang chạy.
  * Backend vẫn kiểm tra lại; ở đây chỉ để không bày nút chắc chắn bị từ chối.
  */
 export function availableActions(product: LoanProduct): AvailableActions {
@@ -106,11 +105,12 @@ export function availableActions(product: LoanProduct): AvailableActions {
   const syncInProgress = SYNC_RUNNING.includes(coreSyncStatus);
   const canSync = status === 'DRAFT' && (coreSyncStatus === 'NOT_SYNCED' || coreSyncStatus === 'FAILED');
   return {
-    syncLabel: canSync ? (coreSyncStatus === 'FAILED' ? 'Đồng bộ lại' : 'Đồng bộ sang Fineract') : null,
+    syncLabel: canSync ? (coreSyncStatus === 'FAILED' ? 'Đồng bộ lại' : 'Đồng bộ sang hệ thống lõi') : null,
     syncInProgress,
     canActivate: editable && coreSyncStatus === 'SYNCED',
-    activateBlockedReason: editable && coreSyncStatus !== 'SYNCED' ? 'Cần đồng bộ sang Fineract thành công trước khi kích hoạt' : null,
+    activateBlockedReason: editable && coreSyncStatus !== 'SYNCED' ? 'Cần đồng bộ sang hệ thống lõi thành công trước khi kích hoạt' : null,
     canDeactivate: status === 'ACTIVE',
     canArchive: editable,
+    canEdit: status === 'DRAFT' && !syncInProgress,
   };
 }

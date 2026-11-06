@@ -1,6 +1,8 @@
-import { formatCurrency } from '@/utils';
+import { formatNumber } from '@/utils';
+import { dong, sangPhanTram, soTuChuoi } from '../mappers/policyDisplay';
 import type { ModelWeights, PolicyGrade } from '../types';
 import { GradeBadge } from './GradeBadge';
+import { CARD, CARD_HEAD, CARD_TITLE, META, POLICY_INPUT, TABLE_WRAP } from './styles';
 
 interface GradeTableCardProps {
   grades: PolicyGrade[];
@@ -9,12 +11,15 @@ interface GradeTableCardProps {
   onGrade: (index: number, field: 'min_score' | 'max_score' | 'limit', value: number) => void;
 }
 
-/** Bảng hạng tín dụng: khoảng điểm và hạn mức gợi ý của từng hạng. */
+/**
+ * Bảng hạng tín dụng: khoảng điểm và hạn mức gợi ý của từng hạng. Ô hạn mức là ô chữ có dấu phân cách hàng nghìn và
+ * đơn vị "đ" (như ô số tiền của màn thu hồi): số hàng chục triệu gõ trong ô số trơn rất dễ thừa hay thiếu một chữ số 0.
+ */
 export function GradeTableCard({ grades, weights, editing, onGrade }: GradeTableCardProps) {
   const scoreInput = (index: number, field: 'min_score' | 'max_score', grade: PolicyGrade) => (
     <input
       type="number"
-      className="aip-input"
+      className={`aip-input ${POLICY_INPUT} w-22`}
       min="0"
       max="100"
       aria-label={`${field === 'min_score' ? 'Điểm tối thiểu' : 'Điểm tối đa'} hạng ${grade.grade}`}
@@ -24,14 +29,14 @@ export function GradeTableCard({ grades, weights, editing, onGrade }: GradeTable
   );
 
   return (
-    <article className="ui-card aip-card" aria-labelledby="aipGradeTitle">
-      <div className="aip-card-head">
-        <h2 id="aipGradeTitle">Phân hạng và hạn mức gợi ý</h2>
-        <span className="aip-meta">
-          Điểm đánh giá = điểm PD × {Math.round(weights.pd_weight * 100)}% + điểm luật × {Math.round(weights.risk_weight * 100)}%
+    <article className={`ui-card aip-card ${CARD}`} aria-labelledby="aipGradeTitle">
+      <div className={`aip-card-head ${CARD_HEAD}`}>
+        <h2 id="aipGradeTitle" className={CARD_TITLE}>Phân hạng và hạn mức gợi ý</h2>
+        <span className={`aip-meta ${META}`}>
+          Điểm đánh giá = điểm PD × {sangPhanTram(weights.pd_weight)}% + điểm luật × {sangPhanTram(weights.risk_weight)}%
         </span>
       </div>
-      <div className="ui-table-wrap aip-table-wrap">
+      <div className={`ui-table-wrap aip-table-wrap ${TABLE_WRAP}`}>
         <table className="ui-table list aip-grade-table">
           <thead>
             <tr>
@@ -49,16 +54,18 @@ export function GradeTableCard({ grades, weights, editing, onGrade }: GradeTable
                 <td className="num">{editing ? scoreInput(i, 'max_score', g) : g.max_score}</td>
                 <td className="num">
                   {editing ? (
-                    <input
-                      type="number"
-                      className="aip-input money"
-                      min="0"
-                      step="1000000"
-                      aria-label={`Hạn mức hạng ${g.grade}`}
-                      value={g.limit}
-                      onChange={(e) => onGrade(i, 'limit', Number(e.target.value))}
-                    />
-                  ) : formatCurrency(g.limit)}
+                    <span className="inline-flex items-center gap-1.5 text-[13px] text-secondary">
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        className={`aip-input money ${POLICY_INPUT} w-37.5`}
+                        aria-label={`Hạn mức hạng ${g.grade} (đồng)`}
+                        value={formatNumber(g.limit)}
+                        onChange={(e) => onGrade(i, 'limit', soTuChuoi(e.target.value))}
+                      />
+                      đ
+                    </span>
+                  ) : dong(g.limit)}
                 </td>
               </tr>
             ))}

@@ -1,3 +1,4 @@
+import type { PillTone } from '@/components/StatusPill';
 import type { EkycStatusType, RoleType } from './types';
 
 export const USER_PAGE_SIZE = 20;
@@ -22,9 +23,13 @@ export const ROLE_DESCRIPTIONS: Record<RoleType, string> = {
 /** Thứ tự lựa chọn trong hộp thoại đổi vai trò: quyền tăng dần. */
 export const ASSIGNABLE_ROLES: RoleType[] = ['BORROWER', 'INVESTOR', 'STAFF', 'ADMIN'];
 
-export const EKYC_DISPLAY: Record<EkycStatusType, { label: string; tone: 'success' | 'warning' | 'danger' }> = {
+/**
+ * Nhãn trạng thái xác minh danh tính của tài khoản. `PENDING` là khách chưa làm gì (chưa gửi lượt nào) nên tông xám
+ * "Chưa xác minh", tách hẳn với "Chờ duyệt tay" (cam) là việc đang chờ nhân viên xử lý. Trang Tổng quan dùng chung.
+ */
+export const EKYC_DISPLAY: Record<EkycStatusType, { label: string; tone: PillTone }> = {
   VERIFIED: { label: 'Đã xác minh', tone: 'success' },
-  PENDING: { label: 'Chờ xác minh', tone: 'warning' },
+  PENDING: { label: 'Chưa xác minh', tone: 'neutral' },
   MANUAL_REVIEW: { label: 'Chờ duyệt tay', tone: 'warning' },
   FAILED: { label: 'Thất bại', tone: 'danger' },
 };
@@ -45,4 +50,14 @@ export function formatGender(gender: string | null): string {
   if (gender === 'MALE') return 'Nam';
   if (gender === 'FEMALE') return 'Nữ';
   return '-';
+}
+
+/**
+ * Danh sách chỉ hiện 4 số cuối của số định danh (đủ để phân biệt khi gọi điện đối chiếu), số đầy đủ chỉ ở trang chi
+ * tiết khách hàng: bảng hiện nhiều người một lúc nên che bớt dữ liệu định danh.
+ */
+export function maskIdNumber(idNumber: string | null): string | null {
+  const value = idNumber?.trim();
+  if (!value) return null;
+  return value.length <= 4 ? value : `•••• ${value.slice(-4)}`;
 }

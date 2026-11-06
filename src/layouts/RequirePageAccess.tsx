@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { Link, Navigate } from 'react-router-dom';
-import { AccessDenied, OPS_FUNCTION_LABELS, usePermission, type PageAccess } from '@/features/auth';
-import { firstAccessiblePath } from './adminNavigation';
+import { ACCESS_DENIED_BUTTON_CLASS, AccessDenied, OPS_FUNCTION_LABELS, usePermission, type PageAccess } from '@/features/auth';
+import { firstAccessibleItem, firstAccessiblePath } from './adminNavigation';
 
 function deniedMessage(access: PageAccess): string {
   if ('adminOnly' in access) return 'Trang này chỉ dành cho quản trị viên.';
@@ -17,12 +17,13 @@ export function RequirePageAccess({ access, children }: { access: PageAccess; ch
   const { canAccess } = usePermission();
   if (canAccess(access)) return <>{children}</>;
 
-  const home = firstAccessiblePath(canAccess);
+  // Nói rõ nút đưa về đâu (mục menu đầu tiên được phép xem) thay cho "trang được phép xem" chung chung.
+  const home = firstAccessibleItem(canAccess);
   return (
     <AccessDenied
       inline
       message={deniedMessage(access)}
-      action={home ? <Link className="auth-denied-btn" to={home}>Về trang được phép xem</Link> : undefined}
+      action={home ? <Link className={ACCESS_DENIED_BUTTON_CLASS} to={home.to}>Về trang {home.label}</Link> : undefined}
     />
   );
 }

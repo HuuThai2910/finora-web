@@ -10,6 +10,8 @@ export type ListingStatus = 'DRAFT' | 'OPEN' | 'FULLY_FUNDED' | 'CLOSED' | 'CANC
 export interface MarketListing {
   listingId: number;
   loanId: number;
+  /** Mã hồ sơ vay công khai bên Loan (`LA-...`), dùng mở trang thẩm định `/loans/:applicationNumber/review`. */
+  applicationNumber?: string | null;
   purpose: string;
   region: string;
   creditGrade: string;
@@ -26,13 +28,17 @@ export interface MarketListing {
   status: ListingStatus;
   /** Số hợp đồng vay đã ký; null khi khoản chưa gắn hợp đồng. */
   contractNumber: string | null;
+  /**
+   * Trạng thái hợp đồng Investment chép từ sự kiện của Loan: `PENDING_LENDER_SIGNATURES` khi đủ vốn và chờ các bên
+   * ký, `EFFECTIVE` khi hợp đồng có hiệu lực hoặc đã giải ngân; mã khác giữ nguyên.
+   */
   contractStatus: string | null;
   fundingClosesAt: string;
-  /** Chỉ có khi `CANCELLED` do finora-loan hủy đợt gọi vốn đã đủ vốn (không giải ngân). */
+  /** Chỉ có khi `CANCELLED` do Loan hủy đợt gọi vốn đã đủ vốn (không giải ngân). */
   cancelledAt?: string | null;
   /** `CONTRACT_DECLINED`, `CONTRACT_EXPIRED` hoặc `DISBURSEMENT_FAILED`; mã lạ hiện nguyên văn. */
   cancellationReason?: string | null;
-  /** Có khi finora-loan đã xác nhận giải ngân (LoanDisbursed); trước đó tiền nhà đầu tư mới chỉ được giữ. */
+  /** Có khi Loan đã xác nhận giải ngân (LoanDisbursed); trước đó tiền nhà đầu tư mới chỉ được giữ. */
   disbursedAt?: string | null;
 }
 

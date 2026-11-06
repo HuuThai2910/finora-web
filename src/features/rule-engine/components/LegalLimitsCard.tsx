@@ -1,21 +1,23 @@
-import { formatCurrency, formatPercent } from '@/utils';
+import { formatPercent } from '@/utils';
+import { dong } from '../mappers/policyDisplay';
 import { CAN_CU_TRAN } from '../constants';
 import type { LegalLimits } from '../types';
 import { DefRow } from './DefRow';
+import { CARD, CARD_HEAD, CARD_TITLE } from './styles';
 
 /** Trần pháp lý do backend giữ cố định; PUT /config/product không đổi được. */
 export function LegalLimitsCard({ limits }: { limits: LegalLimits }) {
   return (
-    <article className="ui-card aip-card" aria-labelledby="aipLegalTitle">
-      <div className="aip-card-head">
-        <h2 id="aipLegalTitle">Trần theo quy định pháp luật</h2>
+    <article className={`ui-card aip-card ${CARD}`} aria-labelledby="aipLegalTitle">
+      <div className={`aip-card-head ${CARD_HEAD}`}>
+        <h2 id="aipLegalTitle" className={CARD_TITLE}>Trần theo quy định pháp luật</h2>
         <span className="ui-tag">Chỉ đọc</span>
       </div>
       <dl className="aip-def">
-        <DefRow label="Hạn mức mỗi nền tảng" value={formatCurrency(limits.max_platform_limit)} note={CAN_CU_TRAN.max_platform_limit} />
+        <DefRow label="Hạn mức mỗi nền tảng" value={dong(limits.max_platform_limit)} note={CAN_CU_TRAN.max_platform_limit} />
         <DefRow
           label="Tổng dư nợ mọi nền tảng"
-          value={formatCurrency(limits.max_total_debt_all_platforms)}
+          value={dong(limits.max_total_debt_all_platforms)}
           note={CAN_CU_TRAN.max_total_debt_all_platforms}
         />
         {/* Backend trả lãi suất dạng tỷ lệ (0.2), nhân 100 trước khi định dạng. */}

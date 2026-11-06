@@ -1,12 +1,14 @@
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Avatar } from '@/components/Avatar';
 import { Icon } from '@/components/Icon';
 import { StatusPill } from '@/components/StatusPill';
-import { APPLICATION_STATUS_LABELS, formatMoney, formatPercent } from '../formatters';
+import { fromListState } from '@/lib/navigation';
+import { APPLICATION_STATUS_LABELS, formatMoney, formatPercent, formatScore } from '../formatters';
 import {
   applicationStatusTone,
   formatCompactDateTime,
   recommendationTone,
+  unscoredLabel,
 } from '../mappers/applicationListDisplay';
 import type { AdminLoanReviewSummary } from '../types';
 import { ApplicationPurposeCell } from './ApplicationPurposeCell';
@@ -17,34 +19,43 @@ interface ApplicationTableProps {
   displayName: (actorId: string | null | undefined) => string;
   /** Người vay đã xác minh eKYC; chưa tra được thì coi là chưa biết, không gắn dấu. */
   isVerified: (actorId: string) => boolean;
+  /** Tô màu điểm theo khuyến nghị (chỉ ở tab Chờ thẩm định). */
+  toneScores: boolean;
 }
 
 /** Dấu xác minh eKYC cạnh tên người vay (mockup loans.html). */
 function VerifiedIcon() {
   return (
-    <svg className="loan-verified" viewBox="0 0 24 24" role="img" aria-label="Đã xác minh danh tính">
+    <svg className="loan-verified flex-none size-3.5 text-brand" viewBox="0 0 24 24" role="img" aria-label="Đã xác minh danh tính">
       <path fill="currentColor" d="M12 2 14.4 4l3.1-.3.9 3 2.6 1.8-1.2 2.9 1.2 2.9-2.6 1.8-.9 3-3.1-.3L12 22l-2.4-2-3.1.3-.9-3L3 15.5l1.2-2.9L3 9.6l2.6-1.8.9-3 3.1.3Z" />
       <path d="m8.5 12 2.4 2.4 4.6-4.8" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }
 
-const SCORE_FORMAT = new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 1 });
+// Cột Người vay ẩn ở màn hẹp để bảng không phải cuộn ngang.
+const HIDE_SM = 'hide-sm max-[760px]:hidden';
+
+// Màu điểm theo khuyến nghị (lớp tone do recommendationTone trả về), chỉ gắn khi bảng bật `toneScores`.
+const SCORE = 'loan-score font-bold tabular-nums [&.success]:text-success [&.warning]:text-warning [&.danger]:text-danger';
 
 const reviewPath = (applicationNumber: string) => `/loans/${encodeURIComponent(applicationNumber)}/review`;
 
 /** Bảng hồ sơ vay. Cả dòng bấm được để mở hồ sơ; nút cuối dòng giữ cho người dùng bàn phím và đọc màn hình. */
-export function ApplicationTable({ applications, displayName, isVerified }: ApplicationTableProps) {
+export function ApplicationTable({ applications, displayName, isVerified, toneScores }: ApplicationTableProps) {
   const navigate = useNavigate();
+  // Nhớ URL danh sách (tab, trang) để chi tiết quay về đúng chỗ.
+  const listState = fromListState(useLocation());
+  const open = (applicationNumber: string) => navigate(reviewPath(applicationNumber), { state: listState });
 
   return (
     <div className="ui-table-wrap">
-      <table className="ui-table list loan-table">
+      <table className="ui-table list loan-table [&_td]:px-2.5 [&_th]:px-2.5">
         <thead>
           <tr>
             <th>Hồ sơ</th>
             <th>Trạng thái</th>
-            <th className="hide-sm">Người vay</th>
+            <th className={HIDE_SM}>Người vay</th>
             <th className="num">Số tiền vay</th>
             <th className="num">Điểm</th>
             <th><span className="ui-sr-only">Thao tác</span></th>
@@ -63,16 +74,20 @@ export function ApplicationTable({ applications, displayName, isVerified }: Appl
                 tabIndex={0}
                 onClick={(event) => {
                   if ((event.target as HTMLElement).closest('a')) return;
-                  navigate(reviewPath(application.applicationNumber));
+                  open(application.applicationNumber);
                 }}
                 onKeyDown={(event) => {
                   if (event.key === 'Enter' && event.target === event.currentTarget) {
-                    navigate(reviewPath(application.applicationNumber));
+                    open(application.applicationNumber);
                   }
                 }}
               >
                 <td>
-                  <ApplicationPurposeCell applicationNumber={application.applicationNumber} purposeCode={application.purposeCode ?? null} />
+                  <ApplicationPurposeCell
+                    applicationNumber={application.applicationNumber}
+                    purposeCode={application.purposeCode ?? null}
+                    borrower={borrower}
+                  />
                 </td>
                 <td>
                   <StatusPill tone={applicationStatusTone(application.status)} dot>
@@ -80,10 +95,15 @@ export function ApplicationTable({ applications, displayName, isVerified }: Appl
                   </StatusPill>
                   <span className="ui-sub">nộp {formatCompactDateTime(application.submittedAt)}</span>
                 </td>
-                <td className="hide-sm">
+                <td className={HIDE_SM}>
                   <span className="ui-person">
                     <Avatar name={borrower.replace(/^#/, '')} />
-                    <span className="loan-borrower" title={borrower}>{borrower}</span>
+                    <span
+                      className="loan-borrower inline-block max-w-45 overflow-hidden text-ellipsis align-middle"
+                      title={borrower}
+                    >
+                      {borrower}
+                    </span>
                     {isVerified(application.borrowerId) && <VerifiedIcon />}
                   </span>
                 </td>
@@ -94,17 +114,17 @@ export function ApplicationTable({ applications, displayName, isVerified }: Appl
                 <td className="num">
                   {assessment?.evaluationScore != null ? (
                     <>
-                      <span className={`loan-score ${recommendationTone(assessment.aiRecommendation)}`}>
-                        {SCORE_FORMAT.format(assessment.evaluationScore)}
+                      <span className={toneScores ? `${SCORE} ${recommendationTone(assessment.aiRecommendation)}` : SCORE}>
+                        {formatScore(assessment.evaluationScore)}
                       </span>
                       <span className="ui-sub">hạng {assessment.creditGrade ?? '-'}</span>
                     </>
                   ) : (
-                    <span className="ui-sub">Chưa có</span>
+                    <span className="ui-sub">{unscoredLabel(assessment?.status ?? null)}</span>
                   )}
                 </td>
                 <td className="num">
-                  <Link className="ui-btn soft" to={reviewPath(application.applicationNumber)}>
+                  <Link className="ui-btn soft" to={reviewPath(application.applicationNumber)} state={listState}>
                     {isPending ? 'Thẩm định' : 'Chi tiết'}
                     <Icon name="arrowRight" />
                   </Link>

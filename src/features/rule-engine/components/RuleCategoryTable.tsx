@@ -1,5 +1,8 @@
 import { GIA_TRI_LABEL } from '../constants';
 import type { AiRule, AiTruong } from '../types';
+import {
+  RULE_CELL_INPUT, RULE_SCORE, RULE_TABLE, RULE_TBODY, RULE_TD_LABEL, RULE_TD_SCORE, RULE_TH_LABEL, RULE_TH_SCORE,
+} from './styles';
 
 interface RuleCategoryTableProps {
   luat: AiRule;
@@ -14,25 +17,25 @@ export default function RuleCategoryTable({ luat, truong, editing, diemToiDa, on
   const khoaList = truong?.gia_tri_hop_le ?? Object.keys(luat.bang_diem ?? {});
 
   return (
-    <table className="rl-table">
+    <table className={`rl-table ${RULE_TABLE}`}>
       <thead>
         <tr>
-          <th>{truong?.mo_ta ?? 'Giá trị'}</th>
-          <th className="rl-score">Điểm</th>
+          <th className={RULE_TH_LABEL}>{truong?.mo_ta ?? 'Giá trị'}</th>
+          <th className={`rl-score ${RULE_TH_SCORE}`}>Điểm</th>
         </tr>
       </thead>
-      <tbody>
+      <tbody className={RULE_TBODY}>
         {khoaList.map((khoa) => {
           const diem = luat.bang_diem?.[khoa] ?? 0;
           const nhan = GIA_TRI_LABEL[khoa] ?? khoa;
           return (
             <tr key={khoa}>
-              <td>{nhan}</td>
-              <td className="rl-score">
+              <td className={RULE_TD_LABEL}>{nhan}</td>
+              <td className={`rl-score ${RULE_TD_SCORE}`}>
                 {editing ? (
                   <input
                     type="number"
-                    className="aip-input rl-num rl-cell-input"
+                    className={`aip-input rl-num rl-cell-input ${RULE_CELL_INPUT} w-full`}
                     aria-label={`Điểm cho ${nhan}`}
                     min="0"
                     max={diemToiDa}
@@ -40,7 +43,7 @@ export default function RuleCategoryTable({ luat, truong, editing, diemToiDa, on
                     onChange={(e) => onChange({ ...luat.bang_diem, [khoa]: Number(e.target.value) })}
                   />
                 ) : (
-                  <strong>{diem}</strong>
+                  <strong className={RULE_SCORE}>{diem}</strong>
                 )}
               </td>
             </tr>

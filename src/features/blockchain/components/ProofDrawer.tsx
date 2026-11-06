@@ -4,9 +4,9 @@ import { StatusPill } from '@/components/StatusPill';
 import { usePermission } from '@/features/auth';
 import { toUiApiError } from '@/lib/api/errors';
 import { useGetProofQuery } from '../api/proofApi';
-import { MOCK_LEDGER_NOTICE } from '../constants';
 import type { ProofRetryFailure } from '../hooks/useProofRetry';
 import { proofTypeLabel, statusInfo } from '../mappers/proofDisplay';
+import { BC_DETAILS, BC_DETAILS_SUMMARY, BC_MUTED } from '../styles';
 import type { Proof } from '../types';
 import { ProofFacts } from './ProofFacts';
 import { ProofSummary } from './ProofSummary';
@@ -23,21 +23,19 @@ interface Props {
 }
 
 /** Đưa proof dừng gửi về hàng đợi; chỉ hiện với DEAD_LETTER (W3D mục 7). */
-function RetrySection({ proof, running, busy, failure, onRetry }: {
+function RetrySection({ proof, running, busy, onRetry }: {
   proof: Proof;
   running: boolean;
   busy: boolean;
-  failure: unknown;
   onRetry: (proof: Proof) => void;
 }) {
   return (
     <section aria-labelledby="bc-retry-title">
       <h3 id="bc-retry-title">Đưa lại hàng đợi gửi</h3>
-      <p className="bc-muted">
-        Proof đã hết lượt gửi tự động (DEAD_LETTER). Chỉ đưa lại sau khi đã xử lý nguyên nhân ở lỗi gần nhất; số lần gửi
-        được đếm lại từ đầu, lỗi cuối vẫn được giữ để đối chiếu.
+      <p className={BC_MUTED}>
+        Bằng chứng đã hết lượt gửi tự động. Chỉ đưa lại sau khi đã xử lý nguyên nhân ở lỗi gần nhất (trong chi tiết kỹ
+        thuật); số lần gửi được đếm lại từ đầu, lỗi cuối vẫn được giữ để đối chiếu.
       </p>
-      {failure != null && <div className="bc-gap"><ErrorNotice error={failure} /></div>}
       <button type="button" className="ui-btn primary" disabled={busy} onClick={() => onRetry(proof)}>
         {running ? 'Đang đưa lại...' : 'Đưa lại hàng đợi gửi'}
       </button>
@@ -47,9 +45,9 @@ function RetrySection({ proof, running, busy, failure, onRetry }: {
 
 /**
  * Ngăn chi tiết một proof, mở theo `?proof=` trên URL nên tải lại đúng proof qua `GET /proofs/{proofId}`. Proof MOCK
- * luôn có cảnh báo demo ở đầu ngăn; phần kiểm toàn vẹn và đưa lại hàng đợi nằm ngay bên dưới thông tin.
+ * có cảnh báo sổ cái giả lập ngay trong phần tóm tắt đầu ngăn; phần kiểm toàn vẹn và đưa lại hàng đợi nằm bên dưới.
  */
-export function ProofDrawer({ proofId, runningId, retryFailure, onRetry, onClose }: Props) {
+export function ProofDrawer({ proofId, runningId, onRetry, onClose }: Props) {
   const detail = useGetProofQuery(proofId);
   const proof = detail.data;
   const status = proof ? statusInfo(proof.status) : null;
@@ -70,15 +68,13 @@ export function ProofDrawer({ proofId, runningId, retryFailure, onRetry, onClose
     >
       {detail.error ? (
         notFound
-          ? <div className="ui-alert" role="alert">Không tìm thấy proof {proofId}.</div>
+          ? <div className="ui-alert" role="alert">Không tìm thấy bằng chứng này.</div>
           : <ErrorNotice error={detail.error} onRetry={detail.refetch} />
       ) : !proof ? (
-        <div className="ui-empty" aria-busy="true">Đang tải proof...</div>
+        <div className="ui-empty" aria-busy="true">Đang tải bằng chứng...</div>
       ) : (
         <>
-          {proof.provider === 'MOCK' && (
-            <p className="bc-callout warning" role="note">{proof.receipt?.notice ?? MOCK_LEDGER_NOTICE}</p>
-          )}
+          {/* Bằng chứng MOCK: phần tóm tắt đã nói rõ là sổ cái giả lập (một lần, bằng tiếng Việt). */}
           <ProofSummary proof={proof} />
           {/* Proof của giấy xác nhận chuyển nhượng neo hash tệp PDF: thêm tải tệp và xác minh chính tệp đó. */}
           {proof.proofType === 'NOTE_TRANSFER_DOCUMENT' && canViewDocument && (
@@ -89,18 +85,17 @@ export function ProofDrawer({ proofId, runningId, retryFailure, onRetry, onClose
           )}
           <section aria-labelledby="bc-verify-title">
             <h3 id="bc-verify-title">Xác minh dữ liệu</h3>
-            <VerifyPanel key={proof.proofId} proofId={proof.proofId} />
+            <VerifyPanel key={proof.proofId} proof={proof} />
           </section>
-          <details className="bc-technical">
-            <summary>Xem chi tiết kỹ thuật và nguồn dữ liệu</summary>
-            <div className="bc-technical-body"><ProofFacts proof={proof} /></div>
+          <details className={`bc-technical ${BC_DETAILS}`}>
+            <summary className={BC_DETAILS_SUMMARY}>Xem chi tiết kỹ thuật và nguồn dữ liệu</summary>
+            <div className="bc-technical-body p-3"><ProofFacts proof={proof} /></div>
           </details>
           {proof.status === 'DEAD_LETTER' && onRetry && (
             <RetrySection
               proof={proof}
               running={runningId === proof.proofId}
               busy={runningId != null}
-              failure={retryFailure?.proofId === proof.proofId ? retryFailure.error : null}
               onRetry={onRetry}
             />
           )}

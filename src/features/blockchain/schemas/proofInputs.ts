@@ -11,11 +11,18 @@ export function validateReference(type: ProofReferenceType, raw: string): string
   const id = raw.trim();
   if (!id) return 'Nhập mã tham chiếu cần tra.';
   if (id.length > REFERENCE_MAX_LENGTH) return `Mã tham chiếu dài tối đa ${REFERENCE_MAX_LENGTH} ký tự.`;
-  // Backend tra hồ sơ vay theo ID số (`loan_application_id`), không theo mã hồ sơ dạng LA-...
-  if (type === 'LOAN_APPLICATION' && !/^[1-9]\d{0,18}$/.test(id)) {
-    return 'ID hồ sơ vay là số nguyên dương, ví dụ 123 (không phải mã hồ sơ dạng LA-...).';
+  // Backend tra hồ sơ vay theo ID số (`loan_application_id`); mã hồ sơ LA-... được đổi ra ID số trước khi tra.
+  if (type === 'LOAN_APPLICATION' && !LOAN_APPLICATION_ID.test(id) && !isLoanApplicationCode(id)) {
+    return 'Nhập mã hồ sơ dạng LA-... hoặc ID số của hồ sơ, ví dụ 123.';
   }
   return null;
+}
+
+const LOAN_APPLICATION_ID = /^[1-9]\d{0,18}$/;
+
+/** Mã hồ sơ vay người dùng thấy trên màn Hồ sơ vay, ví dụ LA-7FA66C38… (không phân biệt hoa thường khi nhập). */
+export function isLoanApplicationCode(raw: string): boolean {
+  return /^LA-[A-Z0-9-]{1,60}$/i.test(raw.trim());
 }
 
 /** Kết quả đọc ô "dữ liệu gốc": rỗng nghĩa là chỉ đối chiếu cơ sở dữ liệu với sổ cái. */

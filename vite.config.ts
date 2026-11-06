@@ -1,9 +1,10 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import tailwindcss from '@tailwindcss/vite';
 import path from 'node:path';
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), tailwindcss()],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, 'src'),
@@ -22,6 +23,10 @@ export default defineConfig({
       },
       // Vai trò nhân viên (phân quyền web quản trị) thuộc User Service; đi qua Gateway như /admin/users, phải đứng
       // trước `/api/v1/admin` (mặc định về Loan). Gateway có route user-admin-service cho đường dẫn này.
+      '/api/v1/admin/activity-logs': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+      },
       '/api/v1/admin/staff-roles': {
         target: 'http://localhost:8080',
         changeOrigin: true,

@@ -47,6 +47,12 @@ export interface CreateLoanProductRequest {
   repaymentMethod: RepaymentMethod;
 }
 
+/**
+ * Sửa cấu hình bản nháp (`PUT /admin/loan-products/{id}`): như lúc tạo nhưng không đổi mã, kèm `version` để khóa lạc
+ * quan. Backend chỉ nhận khi sản phẩm còn `DRAFT` và không đang đồng bộ; sửa xong trạng thái đồng bộ về `NOT_SYNCED`.
+ */
+export type UpdateLoanProductRequest = Omit<CreateLoanProductRequest, 'code'> & { version: number };
+
 /** Thao tác đổi trạng thái của quản trị viên; mỗi thao tác là một endpoint POST có kiểm tra `version`. */
 export type ProductAction = 'activate' | 'deactivate' | 'archive' | 'core-sync';
 

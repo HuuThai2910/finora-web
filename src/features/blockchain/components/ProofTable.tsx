@@ -1,8 +1,9 @@
+import { Link } from 'react-router-dom';
 import { RowMenu, type RowMenuItem } from '@/components/RowMenu';
 import { StatusPill } from '@/components/StatusPill';
 import { formatDateTime } from '@/utils';
 import {
-  aggregateLabel, chainResultInfo, proofTypeLabel, statusHint, statusInfo,
+  aggregateLabel, chainResultInfo, loanProofsPath, proofTypeLabel, statusHint, statusInfo,
 } from '../mappers/proofDisplay';
 import type { Proof } from '../types';
 
@@ -37,7 +38,7 @@ function ProofRow({ proof, open, runningId, onOpen, onRetry }: Omit<Props, 'proo
     <tr
       className={open ? 'clickable is-open' : 'clickable'}
       tabIndex={0}
-      aria-label={`Mở proof ${proofTypeLabel(proof.proofType)} của ${proof.aggregateId}`}
+      aria-label={`Mở bằng chứng ${proofTypeLabel(proof.proofType)} của ${proof.aggregateId}`}
       onClick={() => onOpen(proof)}
       onKeyDown={(event) => {
         if (event.target !== event.currentTarget) return;
@@ -47,20 +48,31 @@ function ProofRow({ proof, open, runningId, onOpen, onRetry }: Omit<Props, 'proo
         }
       }}
     >
-      <td>
-        <span className="strong">{proofTypeLabel(proof.proofType)}</span>
-        <span className="ui-sub">{proof.source.eventType ?? proof.source.service}</span>
-      </td>
+      {/* Tên sự kiện kỹ thuật (NoteOwnershipChanged…) chỉ có trong chi tiết kỹ thuật của ngăn bên phải. */}
+      <td><span className="strong">{proofTypeLabel(proof.proofType)}</span></td>
       <td>
         <span className="ui-mono">{proof.aggregateId}</span>
         <span className="ui-sub">
           {aggregateLabel(proof.aggregateType)}
-          {proof.loanApplicationId != null ? `, hồ sơ #${proof.loanApplicationId}` : ''}
+          {proof.loanApplicationId != null && (
+            <>
+              {', '}
+              {/* Lọc mọi bằng chứng của hồ sơ; không mở ngăn của dòng. */}
+              <Link
+                className="ui-link font-normal"
+                to={loanProofsPath(proof.loanApplicationId)}
+                title="Xem mọi bằng chứng của hồ sơ này"
+                onClick={(event) => event.stopPropagation()}
+              >
+                hồ sơ #{proof.loanApplicationId}
+              </Link>
+            </>
+          )}
         </span>
       </td>
       <td>
         <StatusPill tone={status.tone}>{status.label}</StatusPill>
-        {hint && <span className={deadLetter ? 'ui-sub ui-mono' : 'ui-sub'}>{hint}</span>}
+        {hint && <span className="ui-sub">{hint}</span>}
       </td>
       <IntegrityCell proof={proof} />
       <td>
@@ -68,9 +80,9 @@ function ProofRow({ proof, open, runningId, onOpen, onRetry }: Omit<Props, 'proo
         <span className="ui-sub">{confirmedAt ? `Xác nhận ${formatDateTime(confirmedAt)}` : 'Chưa xác nhận'}</span>
       </td>
       {/* Bấm menu không được mở ngăn của dòng (sự kiện từ portal của menu cũng nổi lên cây React). */}
-      <td className="act" onClick={(event) => event.stopPropagation()}>
+      <td className="act w-[1%]" onClick={(event) => event.stopPropagation()}>
         <RowMenu
-          label={`Thao tác với proof ${proof.aggregateId}`}
+          label={`Thao tác với bằng chứng ${proof.aggregateId}`}
           items={[
             { key: 'open', label: 'Xem kết quả xác minh', icon: 'eye', onSelect: () => onOpen(proof) },
             ...(onRetry ? [{
@@ -79,7 +91,7 @@ function ProofRow({ proof, open, runningId, onOpen, onRetry }: Omit<Props, 'proo
               icon: 'repeat',
               separatorBefore: true,
               disabled: !deadLetter || runningId != null,
-              disabledReason: deadLetter ? undefined : 'Chỉ proof dừng gửi (DEAD_LETTER) mới đưa lại hàng đợi được.',
+              disabledReason: deadLetter ? undefined : 'Chỉ bằng chứng đã dừng gửi mới đưa lại hàng đợi được.',
               onSelect: () => onRetry(proof),
             } satisfies RowMenuItem] : []),
           ]}
@@ -96,7 +108,8 @@ function ProofRow({ proof, open, runningId, onOpen, onRetry }: Omit<Props, 'proo
 export function ProofTable({ proofs, openProofId, runningId, onOpen, onRetry }: Props) {
   return (
     <div className="ui-table-wrap">
-      <table className="ui-table list bc-table">
+      {/* Dòng đang mở ngăn có nền xanh nhạt; khi focus bằng bàn phím thì nền focus của ui-table thắng như trước. */}
+      <table className="ui-table list bc-table [&_tbody_tr.is-open:not(:focus-visible)_td]:bg-brand-50">
         <thead>
           <tr>
             <th>Nghiệp vụ</th>

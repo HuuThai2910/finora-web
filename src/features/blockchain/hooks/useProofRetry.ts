@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useRetryProofMutation } from '../api/proofApi';
 import { shortCode } from '../mappers/proofDisplay';
 import type { Proof } from '../types';
+import { toast } from '@/lib/toast';
 
 export interface ProofRetryFailure {
   proofId: string;
@@ -26,9 +27,11 @@ export function useProofRetry(onDone: (message: string) => void) {
     setFailure(null);
     try {
       await retryProof(proof.proofId).unwrap();
-      onDone(`Đã đưa proof ${shortCode(proof.proofId, 8, 4)} về hàng đợi; hệ thống sẽ gửi lại lên sổ cái ở lượt kế tiếp.`);
+      onDone(`Đã đưa bằng chứng ${shortCode(proof.proofId, 8, 4)} về hàng đợi; hệ thống sẽ gửi lại lên sổ cái ở lượt kế tiếp.`);
     } catch (error) {
       setFailure({ proofId: proof.proofId, error });
+      // Lỗi đưa lại hàng đợi là kết quả thao tác: báo bằng toast (trang và ngăn chi tiết không hiện khối lỗi nữa).
+      toast.error(error);
     } finally {
       setRunningId(null);
     }

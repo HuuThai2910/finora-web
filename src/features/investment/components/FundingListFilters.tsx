@@ -1,5 +1,10 @@
 import { useState, type FormEvent } from 'react';
 import { GRADE_OPTIONS } from '../constants';
+import { INPUT } from '../styles';
+
+/** Hẹp màn hình (dưới 760px) thì ba ô chia đều cả hàng. */
+const FIELD = 'max-[760px]:flex-[1_1_120px]';
+const FILTER_INPUT = `fu-input ${INPUT} w-32 h-8.5 max-[760px]:w-full`;
 
 /**
  * Bộ lọc phụ của bảng. Giữ dạng chuỗi vì đây là state của form; đổi sang số chỉ làm một
@@ -24,8 +29,8 @@ interface Props {
 
 /**
  * Ba ô tương ứng đúng ba tham số lọc mà `GET /market/listings` nhận, nên không lọc gì ở
- * phía client: bảng luôn là thứ backend trả về, kể cả khi sang trang. Backend không có
- * tham số tìm theo tên nên trang không có ô tìm kiếm.
+ * phía client: bảng luôn là thứ backend trả về, kể cả khi sang trang. Ô tìm theo mã và kiểu
+ * sắp xếp nằm ở trang (tham số `q`, `sort`).
  */
 export function FundingListFilters({ applied, onApply }: Props) {
   // Bản nháp khởi tạo từ URL; trang cha đặt `key` theo bộ lọc đã áp dụng để nạp lại khi URL đổi.
@@ -38,32 +43,34 @@ export function FundingListFilters({ applied, onApply }: Props) {
   };
 
   return (
-    <form className="fu-filters" onSubmit={handleSubmit} role="search" aria-label="Lọc khoản vay">
-      <label>
+    <form className="fu-filters flex items-center gap-2 flex-wrap max-[760px]:w-full" onSubmit={handleSubmit} role="search" aria-label="Lọc khoản vay">
+      <label className={FIELD}>
         <span className="ui-sr-only">Hạng tín dụng</span>
-        <select className="ui-select" value={draft.grade} onChange={(event) => update({ grade: event.target.value })}>
+        <select className="ui-select max-[760px]:w-full" value={draft.grade} onChange={(event) => update({ grade: event.target.value })}>
           <option value="">Mọi hạng</option>
           {GRADE_OPTIONS.map((grade) => <option key={grade} value={grade}>Hạng {grade}</option>)}
         </select>
       </label>
-      <label>
+      {/* Hậu tố "%" nằm trong ô để rõ đơn vị: gõ 12 là từ 12%/năm (trần lãi suất của sàn là 20%). */}
+      <label className={`fu-rate-field relative ${FIELD}`}>
         <span className="ui-sr-only">Lãi suất từ (%/năm)</span>
         <input
-          className="fu-input"
+          className={`${FILTER_INPUT} pr-7`}
           type="number"
           inputMode="decimal"
           min="0"
-          max="100"
+          max="20"
           step="0.1"
-          placeholder="Lãi từ %"
+          placeholder="Lãi từ"
           value={draft.minRate}
           onChange={(event) => update({ minRate: event.target.value })}
         />
+        <span className="absolute right-2.5 top-[50%] transform-[translateY(-50%)] text-muted text-[13px] pointer-events-none" aria-hidden="true">%</span>
       </label>
-      <label>
+      <label className={FIELD}>
         <span className="ui-sr-only">Kỳ hạn tối đa (tháng)</span>
         <input
-          className="fu-input"
+          className={FILTER_INPUT}
           type="number"
           inputMode="numeric"
           min="1"

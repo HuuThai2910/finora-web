@@ -22,8 +22,15 @@ export function ProofStatusTabs({ active, deadLetterCount, onSelect }: Props) {
           onClick={() => onSelect(tab.value)}
         >
           {tab.label}
+          {/* Có proof dừng gửi thì số đỏ, đậm (trắng khi tab đang chọn) để vận hành thấy việc cần xử lý. */}
           {tab.value === 'DEAD_LETTER' && deadLetterCount != null && (
-            <span className={deadLetterCount > 0 ? 'n bc-hot' : 'n'}>{deadLetterCount}</span>
+            <span
+              className={deadLetterCount > 0
+                ? 'n bc-hot font-bold text-danger opacity-100 in-[button[aria-selected=true]]:text-white'
+                : 'n'}
+            >
+              {deadLetterCount}
+            </span>
           )}
         </button>
       ))}

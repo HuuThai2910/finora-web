@@ -1,5 +1,5 @@
 import { MAX_TERM_MONTHS, RATE_CAP_PERCENT } from '../constants';
-import type { CreateLoanProductRequest, RepaymentMethod } from '../types';
+import type { CreateLoanProductRequest, LoanProduct, RepaymentMethod, UpdateLoanProductRequest } from '../types';
 
 /** Giá trị thô người dùng nhập: tiền và kỳ hạn chỉ giữ chữ số, lãi suất dùng dấu chấm thập phân. */
 export interface ProductForm {
@@ -105,5 +105,43 @@ export function toCreateRequest(form: ProductForm): CreateLoanProductRequest {
     annualInterestRate: Number(form.annualInterestRate),
     maxAnnualInterestRate: Number(form.maxAnnualInterestRate),
     repaymentMethod: form.repaymentMethod,
+  };
+}
+
+/**
+ * Form điền sẵn từ một sản phẩm: sửa bản nháp (giữ mã) hoặc tạo bản sao (`copy`: bỏ mã để sinh mã mới từ tên, tên ghi
+ * "bản sao" để không trùng). Số giữ dạng thô như khi người dùng gõ (tiền nguyên đồng, lãi suất dấu chấm).
+ */
+export function productToForm(product: LoanProduct, copy = false): ProductForm {
+  return {
+    code: copy ? '' : product.code,
+    name: copy ? `${product.name} (bản sao)` : product.name,
+    description: product.description ?? '',
+    minAmount: String(Math.round(product.minAmount)),
+    maxAmount: String(Math.round(product.maxAmount)),
+    minTermMonths: String(product.minTermMonths),
+    maxTermMonths: String(product.maxTermMonths),
+    minAnnualInterestRate: String(product.minAnnualInterestRate),
+    annualInterestRate: String(product.annualInterestRate),
+    maxAnnualInterestRate: String(product.maxAnnualInterestRate),
+    repaymentMethod: product.repaymentMethod,
+  };
+}
+
+/** Thân `PUT` sửa bản nháp: bỏ mã (không đổi được), gửi đúng `version` backend trả về lần đọc gần nhất. */
+export function toUpdateRequest(form: ProductForm, version: number): UpdateLoanProductRequest {
+  const request = toCreateRequest(form);
+  return {
+    name: request.name,
+    description: request.description,
+    minAmount: request.minAmount,
+    maxAmount: request.maxAmount,
+    minTermMonths: request.minTermMonths,
+    maxTermMonths: request.maxTermMonths,
+    minAnnualInterestRate: request.minAnnualInterestRate,
+    annualInterestRate: request.annualInterestRate,
+    maxAnnualInterestRate: request.maxAnnualInterestRate,
+    repaymentMethod: request.repaymentMethod,
+    version,
   };
 }

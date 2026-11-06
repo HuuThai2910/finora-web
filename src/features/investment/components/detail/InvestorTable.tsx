@@ -5,14 +5,16 @@ import { StatusPill } from '@/components/StatusPill';
 import { COMMITMENT_LABEL, COMMITMENT_TONE, FUNDING_PAGE_SIZE } from '../../constants';
 import type { ListingInvestor } from '../../types';
 import { formatDateTime, formatMoney, formatPercent, parseDecimal } from '../../formatters';
+import { TABLE_CARD } from '../../styles';
+import { InvestorLink } from '../InvestorLink';
 
 interface Props {
   investors: ListingInvestor[];
   isLoading: boolean;
   error: unknown;
   onRetry: () => void;
-  names: Record<string, string>;
-  namesLoading: boolean;
+  /** Tên hiển thị theo mã nhà đầu tư (tra từ finora-user ở trang). */
+  nameOf: (investorId: string) => string;
 }
 
 /** Phần vốn còn hiệu lực lên trước, trong mỗi nhóm thì phần góp lớn hơn lên trước. */
@@ -22,7 +24,7 @@ const ORDER: Record<ListingInvestor['status'], number> = { ACTIVE: 0, FINALIZED:
  * Ai đã góp vốn vào khoản vay. Backend trả trọn danh sách (kể cả phần đã hủy) nên chia
  * trang ở client, 10 dòng mỗi trang như các bảng khác.
  */
-export function InvestorTable({ investors, isLoading, error, onRetry, names, namesLoading }: Props) {
+export function InvestorTable({ investors, isLoading, error, onRetry, nameOf }: Props) {
   const [page, setPage] = useState(0);
 
   if (error) return <ErrorNotice error={error} onRetry={onRetry} />;
@@ -36,7 +38,7 @@ export function InvestorTable({ investors, isLoading, error, onRetry, names, nam
   const rows = sorted.slice(current * FUNDING_PAGE_SIZE, (current + 1) * FUNDING_PAGE_SIZE);
 
   return (
-    <div className="ui-card fd-table-card">
+    <div className={`ui-card fd-table-card ${TABLE_CARD}`}>
       <div className="ui-table-wrap">
         <table className="ui-table">
           <thead>
@@ -51,11 +53,9 @@ export function InvestorTable({ investors, isLoading, error, onRetry, names, nam
           </thead>
           <tbody>
             {rows.map((item) => (
-              <tr key={item.commitmentId} className={item.status === 'CANCELLED' ? 'fd-muted-row' : undefined}>
+              <tr key={item.commitmentId} className={item.status === 'CANCELLED' ? 'fd-muted-row [&_td]:text-muted' : undefined}>
                 <td>
-                  {names[item.investorId] ?? (
-                    <span className="fd-muted">{namesLoading ? 'Đang tra tên...' : 'Không tra được tên'}</span>
-                  )}
+                  <InvestorLink userId={item.investorId} name={nameOf(item.investorId)} />
                   <span className="ui-sub">Mã {item.investorId}</span>
                 </td>
                 <td className="num">{formatMoney(item.amount)} đ</td>

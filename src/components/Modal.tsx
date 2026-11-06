@@ -13,12 +13,22 @@ interface ModalProps {
   children: ReactNode;
   /** Hộp rộng (600px) cho form nhiều cột; mặc định 480px. */
   wide?: boolean;
+  /**
+   * Bấm ra nền thì đóng (mặc định). Hộp có form nhập liệu đặt `false`: bấm trượt ra nền không được làm mất phần đã
+   * nhập, người dùng vẫn đóng bằng nút Đóng, Hủy hoặc Esc.
+   */
+  dismissOnBackdrop?: boolean;
 }
 
+const FOCUSABLE = 'button:not(:disabled), [href], input:not(:disabled), select:not(:disabled), textarea:not(:disabled), summary, [tabindex]:not([tabindex="-1"])';
+
 /**
- * Hộp thoại dùng chung: focus vào hộp khi mở, trả focus về chỗ cũ khi đóng, Esc hoặc bấm nền để đóng.
+ * Hộp thoại dùng chung: focus vào hộp khi mở, Tab chỉ đi vòng trong hộp, khóa cuộn trang phía sau, Esc để đóng,
+ * đóng thì trả focus về chỗ cũ. Cùng cách giữ focus với `Drawer`.
  */
-export function Modal({ title, subtitle, onClose, busy = false, footer, children, wide = false }: ModalProps) {
+export function Modal({
+  title, subtitle, onClose, busy = false, footer, children, wide = false, dismissOnBackdrop = true,
+}: ModalProps) {
   const titleId = useId();
   const dialogRef = useRef<HTMLDivElement>(null);
   const closeRef = useRef(onClose);
@@ -26,17 +36,40 @@ export function Modal({ title, subtitle, onClose, busy = false, footer, children
   closeRef.current = onClose;
   busyRef.current = busy;
 
-  // Ghi nhớ phần tử đang có focus trước khi mở để trả lại sau khi đóng (yêu cầu accessibility).
+  // Ghi nhớ phần tử đang có focus và khóa cuộn trang khi mở; trả lại cả hai khi hộp rời khỏi cây (accessibility).
   useEffect(() => {
     const previous = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const overflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
     dialogRef.current?.focus();
+
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && !busyRef.current) closeRef.current();
+      if (event.key === 'Escape') {
+        if (!busyRef.current) closeRef.current();
+        return;
+      }
+      if (event.key !== 'Tab' || !dialogRef.current) return;
+      const items = Array.from(dialogRef.current.querySelectorAll<HTMLElement>(FOCUSABLE))
+        .filter((item) => item.offsetParent !== null);
+      if (items.length === 0) return;
+      const first = items[0];
+      const last = items[items.length - 1];
+      if (!dialogRef.current.contains(document.activeElement) || document.activeElement === dialogRef.current) {
+        event.preventDefault();
+        (event.shiftKey ? last : first).focus();
+      } else if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
     };
     document.addEventListener('keydown', onKeyDown);
     return () => {
       document.removeEventListener('keydown', onKeyDown);
-      previous?.focus();
+      document.body.style.overflow = overflow;
+      if (previous?.isConnected) previous.focus();
     };
   }, []);
 
@@ -44,7 +77,7 @@ export function Modal({ title, subtitle, onClose, busy = false, footer, children
     <div
       className="ui-modal-scrim"
       onMouseDown={(event) => {
-        if (event.target === event.currentTarget && !busy) onClose();
+        if (dismissOnBackdrop && event.target === event.currentTarget && !busy) onClose();
       }}
     >
       <div ref={dialogRef} className={wide ? 'ui-modal wide' : 'ui-modal'} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1}>

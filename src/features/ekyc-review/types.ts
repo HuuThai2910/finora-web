@@ -60,6 +60,10 @@ export interface EkycAttemptSummary {
   reasons: string[] | null;
   createdAt: string;
   submittedAt: string | null;
+  /** Thời điểm nhân viên duyệt/từ chối; null khi máy tự kết luận hoặc chưa có quyết định. */
+  decidedAt?: string | null;
+  /** Ghi chú của người duyệt; với lượt bị từ chối đây là lý do khách thấy trên app. */
+  reviewNote?: string | null;
 }
 
 export type EkycEvidenceKind = 'CCCD_FRONT' | 'CCCD_BACK' | 'LIVENESS_VIDEO' | 'LIVENESS_FRAME' | 'RESULT';

@@ -38,7 +38,9 @@ export const SNAPSHOT_DEPTH = 20;
  * giữ nguyên để còn tra được trong nhật ký của dịch vụ thanh toán.
  */
 const SETTLEMENT_ERROR_LABEL: Record<string, string> = {
+  PAYMENT_REJECTED: 'dịch vụ thanh toán từ chối',
   PAYMENT_UNAVAILABLE: 'dịch vụ thanh toán chưa phản hồi',
+  BID_HOLD_MISSING: 'lệnh mua không có khoản tiền giữ',
   PAYMENT_HOLD_INSUFFICIENT: 'khoản giữ không đủ',
   PAYMENT_HOLD_NOT_FOUND: 'không thấy khoản giữ',
   PAYMENT_HOLD_ORDER_MISMATCH: 'khoản giữ không khớp lệnh',
@@ -46,3 +48,17 @@ const SETTLEMENT_ERROR_LABEL: Record<string, string> = {
 };
 
 export const settlementErrorLabel = (code: string): string => SETTLEMENT_ERROR_LABEL[code] ?? code;
+
+/**
+ * Lỗi lập giấy xác nhận chuyển nhượng (`lastError` của văn bản, do `TransferDocumentIssuerImpl` ghi), viết lại theo
+ * nhóm: tra danh tính hai bên ở dịch vụ người dùng (`USER_IDENTITY_*`), đóng dấu số (`PADES_*`, `SEAL_*`), dựng văn
+ * bản (`DOCUMENT_BUILD_FAILED: <lỗi>`). Mã lạ giữ nguyên để còn tra nhật ký.
+ */
+export function documentErrorLabel(code: string): string {
+  if (code === 'USER_IDENTITY_UNAVAILABLE') return 'chưa đọc được họ tên hai bên';
+  if (code === 'USER_IDENTITY_EMPTY') return 'thiếu họ tên hai bên';
+  if (code.startsWith('USER_IDENTITY_')) return 'bị từ chối khi đọc họ tên hai bên';
+  if (code.startsWith('PADES_') || code.startsWith('SEAL_')) return 'không đóng được dấu số';
+  if (code.startsWith('DOCUMENT_BUILD_FAILED')) return 'không dựng được văn bản';
+  return code;
+}

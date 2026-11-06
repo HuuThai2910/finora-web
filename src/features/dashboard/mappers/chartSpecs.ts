@@ -195,7 +195,7 @@ function overdueSpec(stats: DashboardStatistics): ChartSpec {
   const unavailable = series.portfolioHistory?.unavailableLoans ?? 0;
   const note = [
     'Cuối mỗi tháng, tháng này tính đến hôm nay; đơn vị triệu đồng, N2 đến N5 là nhóm nợ 2 đến 5',
-    ...(unavailable > 0 ? [`${unavailable} khoản vay chưa đọc được lịch sử từ Fineract nên chưa tính`] : []),
+    ...(unavailable > 0 ? [`${unavailable} khoản vay chưa đọc được lịch sử từ hệ thống lõi nên chưa tính`] : []),
   ].join('. ');
   if (months.every((month) => OVERDUE_DEBT_GROUPS.every((group) => groupPrincipal(month.position, group) === 0))) {
     return { status: 'empty', text: `Không có khoản vay quá hạn trong ${months.length} tháng gần nhất.`, note };
@@ -222,7 +222,7 @@ function overdueSpec(stats: DashboardStatistics): ChartSpec {
 
 /** Biểu đồ nợ quá hạn khi không có lịch sử: ảnh chụp hiện tại theo nhóm nợ, kèm tiền quá hạn. */
 function overdueSnapshotSpec(portfolio: LoanStatisticsSummary['portfolio']): ChartSpec {
-  const note = 'Số hiện tại; chưa đọc được lịch sử từ Fineract nên chưa có diễn biến 6 tháng';
+  const note = 'Số hiện tại; chưa đọc được lịch sử từ hệ thống lõi nên chưa có diễn biến 6 tháng';
   if (overdueGroups(portfolio.byDebtGroup).every((group) => group.loans === 0)) {
     return { status: 'empty', text: 'Hiện không có khoản vay nào quá hạn.', note };
   }

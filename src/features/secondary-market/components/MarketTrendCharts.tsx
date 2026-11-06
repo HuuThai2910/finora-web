@@ -51,7 +51,7 @@ export function MarketTrendCharts() {
   const common = { isLoading: series.isLoading, error: series.error, onRetry: series.refetch };
 
   return (
-    <section className="sm-charts" aria-label="Biểu đồ chợ Notes">
+    <section className="sm-charts grid grid-cols-2 gap-4 max-[1000px]:grid-cols-[minmax(0,1fr)]" aria-label="Biểu đồ chợ Notes">
       <ChartCard id="smValueTitle" title="Giá trị khớp theo ngày" aside={`${DAYS} ngày`} isEmpty={trades === 0} {...common}>
         {points && valueOption && (
           <>

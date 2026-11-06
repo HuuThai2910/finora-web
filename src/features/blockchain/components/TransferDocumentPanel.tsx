@@ -4,26 +4,30 @@ import { StatusPill } from '@/components/StatusPill';
 import { useTransferDocumentDownload } from '@/features/secondary-market';
 import { useTransferDocumentVerify } from '../hooks/useTransferDocumentVerify';
 import type { PdfHashCheck } from '../mappers/documentHash';
+import {
+  BC_HASH, BC_RESULT, BC_RESULT_DESCRIPTION, BC_RESULT_HEAD, BC_STACK_ROW, BC_VERIFY_MAIN,
+} from '../styles';
 import { VerifyResults } from './VerifyResults';
+import { ErrorToast } from '@/components/ErrorToast';
 
 /** Kết quả so hash tệp PDF; nhãn và màu tách khỏi kết quả sổ cái để không lẫn hai lớp kiểm. */
 function PdfHashResult({ pdf }: { pdf: PdfHashCheck }) {
   return (
-    <div className="bc-result">
-      <div className="bc-result-head">
+    <div className={BC_RESULT}>
+      <div className={BC_RESULT_HEAD}>
         <h4>{pdf.matched ? 'Tệp PDF còn nguyên vẹn' : 'Tệp PDF đã khác bản được neo'}</h4>
         <StatusPill tone={pdf.matched ? 'success' : 'danger'}>
           {pdf.matched ? 'PDF khớp hash' : 'PDF không khớp hash'}
         </StatusPill>
       </div>
-      <p className="bc-result-description">
+      <p className={BC_RESULT_DESCRIPTION}>
         {pdf.matched
           ? 'SHA-256 của tệp PDF vừa tải về trùng với hash ghi trong dữ liệu nguồn của bằng chứng.'
           : 'SHA-256 của tệp PDF vừa tải về khác hash ghi trong dữ liệu nguồn. Không dùng tệp này cho tới khi kiểm tra xong.'}
       </p>
-      <dl className="ui-rows bc-rows">
-        <div className="bc-stack"><dt>Hash đã neo (documentHash)</dt><dd><span className="bc-hash">{pdf.expected}</span></dd></div>
-        <div className="bc-stack"><dt>SHA-256 của tệp tải về</dt><dd><span className="bc-hash">{pdf.actual}</span></dd></div>
+      <dl className="ui-rows bc-rows mt-1">
+        <div className={BC_STACK_ROW}><dt>Hash đã neo (documentHash)</dt><dd><span className={BC_HASH}>{pdf.expected}</span></dd></div>
+        <div className={BC_STACK_ROW}><dt>SHA-256 của tệp tải về</dt><dd><span className={BC_HASH}>{pdf.actual}</span></dd></div>
       </dl>
     </div>
   );
@@ -40,8 +44,8 @@ export function TransferDocumentPanel({ proofId, tradeReference }: { proofId: st
   const running = state.status === 'running';
 
   return (
-    <div className="bc-verify">
-      <div className="bc-verify-main">
+    <div className="bc-verify grid gap-3">
+      <div className={BC_VERIFY_MAIN}>
         <div>
           <h4>Giấy xác nhận chuyển nhượng</h4>
           <p>
@@ -49,7 +53,8 @@ export function TransferDocumentPanel({ proofId, tradeReference }: { proofId: st
             lưu còn đúng với bằng chứng đã ghi.
           </p>
         </div>
-        <div className="bc-doc-actions">
+        {/* Hai nút Tải PDF và Xác minh văn bản cùng hàng; màn hẹp thì xếp dọc. */}
+        <div className="bc-doc-actions flex flex-none flex-wrap gap-2 max-[760px]:flex-col">
           <button
             type="button"
             className="ui-btn ghost"
@@ -65,10 +70,10 @@ export function TransferDocumentPanel({ proofId, tradeReference }: { proofId: st
           </button>
         </div>
       </div>
-      {pdfDownload.error != null && !pdfDownload.downloading && <ErrorNotice error={pdfDownload.error} />}
+      {pdfDownload.error != null && !pdfDownload.downloading && <ErrorToast error={pdfDownload.error} />}
       {running && <div className="ui-empty" aria-busy="true">Đang tải văn bản và tính SHA-256...</div>}
       {(state.status === 'done' || state.status === 'error') && state.pdf && (
-        <div className="bc-results" role="status"><PdfHashResult pdf={state.pdf} /></div>
+        <div className="bc-results grid gap-3" role="status"><PdfHashResult pdf={state.pdf} /></div>
       )}
       {state.status === 'error' && <ErrorNotice error={state.error} />}
       {state.status === 'done' && <VerifyResults result={state.verification} />}

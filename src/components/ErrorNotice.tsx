@@ -5,10 +5,13 @@ interface ErrorNoticeProps {
   onRetry?: () => void;
 }
 
-/** Khối báo lỗi tải dữ liệu, giữ mã lỗi và traceId để đối chiếu log backend. */
+/**
+ * Khối báo lỗi tải dữ liệu. Người dùng chỉ cần câu báo và mã tra cứu (traceId) để gửi bộ phận kỹ thuật đối chiếu log;
+ * mã lỗi nội bộ (INTERNAL_ERROR…) không hiện trên giao diện.
+ */
 export function ErrorNotice({ error, onRetry }: ErrorNoticeProps) {
   const uiError = toUiApiError(error);
-  const detail = [uiError.code, uiError.traceId && `mã truy vết ${uiError.traceId}`].filter(Boolean).join(', ');
+  const detail = uiError.traceId ? `Mã tra cứu ${uiError.traceId}` : '';
 
   return (
     <div className="ui-alert" role="alert">

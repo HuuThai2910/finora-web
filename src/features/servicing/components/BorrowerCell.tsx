@@ -10,7 +10,7 @@ export function BorrowerCell({ borrowerId, loanNumber }: Props) {
   const name = useUserLabel(borrowerId, `Người vay #${borrowerId}`);
   return (
     <>
-      <span className="svc-who">{name}</span>
+      <span className="svc-who font-medium text-primary">{name}</span>
       <span className="ui-sub ui-mono">{loanNumber}</span>
     </>
   );

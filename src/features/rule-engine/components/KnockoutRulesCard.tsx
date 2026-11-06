@@ -1,6 +1,8 @@
-import { formatCurrency, formatPercent } from '@/utils';
+import { formatPercent } from '@/utils';
+import { dong } from '../mappers/policyDisplay';
 import { CAN_CU_TRAN, NHOM_NO_XAU_TOI_THIEU } from '../constants';
 import type { LegalLimits } from '../types';
+import { CARD, CARD_HEAD, CARD_TITLE, HEAD_MAIN, META, TABLE_WRAP } from './styles';
 
 interface KnockoutRow {
   ten: string;
@@ -12,7 +14,7 @@ interface KnockoutRow {
  * Luật loại trực tiếp theo `kiem_tra_chot_chan_cung` của finora-ai.
  *
  * finora-ai CHƯA có API liệt kê các luật này, nên danh sách là mô tả cố định đối
- * chiếu với mã nguồn backend (ghi rõ trên giao diện). Các mức trần lấy từ
+ * chiếu với mã nguồn backend (không ghi chú điều này trên giao diện: người dùng chỉ cần biết luật nào đang áp dụng). Các mức trần lấy từ
  * `legal_limits` của API nên đổi theo cấu hình. Hai luật CIC là chính sách rủi ro
  * nội bộ (diễn giải của backend nói rõ), không phải quy định pháp luật.
  * Bản trước còn liệt kê "trả nợ quá 50% thu nhập" và "đi làm trước 10 tuổi":
@@ -27,7 +29,7 @@ function buildRows(limits: LegalLimits): KnockoutRow[] {
     { ten: 'Đang phục hồi sau nợ xấu', dieuKien: 'Dữ liệu CIC còn trong thời gian tạm khóa vay', canCu: 'Chính sách rủi ro nội bộ' },
     {
       ten: 'Vượt trần tổng dư nợ',
-      dieuKien: `Dư nợ hiện có cộng khoản vay này vượt ${formatCurrency(limits.max_total_debt_all_platforms)} trên mọi nền tảng`,
+      dieuKien: `Dư nợ hiện có cộng khoản vay này vượt ${dong(limits.max_total_debt_all_platforms)} trên mọi nền tảng`,
       canCu: CAN_CU_TRAN.max_total_debt_all_platforms,
     },
   ];
@@ -35,15 +37,15 @@ function buildRows(limits: LegalLimits): KnockoutRow[] {
 
 export function KnockoutRulesCard({ limits }: { limits: LegalLimits }) {
   return (
-    <article className="ui-card aip-card" aria-labelledby="aipKnockoutTitle">
-      <div className="aip-card-head">
-        <div className="aip-head-main">
-          <h2 id="aipKnockoutTitle">Luật loại trực tiếp</h2>
-          <span className="aip-meta">Vi phạm một luật là từ chối, bất kể điểm số</span>
+    <article className={`ui-card aip-card ${CARD}`} aria-labelledby="aipKnockoutTitle">
+      <div className={`aip-card-head ${CARD_HEAD}`}>
+        <div className={`aip-head-main ${HEAD_MAIN}`}>
+          <h2 id="aipKnockoutTitle" className={CARD_TITLE}>Luật loại trực tiếp</h2>
+          <span className={`aip-meta ${META}`}>Vi phạm một luật là từ chối, bất kể điểm số</span>
         </div>
         <span className="ui-tag">Chỉ đọc</span>
       </div>
-      <div className="ui-table-wrap aip-table-wrap">
+      <div className={`ui-table-wrap aip-table-wrap ${TABLE_WRAP}`}>
         <table className="ui-table list aip-wrap-table">
           <thead>
             <tr><th>Luật</th><th>Loại hồ sơ khi</th><th>Căn cứ</th></tr>
@@ -51,17 +53,15 @@ export function KnockoutRulesCard({ limits }: { limits: LegalLimits }) {
           <tbody>
             {buildRows(limits).map((row) => (
               <tr key={row.ten}>
-                <td className="strong">{row.ten}</td>
-                <td>{row.dieuKien}</td>
-                <td className="aip-muted">{row.canCu}</td>
+                {/* Bảng chữ dài: các cột được xuống dòng, riêng tên luật giữ một dòng. */}
+                <td className="strong whitespace-nowrap">{row.ten}</td>
+                <td className="whitespace-normal">{row.dieuKien}</td>
+                <td className="aip-muted whitespace-normal text-secondary text-[13px]">{row.canCu}</td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
-      <p className="aip-foot">
-        Danh sách cố định theo dịch vụ chấm điểm, chưa đọc được qua API; các mức trần lấy từ cấu hình pháp lý ở trên.
-      </p>
     </article>
   );
 }

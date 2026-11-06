@@ -5,7 +5,8 @@ import { formatDateTime } from '../../formatters';
 import type { AdminAssessmentExplanation, AssessmentEvidence } from '../../types';
 import { BorrowerMessage, FactorSummary, RuleTraceTable, ShapColumns } from './AiExplanationBlocks';
 import { ReviewCard } from './ReviewCard';
-import { policyLabel } from '../../mappers/reviewDisplay';
+import { formatDecimal, policyLabel } from '../../mappers/reviewDisplay';
+import { AI_HEADING, AI_SECTION, AI_SUB, MUTED } from './reviewClassNames';
 
 interface ScoringDetailTabProps {
   assessment: AssessmentEvidence | null;
@@ -36,7 +37,7 @@ export function ScoringDetailTab({ assessment, explanation, isLoading, error, on
   if (!assessment || assessment.status !== 'SUCCEEDED') {
     return (
       <ReviewCard title="Chi tiết chấm điểm">
-        <p className="lr-muted">Chưa có kết quả chấm điểm.</p>
+        <p className={MUTED}>Chưa có kết quả chấm điểm.</p>
       </ReviewCard>
     );
   }
@@ -52,7 +53,7 @@ export function ScoringDetailTab({ assessment, explanation, isLoading, error, on
   if (!explanation) {
     return (
       <ReviewCard title="Chi tiết chấm điểm" aside={meta}>
-        <p className="lr-muted" aria-busy={isLoading}>Đang tải phân tích...</p>
+        <p className={MUTED} aria-busy={isLoading}>Đang tải phân tích...</p>
       </ReviewCard>
     );
   }
@@ -60,13 +61,13 @@ export function ScoringDetailTab({ assessment, explanation, isLoading, error, on
   const model = explanation.modelExplanation;
   return (
     <ReviewCard title="Chi tiết chấm điểm" aside={meta}>
-      <div className="lr-ai">
+      <div className="lr-ai grid gap-4">
         {/* Vết luật là căn cứ thẩm định: mỗi luật do quản trị viên cấu hình, có trường đã đọc,
             giá trị thật và điểm. Bản gộp SHAP bên dưới chỉ cho biết mô hình chú ý điều gì. */}
         {explanation.ruleTrace && explanation.ruleTrace.length > 0 ? (
-          <section className="lr-ai-section">
-            <h3>Bảng luật đã chấm</h3>
-            <p className="lr-ai-sub">Đủ mã luật, trường đọc và trọng số để đối chiếu với chính sách đánh giá.</p>
+          <section className={AI_SECTION}>
+            <h3 className={AI_HEADING}>Bảng luật đã chấm</h3>
+            <p className={AI_SUB}>Điểm từng luật và giá trị hệ thống đọc được lúc chấm, để đối chiếu với chính sách đánh giá.</p>
             <RuleTraceTable trace={explanation.ruleTrace} />
           </section>
         ) : null}
@@ -76,23 +77,23 @@ export function ScoringDetailTab({ assessment, explanation, isLoading, error, on
 
         {model ? (
           <>
-            <div className="lr-ai-mode">
+            <div className="lr-ai-mode flex items-center gap-3 flex-wrap text-muted text-[12px]">
               <button type="button" className="ui-btn soft" aria-expanded={technical} onClick={() => setTechnical((value) => !value)}>
                 {technical ? 'Ẩn chi tiết kỹ thuật' : 'Xem chi tiết kỹ thuật (SHAP từng đặc trưng)'}
               </button>
               <span>Số liệu trên thang log-odds, dùng để đối chiếu mô hình, không cần cho thẩm định thường ngày.</span>
             </div>
             {technical && model.canh_bao.length > 0 ? (
-              <div className="lr-ai-warning">
+              <div className="lr-ai-warning flex gap-2 py-2.5 px-3 rounded-md bg-warning-bg text-[13px] leading-[1.55] [&_svg]:flex-none [&_svg]:size-4 [&_svg]:mt-0.5 [&_svg]:text-warning">
                 <Icon name="alert" />
-                <div><b>Lưu ý về chất lượng giải thích.</b> {model.canh_bao.join(' ')}</div>
+                <div><b className="font-semibold">Lưu ý về chất lượng giải thích.</b> {model.canh_bao.join(' ')}</div>
               </div>
             ) : null}
             {technical ? (
-              <section className="lr-ai-section">
-                <h3>Chi tiết SHAP từng đặc trưng (bản thô)</h3>
-                <p className="lr-ai-sub">
-                  Từng đặc trưng đúng như mô hình nhìn thấy. Tổng mọi đóng góp cộng giá trị cơ sở ({model.gia_tri_co_so}) bằng đúng đầu ra.
+              <section className={AI_SECTION}>
+                <h3 className={AI_HEADING}>Chi tiết SHAP từng đặc trưng (bản thô)</h3>
+                <p className={AI_SUB}>
+                  Từng đặc trưng đúng như mô hình nhìn thấy. Tổng mọi đóng góp cộng giá trị cơ sở ({formatDecimal(model.gia_tri_co_so)}) bằng đúng đầu ra.
                 </p>
                 <ShapColumns risk={model.yeu_to_bat_loi} safe={model.yeu_to_co_loi} />
               </section>

@@ -27,6 +27,8 @@ export function buildStageOption(stages: StageCount[]): ChartOption {
     yAxis: {
       type: 'category',
       inverse: true,
+      // Nhãn khoảng ngày bấm được như thanh: thanh mảnh (14px) và mức 0 hồ sơ không có thanh để bấm.
+      triggerEvent: true,
       data: stages.map((item) => item.range),
       axisLine: { show: false },
       axisLabel: { color: CHART_PALETTE.ink2, fontSize: 12 },
@@ -50,4 +52,15 @@ export function buildStageOption(stages: StageCount[]): ChartOption {
       },
     }],
   };
+}
+
+/**
+ * Mức độ ứng với một lần bấm trên biểu đồ: bấm thanh (hoặc số) cho `dataIndex`, bấm nhãn trục cho `value` là chữ của
+ * nhãn (khoảng số ngày). Trả `undefined` khi bấm vào chỗ khác.
+ */
+export function stageFromChartClick(stages: StageCount[], params: unknown): StageCount | undefined {
+  if (typeof params !== 'object' || params === null) return undefined;
+  const { dataIndex, value, componentType } = params as { dataIndex?: unknown; value?: unknown; componentType?: unknown };
+  if (componentType === 'yAxis') return stages.find((item) => item.range === value);
+  return typeof dataIndex === 'number' ? stages[dataIndex] : undefined;
 }

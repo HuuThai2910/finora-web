@@ -1,5 +1,5 @@
 import type { PillTone } from '@/components/StatusPill';
-import { EMPTY } from '@/utils';
+import { EMPTY, formatDateTime } from '@/utils';
 import type { EkycAttemptStatus, EkycCardType, EkycDocumentDecision, EkycLivenessResult } from '../types';
 
 export interface PillDisplay {
@@ -63,14 +63,36 @@ export function formatFaceScore(score: number | null): string {
   return score == null || !Number.isFinite(score) ? EMPTY : SCORE.format(score);
 }
 
-const DAY = new Intl.DateTimeFormat('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
-const TIME = new Intl.DateTimeFormat('vi-VN', { hour: '2-digit', minute: '2-digit', hour12: false });
-
-/** Thời điểm (`Instant`) theo giờ máy người xem, ví dụ 16/10/2026 09:30. */
+/** Thời điểm (`Instant`) theo giờ Việt Nam như mọi màn quản trị, ví dụ 09:30 16/10/2026. */
 export function formatDayTime(value: string | null | undefined): string {
-  if (!value) return EMPTY;
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? EMPTY : `${DAY.format(date)} ${TIME.format(date)}`;
+  return formatDateTime(value);
+}
+
+const MINUTE = 60_000;
+
+/**
+ * Lượt đã chờ duyệt bao lâu tính từ lúc gửi, làm tròn xuống theo phút, giờ rồi ngày ("Đã chờ 3 giờ"). `null` khi lượt
+ * chưa có thời điểm gửi. Thời điểm gửi ở tương lai (lệch đồng hồ máy) coi như vừa gửi.
+ */
+export function waitingLabel(submittedAt: string | null, now: number = Date.now()): string | null {
+  if (!submittedAt) return null;
+  const sent = new Date(submittedAt).getTime();
+  if (Number.isNaN(sent)) return null;
+  const minutes = Math.max(0, Math.floor((now - sent) / MINUTE));
+  if (minutes < 60) return `Đã chờ ${Math.max(1, minutes)} phút`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `Đã chờ ${hours} giờ`;
+  return `Đã chờ ${Math.floor(hours / 24)} ngày`;
+}
+
+/**
+ * Phiên bản điều khoản khách đã đồng ý. Mã dạng `EKYC-2026-10` đọc thành "Bản 10/2026"; mã khác dạng hiện nguyên văn
+ * để vẫn đối chiếu được với bảng điều khoản.
+ */
+export function consentLabel(version: string | null): string {
+  if (!version) return EMPTY;
+  const match = /^[A-Z]+-(\d{4})-(\d{2})$/.exec(version.trim());
+  return match ? `Bản ${match[2]}/${match[1]}` : version;
 }
 
 /** Mã lượt (UUID) rút gọn để hiện trong dòng; mã đầy đủ đặt ở `title` và chỗ cần sao chép. */
