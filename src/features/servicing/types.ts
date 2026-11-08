@@ -30,9 +30,11 @@ export type RescheduleStatus =
   | 'APPROVING'
   | 'COMPLETED'
   | 'RECONCILIATION_REQUIRED'
-  | 'MANUAL_REVIEW';
+  | 'MANUAL_REVIEW'
+  | 'CANCELLED';
 export type RescheduleType = 'INSTALLMENT_ADJUSTMENT' | 'TERM_EXTENSION';
 export type RescheduleDecision = 'approve' | 'reject';
+export type RescheduleRecoveryAction = 'retry' | 'cancel';
 
 export type FinoraLoanStatus = 'ACTIVE' | 'RESTRUCTURING' | 'SETTLED' | 'DEFAULTED' | 'WRITTEN_OFF';
 export type ReconciliationIncidentType =
@@ -65,6 +67,7 @@ export interface RescheduleRequest {
   adjustedDueDate: string | null; extraTerms: number | null; reasonComment: string;
   termsVersion: string; status: RescheduleStatus; originalMaturityDate: string; newMaturityDate: string | null;
   decisionComment: string | null; decidedAt: string | null; createdAt: string; updatedAt: string;
+  lastErrorCode?: string | null;
 }
 
 export interface StaleLoan {

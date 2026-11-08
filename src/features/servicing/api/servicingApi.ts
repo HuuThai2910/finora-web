@@ -2,7 +2,7 @@ import { loanApi } from '@/lib/api/loanApi';
 import type {
   CollectionAction, CollectionCase, CollectionCaseStatus, CollectionStage, CreateCollectionActionRequest,
   DisbursementSagaRepair, PageResponse, QuarantinedRepaymentEvent, ReconciliationIncident, RescheduleDecision,
-  RescheduleRequest, RescheduleStatus, StaleLoan,
+  RescheduleRecoveryAction, RescheduleRequest, RescheduleStatus, StaleLoan,
 } from '../types';
 
 export interface PageArgs { page: number; size: number }
@@ -45,6 +45,14 @@ export const servicingApi = loanApi.injectEndpoints({
       }),
       invalidatesTags: [tag('RESCHEDULE')],
     }),
+    recoverReschedule: builder.mutation<RescheduleRequest, { requestId: string; action: RescheduleRecoveryAction; comment?: string; key?: string }>({
+      query: ({ requestId, action, comment, key }) => ({
+        url: `/admin/loan-reschedule-requests/${requestId}/${action}`,
+        method: 'POST',
+        ...(action === 'cancel' ? { body: { comment }, headers: { 'Idempotency-Key': key! } } : {}),
+      }),
+      invalidatesTags: [tag('RESCHEDULE')],
+    }),
     staleLoans: builder.query<PageResponse<StaleLoan>, PageArgs>({
       query: (params) => ({ url: '/admin/loan-servicing-reconciliation', params }),
       providesTags: [tag('RECONCILIATION')],
@@ -82,7 +90,7 @@ export const servicingApi = loanApi.injectEndpoints({
 
 export const {
   useCollectionCasesQuery, useCollectionActionsQuery, useRecordCollectionActionMutation,
-  useRescheduleRequestsQuery, useDecideRescheduleMutation,
+  useRescheduleRequestsQuery, useDecideRescheduleMutation, useRecoverRescheduleMutation,
   useStaleLoansQuery, useReconciliationIncidentsQuery, useReconcileLoanMutation,
   useQuarantinedEventsQuery, useReplayQuarantineMutation,
   useRepairSagasQuery, useRequeueSagaMutation,

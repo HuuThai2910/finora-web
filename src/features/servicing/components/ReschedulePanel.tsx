@@ -6,9 +6,10 @@ import { useRescheduleRequestsQuery } from '../api/servicingApi';
 import { RESCHEDULE_TYPE_LABEL, SERVICING_PAGE_SIZE } from '../constant';
 import { rescheduleChangeText } from '../mappers/rescheduleDisplay';
 import { SVC_ACT_CELL, SVC_ACT_HEAD, SVC_WRAP_CELL } from '../styles';
-import type { RescheduleDecision, RescheduleRequest } from '../types';
+import type { RescheduleDecision, RescheduleRecoveryAction, RescheduleRequest, RescheduleStatus } from '../types';
 import { QueueBody } from './QueueBody';
 import { RescheduleDecisionModal } from './RescheduleDecisionModal';
+import { RescheduleRecoveryModal } from './RescheduleRecoveryModal';
 
 interface Props {
   page: number;
@@ -37,19 +38,28 @@ function MaturityCell({ item }: { item: RescheduleRequest }) {
 export function ReschedulePanel({ page, onPage, onDone }: Props) {
   // Thẩm định đạt/Từ chối cần quyền Thao tác "Cơ cấu nợ"; chỉ có quyền Xem thì bảng chỉ đọc.
   const canDecide = usePermission().canAct('reschedule');
-  const query = useRescheduleRequestsQuery({ page, size: SERVICING_PAGE_SIZE, status: 'PENDING_REVIEW' });
+  const [view, setView] = useState<'review' | 'repair'>('review');
+  const status: RescheduleStatus = view === 'review' ? 'PENDING_REVIEW' : 'MANUAL_REVIEW';
+  const query = useRescheduleRequestsQuery({ page, size: SERVICING_PAGE_SIZE, status });
   const [pending, setPending] = useState<{ request: RescheduleRequest; decision: RescheduleDecision } | null>(null);
+  const [recovery, setRecovery] = useState<{ request: RescheduleRequest; action: RescheduleRecoveryAction } | null>(null);
   const rows = query.data?.data ?? [];
 
   return (
     <>
+      <div className="mb-3 flex flex-wrap gap-2" aria-label="Loại yêu cầu cơ cấu">
+        <button type="button" className={view === 'review' ? 'ui-btn primary' : 'ui-btn ghost'}
+          onClick={() => { setView('review'); onPage(0); }}>Chờ thẩm định</button>
+        <button type="button" className={view === 'repair' ? 'ui-btn primary' : 'ui-btn ghost'}
+          onClick={() => { setView('repair'); onPage(0); }}>Cần xử lý lỗi</button>
+      </div>
       <QueueBody
         error={query.error}
         isLoading={query.isLoading}
         isFetching={query.isFetching}
         onRetry={query.refetch}
         total={query.data?.totalElements ?? 0}
-        emptyText="Không có yêu cầu cơ cấu chờ duyệt."
+        emptyText={view === 'review' ? 'Không có yêu cầu cơ cấu chờ duyệt.' : 'Không có yêu cầu cơ cấu cần xử lý lỗi.'}
         page={page}
         unit="yêu cầu"
         onPage={onPage}
@@ -80,9 +90,12 @@ export function ReschedulePanel({ page, onPage, onDone }: Props) {
                     {canDecide && (
                       <RowMenu
                         label={`Thao tác với yêu cầu cơ cấu khoản vay ${item.loanNumber}`}
-                        items={[
+                        items={view === 'review' ? [
                           { key: 'approve', label: 'Thẩm định đạt', icon: 'checkCircle', onSelect: () => setPending({ request: item, decision: 'approve' }) },
                           { key: 'reject', label: 'Từ chối', icon: 'xCircle', danger: true, separatorBefore: true, onSelect: () => setPending({ request: item, decision: 'reject' }) },
+                        ] : [
+                          { key: 'retry', label: 'Chạy lại', icon: 'refresh', onSelect: () => setRecovery({ request: item, action: 'retry' }) },
+                          { key: 'cancel', label: 'Đóng và dùng lịch cũ', icon: 'xCircle', danger: true, separatorBefore: true, onSelect: () => setRecovery({ request: item, action: 'cancel' }) },
                         ]}
                       />
                     )}
@@ -103,6 +116,14 @@ export function ReschedulePanel({ page, onPage, onDone }: Props) {
             setPending(null);
             onDone(message);
           }}
+        />
+      )}
+      {recovery && (
+        <RescheduleRecoveryModal
+          request={recovery.request}
+          action={recovery.action}
+          onClose={() => setRecovery(null)}
+          onDone={(message) => { setRecovery(null); onDone(message); }}
         />
       )}
     </>
