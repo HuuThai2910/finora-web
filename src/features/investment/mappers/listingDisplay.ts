@@ -29,6 +29,10 @@ export function fundedWaitLabel(listing: Pick<MarketListing, 'contractStatus' | 
  */
 export function stepStatus(listing: MarketListing, stage: ListingStageView | null, now: Date = new Date()): StepStatus {
   if (isOverdue(listing, now)) return { label: 'Quá hạn', tone: 'danger' };
+  // Nhà đầu tư chưa ký rút: khoản vay mở lại để gọi phần còn thiếu, các phần vốn đã ký vẫn giữ.
+  if (listing.status === 'OPEN' && listing.contractStatus === 'PENDING_REFUNDING') {
+    return { label: 'Gọi vốn bổ sung', tone: 'warning' };
+  }
   if (listing.status === 'FULLY_FUNDED') {
     const settled = stage && !stage.pending;
     // Dữ liệu cũ có thể đã phát hành Note mà không có mốc giải ngân: tin chặng đã suy ra trước.

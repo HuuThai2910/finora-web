@@ -69,7 +69,13 @@ function LoanReviewView({ applicationNumber }: { applicationNumber: string }) {
   // Kết quả thao tác báo bằng toast dùng chung (`@/lib/toast`).
   const setCopyMessage = useCallback((message: string | null) => { if (message) toast.success(message); }, []);
 
-  const adminIds = application?.recentHistory.filter((item) => item.actorType === 'ADMIN').map((item) => item.actorId) ?? [];
+  // Lịch sử xử lý hiện tên quản trị viên và nhà đầu tư (người ký/rút hợp đồng); backend cũ chỉ có recentHistory.
+  const adminIds = [
+    ...(application?.recentHistory.filter((item) => item.actorType === 'ADMIN').map((item) => item.actorId) ?? []),
+    ...(application?.timeline
+      ?.filter((item) => item.actorType === 'ADMIN' || item.actorType === 'INVESTOR')
+      .map((item) => item.actorId) ?? []),
+  ];
   const { displayName } = useActorNames([application?.borrowerId, application?.adminDecidedBy, ...adminIds]);
 
   const selectTab = (next: ReviewTabId) => {
@@ -150,7 +156,9 @@ function LoanReviewView({ applicationNumber }: { applicationNumber: string }) {
                 onRetry={explanation.reload}
               />
             ) : null}
-            {tab === 'history' ? <HistoryTab history={application.recentHistory} displayName={displayName} /> : null}
+            {tab === 'history' ? (
+              <HistoryTab history={application.recentHistory} timeline={application.timeline} displayName={displayName} />
+            ) : null}
           </div>
         </div>
 

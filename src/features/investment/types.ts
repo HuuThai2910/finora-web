@@ -30,7 +30,8 @@ export interface MarketListing {
   contractNumber: string | null;
   /**
    * Trạng thái hợp đồng Investment chép từ sự kiện của Loan: `PENDING_LENDER_SIGNATURES` khi đủ vốn và chờ các bên
-   * ký, `EFFECTIVE` khi hợp đồng có hiệu lực hoặc đã giải ngân; mã khác giữ nguyên.
+   * ký, `PENDING_REFUNDING` khi nhà đầu tư chưa ký rút và khoản vay đang gọi vốn bổ sung, `EFFECTIVE` khi hợp đồng có
+   * hiệu lực hoặc đã giải ngân; mã khác giữ nguyên.
    */
   contractStatus: string | null;
   fundingClosesAt: string;

@@ -24,7 +24,7 @@ function Overview({ proof }: { proof: Proof }) {
   const status = statusInfo(proof.status);
   return (
     <dl className="ui-rows bc-rows mt-1">
-      <Fact label="Mốc">{proofTypeLabel(proof.proofType)}</Fact>
+      <Fact label="Mốc">{proofTypeLabel(proof)}</Fact>
       <Fact label={aggregateLabel(proof.aggregateType)}><span className="ui-mono">{proof.aggregateId}</span></Fact>
       <Fact label="Hồ sơ vay">
         {proof.loanApplicationId != null ? (

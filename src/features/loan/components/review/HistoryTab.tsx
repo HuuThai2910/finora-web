@@ -1,6 +1,7 @@
-import { APPLICATION_STATUS_LABELS, formatBusinessLabel, formatDateTime } from '../../formatters';
-import { AI_POLICY_REJECTED, AI_POLICY_REVIEW, aiReviewReasonLabels, policyRejectionLabels } from '../../mappers/reviewDisplay';
-import type { LoanApplicationHistoryItem } from '../../types';
+import { useMemo, useState } from 'react';
+import { formatBusinessLabel, formatDateTime } from '../../formatters';
+import { TIMELINE_STAGE_LABELS, describeTimelineItem, historyAsTimeline } from '../../mappers/timelineDisplay';
+import type { LoanApplicationHistoryItem, LoanTimelineItem, TimelineStage } from '../../types';
 import { ReviewCard } from './ReviewCard';
 import { MUTED } from './reviewClassNames';
 
@@ -10,46 +11,77 @@ const ITEM =
 
 const NOTE = 'mt-0.5 text-secondary text-[13px]';
 
+const DOT_TONE = {
+  neutral: 'bg-line-strong',
+  warning: 'bg-warning',
+  success: 'bg-success',
+} as const;
+
+const CHIP = 'lr-timeline-chip inline-flex h-7 items-center gap-1.5 rounded-[999px] border border-line-strong bg-white px-3 '
+  + 'text-[12px] font-medium text-secondary hover:text-primary '
+  + 'aria-pressed:border-brand aria-pressed:bg-brand-50 aria-pressed:text-brand';
+
 interface HistoryTabProps {
   history: LoanApplicationHistoryItem[];
+  /** Lịch sử đầy đủ từ backend; backend cũ không có thì dùng lịch sử trạng thái hồ sơ. */
+  timeline?: LoanTimelineItem[];
   displayName: (actorId: string | null | undefined) => string;
 }
 
-/** Lịch sử trạng thái gần nhất; backend trả mới nhất trước và có giới hạn số dòng. */
-export function HistoryTab({ history, displayName }: HistoryTabProps) {
+/**
+ * Lịch sử xử lý của hồ sơ từ lúc nộp tới khi khoản vay đóng: thẩm định, gọi vốn (kể cả nhà đầu tư rút và gọi vốn bổ
+ * sung), ký hợp đồng, giải ngân, gia hạn/cơ cấu, thu hồi nợ. Backend trả mới nhất trước.
+ */
+export function HistoryTab({ history, timeline, displayName }: HistoryTabProps) {
+  const items = useMemo(() => timeline ?? historyAsTimeline(history), [timeline, history]);
+  const [stage, setStage] = useState<TimelineStage | null>(null);
+  const stages = (Object.keys(TIMELINE_STAGE_LABELS) as TimelineStage[])
+    .filter((key) => items.some((item) => item.stage === key));
+  const visible = stage ? items.filter((item) => item.stage === stage) : items;
+
   return (
     <ReviewCard title="Lịch sử xử lý" aside="Mới nhất ở trên">
-      {history.length === 0 ? (
+      {items.length === 0 ? (
         <p className={MUTED}>Chưa có lịch sử xử lý.</p>
       ) : (
-        // Mốc mới nhất (đầu danh sách) chấm màu nhấn.
-        <ol className="lr-timeline [&_li:first-child_.lr-timeline-dot]:bg-brand">
-          {history.map((item) => (
-            <li key={item.id} className={ITEM}>
-              <span className="lr-timeline-dot size-2 mt-1.75 rounded-[50%] bg-line-strong" aria-hidden="true" />
-              <div>
-                <strong className="font-semibold">{APPLICATION_STATUS_LABELS[item.toStatus] ?? item.toStatus}</strong>
-                <p className={NOTE}>
-                  {item.fromStatus
-                    ? `Chuyển từ ${APPLICATION_STATUS_LABELS[item.fromStatus] ?? item.fromStatus}`
-                    : 'Hồ sơ được khởi tạo'}
-                </p>
-                {/* Chính sách tự từ chối: Loan ghi danh sách mã loại trực tiếp vào reasonDetail nên dịch từng mã. */}
-                {item.reasonDetail && item.reasonCode === AI_POLICY_REJECTED ? (
-                  <p className={`lr-timeline-reasons ${NOTE}`}>{policyRejectionLabels(item.reasonDetail).join('; ')}</p>
-                ) : item.reasonDetail && item.reasonCode === AI_POLICY_REVIEW ? (
-                  // Chuyển thẩm định: Loan ghi mã lý do chuyển (từ AI) vào reasonDetail.
-                  <p className={`lr-timeline-reasons ${NOTE}`}>{aiReviewReasonLabels(item.reasonDetail).join('; ')}</p>
-                ) : item.reasonDetail ? <p className={NOTE}>{item.reasonDetail}</p> : null}
-                <span className="lr-timeline-meta block mt-0.5 text-muted text-[12px]">
-                  {formatDateTime(item.createdAt)} · {formatBusinessLabel(item.actorType)}
-                  {/* Chỉ tra tên quản trị viên: người vay và tiến trình tự động không nằm trong danh bạ quản trị. */}
-                  {item.actorType === 'ADMIN' ? `: ${displayName(item.actorId)}` : null}
-                </span>
-              </div>
-            </li>
-          ))}
-        </ol>
+        <>
+          {stages.length > 1 ? (
+            <div className="lr-timeline-filter mb-3 flex flex-wrap gap-1.5" role="group" aria-label="Lọc theo giai đoạn">
+              <button type="button" className={CHIP} aria-pressed={stage === null} onClick={() => setStage(null)}>
+                Tất cả
+              </button>
+              {stages.map((key) => (
+                <button key={key} type="button" className={CHIP} aria-pressed={stage === key} onClick={() => setStage(key)}>
+                  {TIMELINE_STAGE_LABELS[key]}
+                </button>
+              ))}
+            </div>
+          ) : null}
+          <ol className="lr-timeline">
+            {visible.map((item) => {
+              const view = describeTimelineItem(item, displayName);
+              return (
+                <li key={item.key} className={ITEM}>
+                  <span
+                    className={`lr-timeline-dot size-2 mt-1.75 rounded-[50%] ${DOT_TONE[view.tone]}`}
+                    aria-hidden="true"
+                  />
+                  <div>
+                    <strong className="font-semibold">{view.title}</strong>
+                    {view.notes.map((note) => (
+                      <p key={note} className={`lr-timeline-reasons ${NOTE}`}>{note}</p>
+                    ))}
+                    <span className="lr-timeline-meta block mt-0.5 text-muted text-[12px]">
+                      {formatDateTime(item.occurredAt)} · {TIMELINE_STAGE_LABELS[item.stage]} · {formatBusinessLabel(item.actorType)}
+                      {/* Người vay và tiến trình tự động không cần tên; quản trị viên và nhà đầu tư tra theo danh bạ. */}
+                      {item.actorType === 'ADMIN' || item.actorType === 'INVESTOR' ? `: ${displayName(item.actorId)}` : null}
+                    </span>
+                  </div>
+                </li>
+              );
+            })}
+          </ol>
+        </>
       )}
     </ReviewCard>
   );

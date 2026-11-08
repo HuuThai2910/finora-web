@@ -59,7 +59,7 @@ export function ProofDrawer({ proofId, runningId, onRetry, onClose }: Props) {
     <Drawer
       title={(
         <>
-          <h2>{proof ? proofTypeLabel(proof.proofType) : 'Kết quả xác minh'}</h2>
+          <h2>{proof ? proofTypeLabel(proof) : 'Kết quả xác minh'}</h2>
           {status && <StatusPill tone={status.tone}>{status.label}</StatusPill>}
         </>
       )}

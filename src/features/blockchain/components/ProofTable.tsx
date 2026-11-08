@@ -38,7 +38,7 @@ function ProofRow({ proof, open, runningId, onOpen, onRetry }: Omit<Props, 'proo
     <tr
       className={open ? 'clickable is-open' : 'clickable'}
       tabIndex={0}
-      aria-label={`Mở bằng chứng ${proofTypeLabel(proof.proofType)} của ${proof.aggregateId}`}
+      aria-label={`Mở bằng chứng ${proofTypeLabel(proof)} của ${proof.aggregateId}`}
       onClick={() => onOpen(proof)}
       onKeyDown={(event) => {
         if (event.target !== event.currentTarget) return;
@@ -49,7 +49,7 @@ function ProofRow({ proof, open, runningId, onOpen, onRetry }: Omit<Props, 'proo
       }}
     >
       {/* Tên sự kiện kỹ thuật (NoteOwnershipChanged…) chỉ có trong chi tiết kỹ thuật của ngăn bên phải. */}
-      <td><span className="strong">{proofTypeLabel(proof.proofType)}</span></td>
+      <td><span className="strong">{proofTypeLabel(proof)}</span></td>
       <td>
         <span className="ui-mono">{proof.aggregateId}</span>
         <span className="ui-sub">

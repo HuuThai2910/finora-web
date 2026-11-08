@@ -83,6 +83,34 @@ export interface LoanApplicationHistoryItem {
   createdAt: string;
 }
 
+/** Nhóm mốc trong lịch sử xử lý đầy đủ (`LoanApplicationTimelineItemResponse.stage`). */
+export type TimelineStage =
+  | 'APPLICATION'
+  | 'FUNDING'
+  | 'CONTRACT'
+  | 'DISBURSEMENT'
+  | 'SERVICING'
+  | 'RESTRUCTURE'
+  | 'COLLECTION';
+
+/**
+ * Một mốc trong lịch sử xử lý từ lúc nộp tới khi khoản vay đóng. Backend chỉ trả mã; nhãn tiếng Việt dựng ở
+ * `mappers/timelineDisplay.ts`.
+ */
+export interface LoanTimelineItem {
+  key: string;
+  occurredAt: string;
+  stage: TimelineStage;
+  eventCode: string;
+  fromStatus: string | null;
+  toStatus: string | null;
+  reasonCode: string | null;
+  reasonDetail: string | null;
+  actorType: 'BORROWER' | 'INVESTOR' | 'ADMIN' | 'SYSTEM';
+  actorId: string | null;
+  amount: number | null;
+}
+
 export interface AssessmentEvidence {
   assessmentId: number;
   status: CreditAssessmentStatus;
@@ -137,6 +165,8 @@ export interface AdminLoanReviewDetail extends AdminLoanReviewSummary {
   eligibility: EligibilityEvidence | null;
   creditProfile: CreditProfileEvidence | null;
   recentHistory: LoanApplicationHistoryItem[];
+  /** Lịch sử xử lý đầy đủ, mới nhất trước; backend cũ chưa có trường này. */
+  timeline?: LoanTimelineItem[];
   termsVersion: string | null;
   termsExpiresAt: string | null;
 }

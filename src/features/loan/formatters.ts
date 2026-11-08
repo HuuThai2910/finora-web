@@ -89,6 +89,7 @@ const LABELS: Record<string, string> = {
   NO_HISTORY: 'Chưa có lịch sử tín dụng tại FINORA',
   FINORA_INTERNAL: 'Lịch sử tín dụng nội bộ FINORA',
   BORROWER: 'Người vay',
+  INVESTOR: 'Nhà đầu tư',
   ADMIN: 'Quản trị viên',
   SYSTEM: 'Hệ thống',
   PENDING_REVIEW: 'Cần chuyên viên thẩm định',

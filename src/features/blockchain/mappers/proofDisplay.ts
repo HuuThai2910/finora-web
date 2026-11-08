@@ -1,6 +1,7 @@
 import { formatDateTime } from '@/utils';
 import {
-  AGGREGATE_LABEL, ARTIFACT_RESULT_INFO, CHAIN_RESULT_INFO, PROOF_TYPE_LABEL, PROVIDER_LABEL, REFERENCE_TYPES,
+  AGGREGATE_LABEL, ARTIFACT_RESULT_INFO, CHAIN_RESULT_INFO, NOTE_OWNERSHIP_LABEL, PROOF_TYPE_LABEL, PROVIDER_LABEL,
+  REFERENCE_TYPES,
   STATUS_INFO, type Tagged,
 } from '../constants';
 import type { Proof } from '../types';
@@ -15,7 +16,11 @@ function lookup<V>(table: Record<string, V>, key: string): V | undefined {
 
 const raw = (value: string): Tagged => ({ label: value, tone: 'neutral' });
 
-export const proofTypeLabel = (value: string): string => lookup(PROOF_TYPE_LABEL, value) ?? value;
+/** Tên nghiệp vụ của proof; mốc đổi chủ Note tách thành phát hành hoặc chuyển nhượng theo aggregate. */
+export function proofTypeLabel(proof: Pick<Proof, 'proofType' | 'aggregateType'>): string {
+  const note = proof.proofType === 'NOTE_OWNERSHIP' ? lookup(NOTE_OWNERSHIP_LABEL, proof.aggregateType) : undefined;
+  return note ?? lookup(PROOF_TYPE_LABEL, proof.proofType) ?? proof.proofType;
+}
 export const aggregateLabel = (value: string): string => lookup(AGGREGATE_LABEL, value) ?? value;
 export const providerLabel = (value: string): string => lookup(PROVIDER_LABEL, value) ?? value;
 /** Đường dẫn trang này lọc mọi bằng chứng của một hồ sơ vay (theo ID số). */

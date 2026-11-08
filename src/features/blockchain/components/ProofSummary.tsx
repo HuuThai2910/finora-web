@@ -93,7 +93,7 @@ export function ProofSummary({ proof }: { proof: Proof }) {
             + '[&_dt]:text-muted [&_dd]:mt-0.5 [&_dd]:text-[12px] [&_dd]:font-semibold [&_dd]:text-primary [&_dd]:wrap-anywhere'
           }
         >
-          <div><dt>Nghiệp vụ</dt><dd>{proofTypeLabel(proof.proofType)}</dd></div>
+          <div><dt>Nghiệp vụ</dt><dd>{proofTypeLabel(proof)}</dd></div>
           <div><dt>{aggregateLabel(proof.aggregateType)}</dt><dd>{proof.aggregateId}</dd></div>
           <div><dt>Ghi nhận lúc</dt><dd>{formatDateTime(recordedAt)}</dd></div>
         </dl>

@@ -16,8 +16,18 @@ export const PROOF_TYPE_LABEL: Record<ProofType, string> = {
   CONTRACT_DOCUMENT: 'Hợp đồng đủ chữ ký',
   DISBURSEMENT: 'Giải ngân',
   REPAYMENT: 'Trả nợ',
-  NOTE_OWNERSHIP: 'Phát hành hoặc chuyển nhượng Note',
+  NOTE_OWNERSHIP: 'Đổi chủ Note',
   NOTE_TRANSFER_DOCUMENT: 'Giấy xác nhận chuyển nhượng',
+};
+
+/**
+ * `NOTE_OWNERSHIP` là một loại bản ghi trên sổ cái nhưng gồm hai nghiệp vụ riêng, phân biệt bằng aggregate: phát hành
+ * Note khi khoản vay mới giải ngân cho nhà đầu tư đã góp vốn (`NoteIssuance/<mã khoản gọi vốn>`), và chuyển nhượng Note
+ * giữa các nhà đầu tư trên sổ lệnh (`NoteTransfer/<mã giao dịch>`). Trang luôn hiện tên nghiệp vụ, không gộp hai việc.
+ */
+export const NOTE_OWNERSHIP_LABEL: Record<string, string> = {
+  NoteIssuance: 'Phát hành Note',
+  NoteTransfer: 'Chuyển nhượng Note',
 };
 
 /**
