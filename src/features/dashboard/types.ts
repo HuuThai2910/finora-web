@@ -22,4 +22,4 @@ export type PeriodDays = 7 | 30 | 90;
 export type PeriodKpiKey = 'outstanding' | 'committed' | 'npl' | 'fee';
 
 /** Các biểu đồ trong thẻ biểu đồ có tab. */
-export type DashboardChartKey = 'funding' | 'funnel' | 'grades' | 'overdue' | 'market' | 'auto';
+export type DashboardChartKey = 'funding' | 'funnel' | 'grades' | 'overdue' | 'market';

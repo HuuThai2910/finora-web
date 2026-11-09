@@ -1,3 +1,5 @@
+import { deviceHeaders } from './deviceIdentity';
+
 export interface ApiError {
   status: number;
   message: string;
@@ -70,6 +72,8 @@ export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> 
       ...init,
       headers: {
         'Content-Type': 'application/json',
+        // Mã thiết bị cho "Thiết bị đăng nhập": finora-user ghi khi đăng nhập và nhận ra trình duyệt hiện tại.
+        ...deviceHeaders(),
         ...init?.headers,
       },
     }),

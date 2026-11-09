@@ -64,7 +64,7 @@ export function DecisionOutcome({ application, displayName }: DecisionOutcomePro
       ) : null}
       {application.status === 'APPROVED' && application.contractNumber ? (
         <p className="lr-outcome-contract mt-2.5 text-[13px]">
-          Hợp đồng <span className="ui-mono text-[12px] font-medium">{application.contractNumber}</span>
+          Hợp đồng <span className="ui-mono text-[12px] font-medium">{application.contractCode || application.contractNumber}</span>
         </p>
       ) : null}
       {application.status === 'APPROVED' && terms ? (

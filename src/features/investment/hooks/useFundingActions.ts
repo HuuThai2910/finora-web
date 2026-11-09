@@ -42,16 +42,16 @@ export function useFundingActions(listing: MarketListing | undefined, onSuccess:
       run('finalize', async () => {
         const { finalizedCount } = await finalize(listing.listingId).unwrap();
         return finalizedCount === 0
-          ? 'Mọi phần vốn đã được khóa từ trước, không có gì thay đổi.'
-          : `Đã khóa ${finalizedCount} phần vốn. Bước tiếp: phát hành Note.`;
+          ? 'Mọi khoản góp vốn đã được khóa từ trước, không có gì thay đổi.'
+          : `Đã khóa ${finalizedCount} khoản góp vốn. Bước tiếp: phát hành phần vốn.`;
       }),
     activate: () =>
       listing &&
       run('activate', async () => {
         const { issuedNoteCount } = await activate(listing.listingId).unwrap();
         return issuedNoteCount === 0
-          ? 'Note đã được phát hành trước đó, không tạo thêm.'
-          : `Đã phát hành ${formatNumber(issuedNoteCount)} Note.`;
+          ? 'Phần vốn đã được phát hành trước đó, không tạo thêm.'
+          : `Đã phát hành ${formatNumber(issuedNoteCount)} phần vốn.`;
       }),
   };
 }

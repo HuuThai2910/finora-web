@@ -108,7 +108,7 @@ export function MarketSummaryCard({
                 {summary && <small className={FIG_UNIT}>lần khớp</small>}
               </b>
               <span className={FIG_HINT}>
-                {!summary ? ' ' : failed > 0 ? 'Thanh toán bị từ chối, Note đã đổi chủ' : 'Không có lần khớp lỗi'}
+                {!summary ? ' ' : failed > 0 ? 'Thanh toán bị từ chối, phần vốn đã đổi chủ' : 'Không có lần khớp lỗi'}
               </span>
             </button>
             {/* Giấy xác nhận lập lỗi cũng là việc phải đối soát (bấm "Thử lại"), nên đếm chung ô này. */}
@@ -124,7 +124,7 @@ export function MarketSummaryCard({
               {value(`${formatNumber(summary?.openBidNotes)} mua, ${formatNumber(summary?.openAskNotes)} bán`)}
             </b>
             <span className={FIG_HINT}>
-              {summary ? `Note trong ${formatNumber(summary.openBidOrders + summary.openAskOrders)} lệnh đang nằm trong sổ` : ' '}
+              {summary ? `Phần vốn trong ${formatNumber(summary.openBidOrders + summary.openAskOrders)} lệnh đang nằm trong sổ` : ' '}
             </span>
           </div>
         </div>

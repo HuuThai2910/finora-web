@@ -120,7 +120,7 @@ export function buildPeriodKpis(
     { key: 'outstanding', label: 'Dư nợ hiện tại', value: money(portfolio?.principalOutstanding), ...compareSnapshot(loanPeriods, unavailableLoans, 'outstanding') },
     { key: 'committed', label: 'Vốn gọi được', value: money(committed), ...compare(committed, committedBefore, periods) },
     { key: 'npl', label: 'Tỷ lệ nợ xấu', value: portfolio ? formatPercent(portfolio.nplRatioPercent) : EMPTY, ...compareSnapshot(loanPeriods, unavailableLoans, 'npl') },
-    { key: 'fee', label: 'Phí chợ Notes', value: money(fee), ...compare(fee, feeBefore, periods) },
+    { key: 'fee', label: 'Phí chợ chuyển nhượng', value: money(fee), ...compare(fee, feeBefore, periods) },
   ];
 }
 

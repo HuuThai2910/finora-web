@@ -11,18 +11,26 @@ export function validateReference(type: ProofReferenceType, raw: string): string
   const id = raw.trim();
   if (!id) return 'Nhập mã tham chiếu cần tra.';
   if (id.length > REFERENCE_MAX_LENGTH) return `Mã tham chiếu dài tối đa ${REFERENCE_MAX_LENGTH} ký tự.`;
-  // Backend tra hồ sơ vay theo ID số (`loan_application_id`); mã hồ sơ LA-... được đổi ra ID số trước khi tra.
+  // Backend tra hồ sơ vay theo ID số (`loan_application_id`); mã hồ sơ/hợp đồng được đổi ra ID số trước khi tra.
   if (type === 'LOAN_APPLICATION' && !LOAN_APPLICATION_ID.test(id) && !isLoanApplicationCode(id)) {
-    return 'Nhập mã hồ sơ dạng LA-... hoặc ID số của hồ sơ, ví dụ 123.';
+    return 'Nhập mã hồ sơ (HS-…), mã hợp đồng (HĐ-…) hoặc ID số của hồ sơ, ví dụ 123.';
   }
   return null;
 }
 
 const LOAN_APPLICATION_ID = /^[1-9]\d{0,18}$/;
 
-/** Mã hồ sơ vay người dùng thấy trên màn Hồ sơ vay, ví dụ LA-7FA66C38… (không phân biệt hoa thường khi nhập). */
+/**
+ * Mã đổi được ra hồ sơ vay qua API tra mã của Loan: mã hiển thị hồ sơ `HS-…`, hợp đồng `HĐ-…` (gõ `HD-…` cũng được)
+ * và mã tra cứu `LA-…`/`LC-…` (không phân biệt hoa thường khi nhập).
+ */
 export function isLoanApplicationCode(raw: string): boolean {
-  return /^LA-[A-Z0-9-]{1,60}$/i.test(raw.trim());
+  return /^(LA|LC|HS|HĐ|HD)-[A-Z0-9-]{1,60}$/i.test(raw.trim());
+}
+
+/** Mã hiển thị (hoặc mã hồ sơ) cần đổi ra mã `LC-…` trước khi tra bằng chứng hợp đồng. */
+export function isContractDisplayCode(raw: string): boolean {
+  return /^(HĐ|HD|HS|LA)-[A-Z0-9-]{1,60}$/i.test(raw.trim());
 }
 
 /** Kết quả đọc ô "dữ liệu gốc": rỗng nghĩa là chỉ đối chiếu cơ sở dữ liệu với sổ cái. */

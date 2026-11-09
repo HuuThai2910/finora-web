@@ -96,7 +96,7 @@ export default function FundingDetailPage() {
   const tabs: Array<{ id: DetailTab; label: string; count?: number }> = [{ id: 'overview', label: 'Tổng quan' }];
   // Số trên tab bằng số dòng của bảng: bảng nhà đầu tư liệt kê cả phần vốn đã hủy (mờ đi) nên đếm cả chúng.
   if (listing.status !== 'DRAFT') tabs.push({ id: 'investors', label: 'Nhà đầu tư', count: investorsLoaded ? investors.length : undefined });
-  if (notesIssued) tabs.push({ id: 'notes', label: 'Note', count: finalized.reduce((sum, item) => sum + item.noteCount, 0) });
+  if (notesIssued) tabs.push({ id: 'notes', label: 'Phần vốn', count: finalized.reduce((sum, item) => sum + item.noteCount, 0) });
   const requestedTab = searchParams.get('tab');
   const tab: DetailTab = tabs.find((item) => item.id === requestedTab)?.id ?? 'overview';
   const status = stepStatus(listing, stage);
@@ -116,7 +116,7 @@ export default function FundingDetailPage() {
         </div>
         <div className={`fu-head-actions ${HEAD_ACTIONS}`}>
           {/* Mã hồ sơ công khai (`applicationNumber`) mở đúng trang thẩm định của khoản vay; listing cũ thiếu mã thì ẩn. */}
-          {listing.applicationNumber && canView('loan-application') && (
+          {listing.applicationNumber && (canView('loan-application') || canView('collection') || canView('reschedule') || canView('reconciliation')) && (
             <Link className="ui-btn ghost fd-loan-link" to={`/loans/${encodeURIComponent(listing.applicationNumber)}/review`}>
               Hồ sơ vay
             </Link>

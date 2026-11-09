@@ -22,6 +22,8 @@ const documentPath = (tradeReference: string) =>
 export interface PageParams {
   page?: number;
   size?: number;
+  /** Ô tìm: mã hồ sơ/hợp đồng của khoản vay (thêm mã lần khớp, số giấy ở bảng tương ứng); khớp một phần ở server. */
+  q?: string;
 }
 
 export interface TradeParams extends PageParams {

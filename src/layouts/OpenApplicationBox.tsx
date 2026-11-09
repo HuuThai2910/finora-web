@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef, useState, type FormEvent, type KeyboardEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMediaQuery } from '@/features/auth';
+import { useLazyLookupApplicationQuery } from '@/features/loan';
 import { normalizeApplicationNumber } from './applicationNumber';
 
 /** Dưới 760px header không đủ chỗ cho ô nhập: thu thành nút kính lúp, bấm mới mở ô dưới header. */
@@ -25,13 +26,15 @@ function isTyping(target: EventTarget | null): boolean {
 }
 
 /**
- * Ô "Mở hồ sơ theo mã" ở header: thẩm định viên nhận mã LA-… qua điện thoại, chat thì dán vào đây là tới thẳng trang
- * hồ sơ, không phải lọc danh sách. Enter thì chuẩn hóa (in hoa, bỏ khoảng trắng) rồi mở `/loans/<mã>/review`; mã sai
- * dạng thì báo ngay dưới ô. Phím "/" ở bất kỳ đâu đưa focus vào ô (trừ khi đang gõ hoặc đang mở hộp thoại).
+ * Ô "Mở hồ sơ theo mã" ở header: thẩm định viên nhận mã hồ sơ `HS-…`, mã hợp đồng `HĐ-…` (hoặc mã tra cứu cũ) qua điện
+ * thoại, chat thì dán vào đây là tới thẳng trang hồ sơ, không phải lọc danh sách. Enter thì chuẩn hóa (in hoa, bỏ khoảng
+ * trắng); mã tra cứu hồ sơ mở thẳng `/loans/<mã>/review`, mã còn lại hỏi Loan hồ sơ nào ứng với mã rồi mới mở. Mã sai
+ * dạng hoặc không có hồ sơ thì báo ngay dưới ô. Phím "/" ở bất kỳ đâu đưa focus vào ô (trừ khi đang gõ hoặc đang mở hộp thoại).
  * Chỉ kiểm dạng mã; hồ sơ không tồn tại thì trang chi tiết báo lỗi như khi mở từ danh sách.
  */
 export function OpenApplicationBox() {
   const navigate = useNavigate();
+  const [lookup, lookupState] = useLazyLookupApplicationQuery();
   const compact = useMediaQuery(COMPACT_QUERY);
   const [value, setValue] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -61,17 +64,30 @@ export function OpenApplicationBox() {
     setError(null);
   };
 
-  const submit = (event: FormEvent) => {
+  const open = (applicationNumber: string) => {
+    setValue('');
+    collapse();
+    inputRef.current?.blur();
+    navigate(`/loans/${encodeURIComponent(applicationNumber)}/review`);
+  };
+
+  const submit = async (event: FormEvent) => {
     event.preventDefault();
     const result = normalizeApplicationNumber(value);
     if (!result.ok) {
       setError(result.message);
       return;
     }
-    setValue('');
-    collapse();
-    inputRef.current?.blur();
-    navigate(`/loans/${encodeURIComponent(result.value)}/review`);
+    if (result.direct) {
+      open(result.value);
+      return;
+    }
+    try {
+      const found = await lookup(result.value).unwrap();
+      open(found.applicationNumber);
+    } catch {
+      setError('Không tìm thấy hồ sơ hoặc hợp đồng có mã này.');
+    }
   };
 
   const onInputKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
@@ -110,7 +126,7 @@ export function OpenApplicationBox() {
         <form
           className="header-find-form relative w-55 max-[1024px]:w-45 max-[760px]:absolute max-[760px]:inset-x-0 max-[760px]:top-full max-[760px]:w-auto max-[760px]:px-4 max-[760px]:pt-1 max-[760px]:pb-2.5 max-[760px]:bg-page max-[760px]:shadow-[0_6px_12px_rgba(10,44,104,0.08)]"
           role="search"
-          onSubmit={submit}
+          onSubmit={(event) => void submit(event)}
         >
           <label htmlFor={inputId} className="ui-sr-only">Mở hồ sơ vay theo mã</label>
           <span className="pointer-events-none absolute top-2 left-2.5 grid text-muted max-[760px]:top-3 max-[760px]:left-6.5 [&_svg]:size-4"><SearchGlyph /></span>
@@ -119,7 +135,8 @@ export function OpenApplicationBox() {
             id={inputId}
             className={INPUT}
             value={value}
-            placeholder="Mở hồ sơ LA-…"
+            placeholder="Mở hồ sơ theo mã…"
+            aria-busy={lookupState.isFetching || undefined}
             autoComplete="off"
             spellCheck={false}
             enterKeyHint="go"

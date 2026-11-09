@@ -79,8 +79,8 @@ export function buildDepthOption(bidLevels: PriceLevel[], askLevels: PriceLevel[
         const first = Array.isArray(params) ? (params[0] as { axisValue?: number }) : undefined;
         const x = round1(Number(first?.axisValue ?? 0));
         return tooltipHtml(`Giá ${formatPrice(x)}`, [
-          { color: CHART_PALETTE.success, label: 'Mua ở giá này trở lên', value: `${chartNumber(bidAt(x))} Note` },
-          { color: CHART_PALETTE.danger, label: 'Bán ở giá này trở xuống', value: `${chartNumber(askAt(x))} Note` },
+          { color: CHART_PALETTE.success, label: 'Mua ở giá này trở lên', value: `${chartNumber(bidAt(x))} phần vốn` },
+          { color: CHART_PALETTE.danger, label: 'Bán ở giá này trở xuống', value: `${chartNumber(askAt(x))} phần vốn` },
         ]);
       },
     },

@@ -78,3 +78,18 @@ export interface PageResponse<T> {
   totalPages: number;
   last: boolean;
 }
+
+/** Một thiết bị khách đã đăng nhập (`GET /api/v1/admin/users/{id}/devices`); không có mã thiết bị. */
+export interface CustomerLoginDevice {
+  id: number;
+  /** Tên client tự khai hoặc suy từ trình duyệt, ví dụ "samsung SM-S918B", "Chrome trên Windows". */
+  deviceName: string;
+  osName: string | null;
+  clientType: 'MOBILE' | 'WEB';
+  appVersion: string | null;
+  /** IP lần đăng nhập cuối (đầy đủ, như Nhật ký hoạt động). */
+  ipAddress: string | null;
+  firstLoginAt: string;
+  lastLoginAt: string;
+  loginCount: number;
+}

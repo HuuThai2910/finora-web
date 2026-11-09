@@ -15,13 +15,16 @@ export const ROLE_LABELS: Record<RoleType, string> = {
 
 export const ROLE_DESCRIPTIONS: Record<RoleType, string> = {
   BORROWER: 'Nộp hồ sơ vay và nhận giải ngân',
-  INVESTOR: 'Đầu tư cho vay và quản lý danh mục Note',
+  INVESTOR: 'Đầu tư cho vay và quản lý danh mục phần vốn',
   STAFF: 'Vận hành web quản trị trong phạm vi quyền của vai trò nhân viên',
   ADMIN: 'Toàn quyền quản trị hệ thống FINORA',
 };
 
-/** Thứ tự lựa chọn trong hộp thoại đổi vai trò: quyền tăng dần. */
-export const ASSIGNABLE_ROLES: RoleType[] = ['BORROWER', 'INVESTOR', 'STAFF', 'ADMIN'];
+/**
+ * Lựa chọn trong hộp thoại đổi vai trò, quyền tăng dần. Người vay/Nhà đầu tư do khách tự chọn lúc đăng ký trên app
+ * nên không cho đổi ở đây; tài khoản khách mở hộp thoại thì chưa thẻ nào được chọn và nút lưu bị khoá cho tới khi chọn.
+ */
+export const ASSIGNABLE_ROLES: RoleType[] = ['STAFF', 'ADMIN'];
 
 /**
  * Nhãn trạng thái xác minh danh tính của tài khoản. `PENDING` là khách chưa làm gì (chưa gửi lượt nào) nên tông xám

@@ -21,16 +21,16 @@ function TradeNotesDrawer({ trade, onClose }: { trade: AdminTrade; onClose: () =
   ]));
 
   return (
-    <Drawer title="Note của lần khớp" subtitle={trade.tradeReference} onClose={onClose}>
+    <Drawer title="Phần vốn của lần khớp" subtitle={trade.tradeReference} onClose={onClose}>
       {notes.error ? (
         <ErrorNotice error={notes.error} onRetry={notes.refetch} />
       ) : notes.isLoading ? (
-        <p className="ui-empty" aria-busy="true">Đang tải Note...</p>
+        <p className="ui-empty" aria-busy="true">Đang tải phần vốn...</p>
       ) : rows.length === 0 ? (
         <p className="ui-empty">
           {trade.settlementStatus === 'SETTLED'
-            ? 'Lần khớp này chưa ghi lần chuyển Note nào.'
-            : 'Chưa chuyển Note nào vì thanh toán của lần khớp chưa xong.'}
+            ? 'Lần khớp này chưa ghi lần chuyển phần vốn nào.'
+            : 'Chưa chuyển phần vốn nào vì thanh toán của lần khớp chưa xong.'}
         </p>
       ) : (
         <ul className="grid gap-3">
@@ -117,7 +117,7 @@ export function TradeActions({ trade }: { trade: AdminTrade }) {
 
   return (
     <div className="sm-trade-actions mt-1 flex flex-wrap gap-x-3 gap-y-1">
-      <button type="button" className="ui-link text-[12px]" onClick={() => setOpen('notes')}>Xem Note</button>
+      <button type="button" className="ui-link text-[12px]" onClick={() => setOpen('notes')}>Xem phần vốn</button>
       {canRetry && (
         <button type="button" className="ui-link text-[12px]" onClick={() => setOpen('retry')}>Gửi thanh toán lại</button>
       )}

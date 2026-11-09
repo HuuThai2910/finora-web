@@ -3,7 +3,6 @@ import {
   bucketTitle,
   formatIsoDate,
   type CreditGradeStat,
-  type InvestmentSeriesPoint,
   type StatisticsBucket,
   type UserSeriesPoint,
 } from '@/features/statistics';
@@ -216,30 +215,6 @@ export function buildGradesOption(grades: CreditGradeStat[]): ChartOption {
       color: CHART_PALETTE.brand,
       label: { show: true, position: 'top', color: CHART_PALETTE.ink2, fontSize: 11, formatter: (param: { value: number }) => moneyShort(param.value) },
     }],
-  };
-}
-
-/** Cột chồng số lần Auto-Invest đặt lệnh và bỏ qua mỗi cột. */
-export function buildAutoInvestOption(points: InvestmentSeriesPoint[], bucket: StatisticsBucket): ChartOption {
-  return {
-    legend: { data: ['Đặt lệnh thành công', 'Bỏ qua'] },
-    tooltip: {
-      trigger: 'axis',
-      axisPointer: { type: 'shadow' },
-      formatter: (params: AxisParams) => {
-        const point = points[firstIndex(params)];
-        return tooltipHtml(bucketTitle(point.bucketStart, bucket), [
-          { label: 'Đặt lệnh thành công', value: `${chartNumber(point.autoInvestPlaced)} lần`, color: CHART_PALETTE.brand },
-          { label: 'Bỏ qua', value: `${chartNumber(point.autoInvestSkipped)} lần`, color: CHART_PALETTE.neutral },
-        ]);
-      },
-    },
-    xAxis: { type: 'category', data: points.map((point) => bucketLabel(point.bucketStart, bucket)) },
-    yAxis: { type: 'value', minInterval: 1 },
-    series: [
-      { name: 'Đặt lệnh thành công', type: 'bar', stack: 'auto', data: points.map((point) => point.autoInvestPlaced), color: CHART_PALETTE.brand, barMaxWidth: 18, itemStyle: { borderColor: CHART_PALETTE.surface, borderWidth: 1, borderRadius: 0 }, emphasis: CHART_FOCUS },
-      { name: 'Bỏ qua', type: 'bar', stack: 'auto', data: points.map((point) => point.autoInvestSkipped), color: CHART_PALETTE.neutral, barMaxWidth: 18, itemStyle: { borderColor: CHART_PALETTE.surface, borderWidth: 1, borderRadius: [4, 4, 0, 0] }, emphasis: CHART_FOCUS },
-    ],
   };
 }
 

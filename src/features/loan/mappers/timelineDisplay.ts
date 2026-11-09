@@ -57,7 +57,7 @@ const CLOSED_STATUS: Record<string, string> = {
   DEFAULTED: 'Khoản vay bị chuyển vỡ nợ.',
 };
 
-const REFUNDING_NOTE = 'Khoản vay quay lại sàn để gọi phần vốn còn thiếu; nhà đầu tư đã ký vẫn giữ nguyên.';
+const REFUNDING_NOTE = 'Khoản vay quay lại sàn để gọi số vốn còn thiếu; nhà đầu tư đã ký vẫn giữ nguyên.';
 
 const money = (amount: number | null) => (amount == null ? null : formatMoney(amount));
 const compact = (...notes: Array<string | null | undefined | false>) => notes.filter((note): note is string => !!note);

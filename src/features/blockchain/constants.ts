@@ -16,7 +16,7 @@ export const PROOF_TYPE_LABEL: Record<ProofType, string> = {
   CONTRACT_DOCUMENT: 'Hợp đồng đủ chữ ký',
   DISBURSEMENT: 'Giải ngân',
   REPAYMENT: 'Trả nợ',
-  NOTE_OWNERSHIP: 'Đổi chủ Note',
+  NOTE_OWNERSHIP: 'Đổi chủ phần vốn',
   NOTE_TRANSFER_DOCUMENT: 'Giấy xác nhận chuyển nhượng',
 };
 
@@ -26,8 +26,8 @@ export const PROOF_TYPE_LABEL: Record<ProofType, string> = {
  * giữa các nhà đầu tư trên sổ lệnh (`NoteTransfer/<mã giao dịch>`). Trang luôn hiện tên nghiệp vụ, không gộp hai việc.
  */
 export const NOTE_OWNERSHIP_LABEL: Record<string, string> = {
-  NoteIssuance: 'Phát hành Note',
-  NoteTransfer: 'Chuyển nhượng Note',
+  NoteIssuance: 'Phát hành phần vốn',
+  NoteTransfer: 'Chuyển nhượng phần vốn',
 };
 
 /**
@@ -40,20 +40,20 @@ export const REFERENCE_TYPES: ReadonlyArray<{
   noun: string;
   placeholder: string;
 }> = [
-  { value: 'LOAN_APPLICATION', label: 'Hồ sơ vay', noun: 'hồ sơ vay', placeholder: 'Mã hồ sơ LA-... hoặc ID số' },
-  { value: 'LOAN_CONTRACT', label: 'Hợp đồng', noun: 'hợp đồng', placeholder: 'Số hợp đồng, ví dụ LC-...' },
+  { value: 'LOAN_APPLICATION', label: 'Hồ sơ vay', noun: 'hồ sơ vay', placeholder: 'Mã hồ sơ, mã hợp đồng hoặc ID số' },
+  { value: 'LOAN_CONTRACT', label: 'Hợp đồng', noun: 'hợp đồng', placeholder: 'Mã hợp đồng (HĐ-…)' },
   { value: 'DISBURSEMENT_SAGA', label: 'Giải ngân', noun: 'lệnh giải ngân', placeholder: 'Mã lệnh giải ngân' },
   { value: 'REPAYMENT', label: 'Trả nợ', noun: 'giao dịch trả nợ', placeholder: 'Mã giao dịch trả nợ' },
   {
     value: 'NOTE_ISSUANCE',
-    label: 'Phát hành Note',
-    noun: 'đợt phát hành Note của khoản gọi vốn',
+    label: 'Phát hành phần vốn',
+    noun: 'đợt phát hành phần vốn của khoản gọi vốn',
     placeholder: 'Mã khoản gọi vốn',
   },
   {
     value: 'NOTE_TRANSFER',
-    label: 'Chuyển nhượng Note',
-    noun: 'giao dịch chuyển nhượng Note',
+    label: 'Chuyển nhượng phần vốn',
+    noun: 'giao dịch chuyển nhượng phần vốn',
     placeholder: 'Mã giao dịch chuyển nhượng',
   },
   {
@@ -69,8 +69,8 @@ export const AGGREGATE_LABEL: Record<string, string> = {
   LoanContract: 'Hợp đồng',
   DisbursementSaga: 'Lệnh giải ngân',
   Repayment: 'Giao dịch trả nợ',
-  NoteIssuance: 'Phát hành Note',
-  NoteTransfer: 'Chuyển nhượng Note',
+  NoteIssuance: 'Phát hành phần vốn',
+  NoteTransfer: 'Chuyển nhượng phần vốn',
   NoteTransferDocument: 'Giấy xác nhận chuyển nhượng',
 };
 

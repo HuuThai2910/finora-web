@@ -190,7 +190,6 @@ export interface InvestmentStatisticsSummary {
     fillRatePercent: number | null;
   };
   notes: { byStatus: CountMap; activeOutstandingPrincipal: number };
-  autoInvest: { activeConfigs: number };
 }
 
 export interface InvestmentSeriesPoint {
@@ -203,8 +202,6 @@ export interface InvestmentSeriesPoint {
   platformFee: number;
   /** Giá khớp bình quân theo khối lượng, phần nghìn (985 = 98,5%); `null` khi cột không có lần khớp. */
   averagePricePermille: number | null;
-  autoInvestPlaced: number;
-  autoInvestSkipped: number;
   /*
    * Các trường mới (2026-10-08), thiếu khi backend chưa cập nhật. "performing" chỉ tính lần khớp của Note
    * thuộc khoản vay chưa vỡ nợ, để giá bình quân không bị khoản nợ xấu (giá rất thấp) kéo xuống.

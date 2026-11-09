@@ -22,13 +22,13 @@ export function TermsCard({ listing }: { listing: MarketListing }) {
           <div><dt>Mục tiêu tạm tính</dt><dd>{formatMoney(listing.targetAmount)} đ</dd></div>
         ) : (
           <>
-            <div><dt>Mệnh giá Note</dt><dd>{formatMoney(listing.noteDenomination)} đ</dd></div>
+            <div><dt>Mệnh giá mỗi phần vốn</dt><dd>{formatMoney(listing.noteDenomination)} đ</dd></div>
             <div><dt>Góp tối thiểu</dt><dd>{formatMoney(listing.minInvestmentAmount)} đ</dd></div>
-            <div><dt>Số Note tối đa</dt><dd>{maxNotes ?? EMPTY}</dd></div>
+            <div><dt>Số phần vốn tối đa</dt><dd>{maxNotes ?? EMPTY}</dd></div>
           </>
         )}
         {listing.contractNumber && (
-          <div><dt>Số hợp đồng</dt><dd><span className="ui-mono">{listing.contractNumber}</span></dd></div>
+          <div><dt>Số hợp đồng</dt><dd><span className="ui-mono">{listing.contractCode || listing.contractNumber}</span></dd></div>
         )}
       </dl>
     </section>

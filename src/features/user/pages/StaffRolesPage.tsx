@@ -1,11 +1,12 @@
 import { useCallback, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { ErrorNotice } from '@/components/ErrorNotice';
 import { Icon } from '@/components/Icon';
 import { RowMenu } from '@/components/RowMenu';
+import { SearchBox } from '@/components/SearchBox';
 import { StatusPill } from '@/components/StatusPill';
 import { toast } from '@/lib/toast';
-import { formatNumber } from '@/utils';
+import { formatNumber, matchesSearch } from '@/utils';
 import { useGetStaffRolesQuery } from '../api/userQueries';
 import { DeleteStaffRoleModal } from '../components/DeleteStaffRoleModal';
 import { PermissionSectionTabs } from '../components/PermissionSectionTabs';
@@ -36,7 +37,17 @@ export default function StaffRolesPage() {
   const [action, setAction] = useState<PendingAction>(null);
   // Kết quả thao tác báo bằng toast dùng chung (`@/lib/toast`).
   const setNotice = useCallback((message: string | null) => { if (message) toast.success(message); }, []);
-  const list = roles.data ?? [];
+  const all = roles.data ?? [];
+  // Danh sách vai trò nhỏ và tải hết một lần: lọc ở client theo tên, mô tả hoặc mã vai trò; từ khóa giữ trên URL.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const search = (searchParams.get('q') ?? '').trim();
+  const list = all.filter((role) => matchesSearch(search, role.name, role.description, role.code));
+  const updateSearch = (next: string) => {
+    const params = new URLSearchParams(searchParams);
+    if (next) params.set('q', next);
+    else params.delete('q');
+    setSearchParams(params, { replace: true });
+  };
 
   const finish = (message: string) => {
     setAction(null);
@@ -61,13 +72,24 @@ export default function StaffRolesPage() {
       <PermissionSectionTabs />
 
       <section className="ui-card user-card overflow-hidden" aria-label="Danh sách vai trò nhân viên">
+        <div className="user-toolbar flex flex-wrap items-center justify-end gap-2 px-3 pt-3 max-[760px]:px-2">
+          <SearchBox
+            className="staff-role-search w-65 max-[760px]:w-full"
+            value={search}
+            onSearch={updateSearch}
+            label="Tìm vai trò nhân viên"
+            placeholder="Tìm theo tên hoặc mô tả vai trò"
+          />
+        </div>
         <div className="user-body p-3 max-[760px]:py-2.5 max-[760px]:px-2">
           {roles.error ? (
             <ErrorNotice error={roles.error} onRetry={roles.refetch} />
           ) : roles.isLoading ? (
             <div className="ui-empty" aria-busy="true">Đang tải vai trò nhân viên...</div>
-          ) : list.length === 0 ? (
+          ) : all.length === 0 ? (
             <div className="ui-empty">Chưa có vai trò nhân viên nào. Bấm "Tạo vai trò" để bắt đầu.</div>
+          ) : list.length === 0 ? (
+            <div className="ui-empty">Không tìm thấy vai trò khớp "{search}".</div>
           ) : (
             <div className={roles.isFetching ? 'ui-table-wrap ui-busy' : 'ui-table-wrap'}>
               <table className="ui-table list staff-role-table">

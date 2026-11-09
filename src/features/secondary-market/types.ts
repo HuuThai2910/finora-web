@@ -22,6 +22,9 @@ export interface OrderBookSummary {
   bestAskPercent: string | null;
   lastTradePercent: string | null;
   lastTradeAt: string | null;
+  /** Mã hiển thị HS-…/HĐ- của khoản vay; null với khoản niêm yết trước khi Loan có mã. */
+  applicationCode?: string | null;
+  contractCode?: string | null;
 }
 
 export interface PriceLevel {

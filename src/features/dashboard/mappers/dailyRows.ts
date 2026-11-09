@@ -44,7 +44,7 @@ export const DAILY_COLUMNS: DailyColumn[] = [
   { key: 'disbursed', header: 'Giải ngân', format: shortMoney },
   { key: 'submitted', header: 'Hồ sơ nộp', format: formatNumber },
   { key: 'npl', header: 'Tỷ lệ nợ xấu', kpi: 'npl', format: (value) => `${TWO_DECIMALS.format(value)}%` },
-  { key: 'fee', header: 'Phí chợ Notes', kpi: 'fee', format: shortMoney },
+  { key: 'fee', header: 'Phí chợ chuyển nhượng', kpi: 'fee', format: shortMoney },
 ];
 
 /** Ghép series Investment và Loan theo ngày đầu cột, mới nhất ở trên. */

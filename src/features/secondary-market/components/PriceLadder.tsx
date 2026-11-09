@@ -24,7 +24,7 @@ function QuantityCell({ level, max, side }: { level: PriceLevel; max: number; si
       />
       <span className="relative">
         {side === 'bid' && <small className="mr-1.5 text-muted text-[12px]">{level.orderCount} lệnh</small>}
-        {level.quantity} Note
+        {level.quantity} phần vốn
         {side === 'ask' && <small className="ml-1.5 text-muted text-[12px]">{level.orderCount} lệnh</small>}
       </span>
     </td>

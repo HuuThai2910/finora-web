@@ -1,6 +1,7 @@
 import { apiFetch } from '@/lib/api/httpClient';
 import type {
   AssignRoleRequest,
+  CustomerLoginDevice,
   EkycStatusType,
   PageResponse,
   RoleType,
@@ -48,6 +49,10 @@ export const userApi = {
 
   getUserById: (id: number | string): Promise<UserItem> =>
     apiFetch<UserItem>(`/api/v1/admin/users/${id}`),
+
+  /** Thiết bị khách đã đăng nhập, gần nhất trước (cùng quyền Xem với trang khách hàng). */
+  getUserDevices: (id: number | string): Promise<CustomerLoginDevice[]> =>
+    apiFetch<CustomerLoginDevice[]>(`/api/v1/admin/users/${id}/devices`),
 
   /** Khóa tài khoản: lý do bắt buộc; backend đăng xuất mọi phiên đang mở của người dùng. */
   lockUser: (id: number, reason: string): Promise<void> =>

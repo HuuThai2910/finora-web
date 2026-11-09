@@ -42,13 +42,13 @@ export function SagaRequeueModal({ saga, onClose, onDone }: Props) {
       // Lỗi hiện trong hộp thoại qua `state.error` (kèm traceId).
       return;
     }
-    onDone(`Đã đưa hợp đồng ${saga.contractNumber} về hàng chờ ghi vào hệ thống lõi.`);
+    onDone(`Đã đưa hợp đồng ${saga.contractCode || saga.contractNumber} về hàng chờ ghi vào hệ thống lõi.`);
   };
 
   return (
     <Modal
       title="Ghi lại khoản vay vào hệ thống lõi"
-      subtitle={`Hợp đồng ${saga.contractNumber}, ${money(saga.amount)}`}
+      subtitle={`Hợp đồng ${saga.contractCode || saga.contractNumber}, ${money(saga.amount)}`}
       onClose={onClose}
       busy={state.isLoading}
       dismissOnBackdrop={false}

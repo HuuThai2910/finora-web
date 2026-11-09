@@ -23,7 +23,7 @@ import type { Proof } from '../types';
 function emptyText(filters: ProofFilters): string {
   if (filters.reference) {
     return `Chưa có bằng chứng nào cho ${referenceNoun(filters.reference.type)} ${filters.reference.id}. `
-      + 'Bằng chứng chỉ được tạo sau khi mốc nghiệp vụ hoàn tất (hợp đồng đủ chữ ký, giải ngân, trả nợ, Note, giấy xác nhận chuyển nhượng).';
+      + 'Bằng chứng chỉ được tạo sau khi mốc nghiệp vụ hoàn tất (hợp đồng đủ chữ ký, giải ngân, trả nợ, phần vốn, giấy xác nhận chuyển nhượng).';
   }
   if (filters.status) return `Không có bằng chứng nào ở trạng thái "${statusInfo(filters.status).label}".`;
   return 'Chưa có bằng chứng nào.';

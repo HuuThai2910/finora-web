@@ -54,7 +54,7 @@ function validate(form: FormValues): FormErrors {
   const days = Number(form.days);
   if (!(denomination >= 1000)) errors.denomination = 'Mệnh giá phải từ 1.000 đ.';
   if (!(minimum >= 1000)) errors.minimum = 'Mức tối thiểu phải từ 1.000 đ.';
-  else if (denomination >= 1000 && minimum % denomination !== 0) errors.minimum = 'Phải chia hết cho mệnh giá Note.';
+  else if (denomination >= 1000 && minimum % denomination !== 0) errors.minimum = 'Phải chia hết cho mệnh giá mỗi phần vốn.';
   if (!Number.isInteger(days) || days < FUNDING_DAYS_MIN || days > FUNDING_DAYS_MAX) {
     errors.days = `Từ ${FUNDING_DAYS_MIN} đến ${FUNDING_DAYS_MAX} ngày.`;
   }
@@ -157,7 +157,7 @@ function SettingsEditor({ current, onClose, onNotice, onCloseExpired }: Props & 
         {/* Chỉ có quyền Xem thì xem được tham số hiện hành, không sửa: khóa cả nhóm ô, bố cục form giữ nguyên. */}
         <fieldset className="fu-settings-fields grid gap-3.5 min-w-0 m-0 p-0 [border:0]" disabled={!canSave}>
           <fieldset className={FIELD}>
-            <legend className={FIELD_LABEL}>Mệnh giá Note mặc định</legend>
+            <legend className={FIELD_LABEL}>Mệnh giá mỗi phần vốn mặc định</legend>
             <div className="fu-chips flex flex-wrap gap-1.5">
               {DENOMINATION_OPTIONS.map((option) => (
                 <button

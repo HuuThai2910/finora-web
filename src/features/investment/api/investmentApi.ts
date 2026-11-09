@@ -16,7 +16,7 @@ export interface ListingSearchParams {
   grade?: string;
   minRate?: string;
   maxTermMonths?: number;
-  /** Tìm theo một phần mã hồ sơ `LA-…` hoặc số hợp đồng. */
+  /** Tìm theo một phần mã hồ sơ, mã hợp đồng (mã hiển thị HS-/HĐ- lẫn mã tra cứu LA-/LC-). */
   q?: string;
   /** `rate` (lãi cao trước, mặc định), `newest`, `closing` (sắp hết hạn trước), `amount`. */
   sort?: ListingSort;

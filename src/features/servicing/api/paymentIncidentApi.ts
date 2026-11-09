@@ -17,7 +17,8 @@ const OPEN_REPAYMENT_STATUSES = 'CORE_POSTING,RECONCILIATION_REQUIRED';
  */
 export const paymentIncidentApi = paymentApi.injectEndpoints({
   endpoints: (builder) => ({
-    repaymentIncidents: builder.query<CommonPage<RepaymentIncident>, PageArgs>({
+    /** Có `loanApplicationId` thì chỉ đọc sự cố của hồ sơ đó (phần "Sau giải ngân" của trang hồ sơ). */
+    repaymentIncidents: builder.query<CommonPage<RepaymentIncident>, PageArgs & { loanApplicationId?: number }>({
       query: (params) => ({ url: '/admin/repayment-reconciliation', params: { ...params, status: OPEN_REPAYMENT_STATUSES } }),
       providesTags: [tag('REPAYMENTS')],
     }),
@@ -29,7 +30,7 @@ export const paymentIncidentApi = paymentApi.injectEndpoints({
       query: (repaymentId) => ({ url: `/admin/repayment-reconciliation/${repaymentId}/repost`, method: 'POST' }),
       invalidatesTags: [tag('REPAYMENTS')],
     }),
-    disbursementIncidents: builder.query<CommonPage<DisbursementIncident>, PageArgs>({
+    disbursementIncidents: builder.query<CommonPage<DisbursementIncident>, PageArgs & { loanApplicationId?: number }>({
       query: (params) => ({ url: '/admin/disbursement-reconciliation', params }),
       providesTags: [tag('DISBURSEMENTS')],
     }),
@@ -38,7 +39,8 @@ export const paymentIncidentApi = paymentApi.injectEndpoints({
       invalidatesTags: [tag('DISBURSEMENTS')],
     }),
     // Payment chỉ trả lệnh rút chưa có kết quả cuối (PROCESSING, PROVIDER_PENDING, RECONCILIATION_REQUIRED), lâu nhất trước.
-    withdrawalIncidents: builder.query<CommonPage<WithdrawalIncident>, PageArgs>({
+    // Có `ownerId` thì chỉ đọc lệnh của đúng khách hàng (trang chi tiết khách hàng).
+    withdrawalIncidents: builder.query<CommonPage<WithdrawalIncident>, PageArgs & { ownerId?: string }>({
       query: (params) => ({ url: '/admin/withdrawals', params }),
       providesTags: [tag('WITHDRAWALS')],
     }),

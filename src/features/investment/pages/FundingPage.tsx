@@ -9,6 +9,7 @@ import { Pager } from '@/components/Pager';
 import { SearchBox } from '@/components/SearchBox';
 import { toast } from '@/lib/toast';
 import { usePermission } from '@/features/auth';
+import { OrderIncidentsSection } from '@/features/servicing';
 import { useGetMarketListingsQuery, type ListingSort } from '../api/investmentApi';
 import { CloseExpiredDialog } from '../components/CloseExpiredDialog';
 import { CommitmentTrendCard } from '../components/CommitmentTrendCard';
@@ -122,7 +123,7 @@ export function FundingPage() {
     <section className="ui-page">
       <header className="ui-page-head">
         <div className="ui-title">
-          <h1>Gọi vốn &amp; Notes</h1>
+          <h1>Gọi vốn &amp; chuyển nhượng</h1>
         </div>
         <div className={`fu-head-actions ${HEAD_ACTIONS}`}>
           <button type="button" className="ui-btn ghost" onClick={refreshAll} disabled={list.isFetching}>
@@ -143,6 +144,9 @@ export function FundingPage() {
         onRetry={summary.refetch}
         onCloseExpired={canCloseExpired ? () => setCloseOpen(true) : undefined}
       />
+
+      {/* Lệnh góp vốn chưa khớp với ví (quyền Xem "Đối soát & sự cố"); không có lệnh nào thì không chiếm chỗ. */}
+      {canView('reconciliation') && <OrderIncidentsSection hideWhenEmpty />}
 
       {/* Biểu đồ đọc series thống kê, cần quyền Xem "Tổng quan & thống kê". */}
       {canView('dashboard') && <CommitmentTrendCard />}
@@ -180,7 +184,7 @@ export function FundingPage() {
             value={search}
             onSearch={(next) => updateQuery({ q: next })}
             label="Tìm khoản gọi vốn"
-            placeholder="Tìm mã hồ sơ LA-… hoặc số hợp đồng"
+            placeholder="Tìm theo mã hồ sơ hoặc mã hợp đồng"
           />
           <label className="flex items-center gap-2 text-[13px] text-secondary max-[760px]:w-full">
             Sắp xếp

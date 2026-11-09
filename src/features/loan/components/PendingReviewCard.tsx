@@ -70,7 +70,7 @@ export function PendingReviewCard({ summary, isLoading, error, onRetry }: Pendin
                     className="ui-link loan-oldest-link"
                     to={`/loans/${encodeURIComponent(summary.oldest.applicationNumber)}/review`}
                     state={fromListState(location)}
-                    title={`Mở hồ sơ ${summary.oldest.applicationNumber}`}
+                    title={`Mở hồ sơ ${summary.oldest.applicationCode || summary.oldest.applicationNumber}`}
                   >
                     {daysSince(summary.oldest.submittedAt)} ngày, từ {formatCompactDateTime(summary.oldest.submittedAt)}
                   </Link>

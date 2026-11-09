@@ -4,10 +4,12 @@ import type {
   AdminDecisionResponse,
   AdminLoanReviewDetail,
   AdminLoanReviewPage,
+  ApplicationReference,
   AssessmentPage,
   CreditAssessmentDetail,
   LoanApplicationStatus,
   ScoringRetryAcceptedResponse,
+  ServicingFlag,
 } from '../types';
 
 const loanReviewApi = loanApi.injectEndpoints({
@@ -16,6 +18,10 @@ const loanReviewApi = loanApi.injectEndpoints({
       status?: LoanApplicationStatus;
       /** ID hồ sơ người dùng ở finora-user: trang khách hàng và mục "Hồ sơ khác của cùng người vay". */
       borrowerId?: string;
+      /** Ô tìm: mã hồ sơ (HS-…/LA-…) hoặc mã hợp đồng (HĐ-…/LC-…), khớp một phần ở server. */
+      q?: string;
+      /** Lọc theo việc vận hành của khoản vay: đang quá hạn, chờ duyệt cơ cấu, có sự cố. */
+      servicing?: ServicingFlag;
       page?: number;
       size?: number;
     }>({
@@ -28,10 +34,14 @@ const loanReviewApi = loanApi.injectEndpoints({
         })) ?? []),
       ],
     }),
-    /** Mã hồ sơ `LA-…` theo ID số, cho các bảng chỉ có ID (đối soát của Payment). Tối đa 100 ID một lần. */
-    getApplicationNumbers: builder.query<{ id: number; applicationNumber: string }[], number[]>({
+    /** Mã tra cứu `LA-…` và mã hiển thị `HS-…` theo ID số, cho các bảng chỉ có ID. Tối đa 100 ID một lần. */
+    getApplicationNumbers: builder.query<ApplicationReference[], number[]>({
       query: (ids) => ({ url: '/admin/loan-applications/numbers', params: { ids: ids.join(',') } }),
       keepUnusedDataFor: 600,
+    }),
+    /** Đổi mã nhân viên có trong tay (`HS-…`, `HĐ-…`/`HD-…`, `LA-…`, `LC-…`) về hồ sơ để mở trang thẩm định. */
+    lookupApplication: builder.query<ApplicationReference, string>({
+      query: (code) => ({ url: '/admin/loan-applications/lookup', params: { code } }),
     }),
     getReviewDetail: builder.query<AdminLoanReviewDetail, string>({
       query: (applicationNumber) => `/admin/loan-applications/${applicationNumber}/review`,
@@ -128,6 +138,7 @@ const loanReviewApi = loanApi.injectEndpoints({
 export const {
   useGetAdminApplicationsQuery,
   useGetApplicationNumbersQuery,
+  useLazyLookupApplicationQuery,
   useGetReviewDetailQuery,
   // Tra hồ sơ theo mã từ trang khác (vd. Xác minh giao dịch đổi mã LA-… ra ID số), chỉ gọi khi người dùng bấm tra.
   useLazyGetReviewDetailQuery,

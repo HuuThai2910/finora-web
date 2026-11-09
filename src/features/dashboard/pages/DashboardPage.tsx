@@ -49,7 +49,7 @@ export default function DashboardPage() {
       <header className="ui-page-head">
         <div className="ui-title">
           <h1>Tổng quan</h1>
-          <p>Tình hình cho vay, gọi vốn và chợ Notes của FINORA{asOf ? `, cập nhật ${asOf}` : ''}.</p>
+          <p>Tình hình cho vay, gọi vốn và chợ chuyển nhượng của FINORA{asOf ? `, cập nhật ${asOf}` : ''}.</p>
         </div>
         <div className="dash-head-actions flex flex-wrap items-center gap-2.5">
           <div className="ui-seg" role="tablist" aria-label="Kỳ số liệu" onKeyDown={(event) => handleTabArrows(event, PERIODS, period, setPeriod)}>
