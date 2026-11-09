@@ -1,7 +1,8 @@
 import { RowMenu, type RowMenuItem } from '@/components/RowMenu';
 import { StatusPill } from '@/components/StatusPill';
 import { usePermission } from '@/features/auth';
-import { ROLE_LABELS, formatGender, maskIdNumber } from '../constant';
+import { formatDate } from '@/utils';
+import { ROLE_LABELS, isInternalRole } from '../constant';
 import type { UserItem } from '../types';
 
 interface UserTableProps {
@@ -13,7 +14,6 @@ interface UserTableProps {
 }
 
 /** Cột phụ ẩn khi bảng hẹp để cột vai trò và nút "⋯" vẫn nằm trong khung, không phải cuộn ngang mới thấy. */
-const HIDE_MD = 'user-hide-md max-[1100px]:hidden';
 const HIDE_SM = 'user-hide-sm max-[900px]:hidden';
 const HIDE_XS = 'user-hide-xs max-[600px]:hidden';
 
@@ -25,7 +25,11 @@ function lockBlockedReason(user: UserItem, isSelf: boolean): string | null {
   return null;
 }
 
-/** Bảng người dùng; các thao tác của dòng gom vào menu "⋯". */
+/**
+ * Bảng tài khoản (mọi vai trò); các thao tác của dòng gom vào menu "⋯". "Đổi vai trò" chỉ có ở dòng quản trị viên/nhân
+ * viên: khách hàng không được biến thành nhân viên (backend cũng chặn), nhân viên mới tạo bằng "Thêm nhân viên". Dòng
+ * khách hàng có "Xem chi tiết" sang trang Khách hàng.
+ */
 export function UserTable({ users, currentAdminId, onChangeRole, onToggleLock }: UserTableProps) {
   // Khóa/mở khóa là quyền Thao tác "Khách hàng"; đổi vai trò chỉ ADMIN (route trang này cũng chỉ mở cho ADMIN).
   const { canAct, isAdmin } = usePermission();
@@ -35,10 +39,9 @@ export function UserTable({ users, currentAdminId, onChangeRole, onToggleLock }:
       <table className="ui-table list">
         <thead>
           <tr>
-            <th>Người dùng</th>
+            <th>Tài khoản</th>
             <th className={HIDE_XS}>Số điện thoại</th>
-            <th className={HIDE_MD}>Giới tính</th>
-            <th className={HIDE_SM}>Số CCCD</th>
+            <th className={HIDE_SM}>Ngày tạo</th>
             <th>Vai trò</th>
             <th className="act"><span className="ui-sr-only">Thao tác</span></th>
           </tr>
@@ -49,23 +52,23 @@ export function UserTable({ users, currentAdminId, onChangeRole, onToggleLock }:
             const isLocked = user.locked === true;
             const name = user.fullName || user.email;
             const lockBlocked = lockBlockedReason(user, isSelf);
-            const idNumber = maskIdNumber(user.idNumber);
+            const internal = isInternalRole(user.role);
             return (
               <tr key={user.id}>
                 {/* Email dài xuống dòng ở màn hẹp thay vì đẩy cột vai trò và nút "⋯" ra ngoài khung. */}
                 <td className="max-[600px]:whitespace-normal max-[600px]:wrap-anywhere">
-                  <div className="user-name-row flex items-center gap-1.5">
+                  <div className="user-name-row flex items-center gap-1.5 flex-wrap">
                     <span className={user.fullName ? 'user-name font-medium' : 'user-name empty text-muted font-normal'}>
                       {user.fullName || 'Chưa cập nhật tên'}
                     </span>
                     {isSelf && <StatusPill tone="neutral" small>Bạn</StatusPill>}
                     {isLocked && <StatusPill tone="danger" small>Đã khóa</StatusPill>}
+                    {user.mustChangePassword && <StatusPill tone="warning" small>Chưa đổi mật khẩu tạm</StatusPill>}
                   </div>
                   <span className="ui-sub">{user.email}</span>
                 </td>
                 <td className={HIDE_XS}>{user.phone || '-'}</td>
-                <td className={HIDE_MD}>{formatGender(user.gender)}</td>
-                <td className={HIDE_SM}>{idNumber ? <span className="ui-mono">{idNumber}</span> : '-'}</td>
+                <td className={HIDE_SM}>{formatDate(user.createdAt)}</td>
                 <td>
                   {ROLE_LABELS[user.role] ?? user.role}
                   {user.role === 'STAFF' && (
@@ -76,8 +79,16 @@ export function UserTable({ users, currentAdminId, onChangeRole, onToggleLock }:
                   <RowMenu
                     label={`Thao tác với ${name}`}
                     items={[
-                      { key: 'detail', label: 'Xem chi tiết', icon: 'eye', to: `/customers/kyc/${user.id}` },
+                      ...(!internal ? [{
+                        key: 'detail', label: 'Xem chi tiết', icon: 'eye', to: `/customers/kyc/${user.id}`,
+                      } satisfies RowMenuItem] : []),
                       ...(isAdmin ? [{
+                        key: 'activity',
+                        label: 'Nhật ký hoạt động',
+                        icon: 'list',
+                        to: `/system/activity-logs?q=${encodeURIComponent(user.email)}`,
+                      } satisfies RowMenuItem] : []),
+                      ...(isAdmin && internal ? [{
                         key: 'role',
                         label: 'Đổi vai trò',
                         icon: 'userCheck',

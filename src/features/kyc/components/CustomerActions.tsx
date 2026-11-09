@@ -5,10 +5,10 @@ import { MoreIcon } from '@/components/Icon';
 import { RowMenu, type RowMenuItem } from '@/components/RowMenu';
 import { usePermission } from '@/features/auth';
 import { ekycReviewDetailPath } from '@/features/ekyc-review';
-import { ChangeRoleModal, LockUserModal, type UserItem } from '@/features/user';
+import { LockUserModal, type UserItem } from '@/features/user';
 import { usePendingAttemptLookup } from '../hooks/usePendingAttemptLookup';
 
-type OpenModal = 'lock' | 'role' | null;
+type OpenModal = 'lock' | null;
 
 interface CustomerActionsProps {
   customer: UserItem;
@@ -28,8 +28,10 @@ function reviewItem(attemptId: string | undefined, isLoading: boolean): RowMenuI
 }
 
 /**
- * Menu "⋯" ở đầu trang chi tiết khách hàng: duyệt xác minh (khi khách có lượt chờ), nhật ký hoạt động, đổi vai trò và
- * khóa/mở khóa, theo đúng quyền như ở bảng Phân quyền (backend vẫn kiểm từng API). Không có mục nào thì không hiện nút.
+ * Menu "⋯" ở đầu trang chi tiết khách hàng: duyệt xác minh (khi khách có lượt chờ), nhật ký hoạt động và khóa/mở
+ * khóa, theo đúng quyền như ở bảng Phân quyền (backend vẫn kiểm từng API). Không có "Đổi vai trò": khách hàng không
+ * được biến thành nhân viên, nhân viên mới tạo bằng thông tin riêng ở trang Phân quyền. Không có mục nào thì không
+ * hiện nút.
  */
 export function CustomerActions({ customer }: CustomerActionsProps) {
   const { canAct, canView, isAdmin } = usePermission();
@@ -48,8 +50,6 @@ export function CustomerActions({ customer }: CustomerActionsProps) {
       icon: 'list',
       to: `/system/activity-logs?q=${encodeURIComponent(customer.email)}`,
     });
-    // Không tự đổi vai trò của chính mình (backend cũng chặn); với chính mình thì ẩn hẳn thay vì để mục khóa.
-    if (!isSelf) items.push({ key: 'role', label: 'Đổi vai trò', icon: 'userCheck', onSelect: () => setOpen('role') });
   }
   // Chỉ khi đã đọc được trạng thái khóa: không biết đang khóa hay mở thì không biết mục này sẽ làm gì.
   if (canAct('customer') && customer.locked != null) {
@@ -79,7 +79,6 @@ export function CustomerActions({ customer }: CustomerActionsProps) {
         buttonContent={<MoreIcon />}
       />
       {open === 'lock' && <LockUserModal user={customer} onClose={() => setOpen(null)} onDone={finish} />}
-      {open === 'role' && <ChangeRoleModal user={customer} onClose={() => setOpen(null)} onDone={finish} />}
     </>
   );
 }

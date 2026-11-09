@@ -11,7 +11,7 @@ export const DEFAULT_PERIOD: PeriodDays = 30;
  * `view` là chức năng cần quyền Xem để hiện link (nhân viên không xem được trang đích thì không hiện).
  */
 export const DASHBOARD_CHARTS: ReadonlyArray<{ key: DashboardChartKey; tab: string; icon: IconName; title: string; link?: { to: string; label: string; view: OpsFunctionCode } }> = [
-  { key: 'funding', icon: 'bars', tab: 'Vốn và giải ngân', title: 'Vốn gọi được và giải ngân', link: { to: '/investments/funding', label: 'Gọi vốn & chuyển nhượng', view: 'funding' } },
+  { key: 'funding', icon: 'bars', tab: 'Vốn và giải ngân', title: 'Vốn gọi được và giải ngân', link: { to: '/investments/funding', label: 'Gọi vốn', view: 'funding' } },
   { key: 'funnel', icon: 'funnel', tab: 'Hồ sơ qua từng bước', title: 'Hồ sơ vay qua từng bước', link: { to: '/loans', label: 'Quản lý hồ sơ vay', view: 'loan-application' } },
   { key: 'grades', icon: 'shieldCheck', tab: 'Hạng tín dụng', title: 'Dư nợ theo hạng tín dụng', link: { to: '/loans', label: 'Quản lý hồ sơ vay', view: 'loan-application' } },
   { key: 'overdue', icon: 'clock', tab: 'Nợ quá hạn', title: 'Dư nợ quá hạn theo nhóm nợ', link: { to: '/loans?servicing=OVERDUE', label: 'Khoản vay đang quá hạn', view: 'collection' } },

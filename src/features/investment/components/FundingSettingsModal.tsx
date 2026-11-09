@@ -96,7 +96,7 @@ function SettingsEditor({ current, onClose, onNotice, onCloseExpired }: Props & 
   // Investment chỉ lưu mã người cập nhật; tra họ tên hoặc email từ finora-user. SYSTEM là giá trị khởi tạo.
   const updatedBy = current.updatedBy === 'SYSTEM' ? null : current.updatedBy;
   const { displayName } = useActorNames([updatedBy]);
-  // Lưu tham số cần quyền Thao tác "Cấu hình gọi vốn"; đóng khoản quá hạn (quyền "Gọi vốn & Notes") do trang quyết định.
+  // Lưu tham số cần quyền Thao tác "Cấu hình gọi vốn"; đóng khoản quá hạn (quyền "Gọi vốn") do trang quyết định.
   const canSave = canAct('funding-settings');
 
   const errors = validate(form);

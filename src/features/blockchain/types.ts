@@ -111,6 +111,11 @@ export interface ProofSearchArgs {
   referenceType?: ProofReferenceType;
   referenceId?: string;
   status?: ProofStatus;
+  /** Bảng lọc trang Kiểm toán: loại bằng chứng, sổ cái, ngày tạo (`YYYY-MM-DD`, giờ VN, gồm hai đầu). */
+  proofType?: ProofType;
+  provider?: ProofProvider;
+  createdFrom?: string;
+  createdTo?: string;
   page: number;
   size: number;
 }

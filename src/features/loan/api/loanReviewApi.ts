@@ -22,6 +22,22 @@ const loanReviewApi = loanApi.injectEndpoints({
       q?: string;
       /** Lọc theo việc vận hành của khoản vay: đang quá hạn, chờ duyệt cơ cấu, có sự cố. */
       servicing?: ServicingFlag;
+      /** Bảng lọc nâng cao: ngày nộp (`YYYY-MM-DD`, giờ VN, gồm hai đầu). */
+      submittedFrom?: string;
+      submittedTo?: string;
+      amountMin?: string;
+      amountMax?: string;
+      termMin?: string;
+      termMax?: string;
+      /** Điểm đánh giá (0–100) và hạng (`A,B`) của lần chấm mới nhất. */
+      scoreMin?: string;
+      scoreMax?: string;
+      grade?: string;
+      /** Lãi suất năm (%): lãi cuối nếu đã định giá, chưa có thì lãi sản phẩm lúc nộp. */
+      rateMin?: string;
+      rateMax?: string;
+      productCode?: string;
+      purposeCode?: string;
       page?: number;
       size?: number;
     }>({

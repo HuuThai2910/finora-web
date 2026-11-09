@@ -1,4 +1,30 @@
 export type RoleType = 'ADMIN' | 'STAFF' | 'BORROWER' | 'INVESTOR';
+
+/** Vai trò tài khoản nội bộ (trang Phân quyền); khách hàng chỉ tự đăng ký trên app. */
+export type InternalRoleType = 'ADMIN' | 'STAFF';
+
+/**
+ * Nhóm tài khoản lọc ở backend (`scope`): `STAFF` = quản trị viên + nhân viên, `CUSTOMER` = người vay + nhà đầu tư.
+ * Lọc ở DB nên phân trang và tổng số đúng theo nhóm.
+ */
+export type UserScope = 'STAFF' | 'CUSTOMER';
+
+/**
+ * Bộ lọc nâng cao của `GET /api/v1/admin/users` (bảng lọc trang Phân quyền và Khách hàng). Ngày dạng `YYYY-MM-DD` theo
+ * giờ Việt Nam, gồm cả hai đầu; trường bỏ trống là không lọc.
+ */
+export interface UserAdvancedFilter {
+  createdFrom?: string;
+  createdTo?: string;
+  /** `true` chỉ tài khoản đang khóa, `false` chỉ tài khoản đang hoạt động. */
+  locked?: boolean;
+  ageMin?: number;
+  ageMax?: number;
+  gender?: 'MALE' | 'FEMALE' | 'OTHER';
+  /** Lần đăng nhập gần nhất trên mọi thiết bị. */
+  lastLoginFrom?: string;
+  lastLoginTo?: string;
+}
 export type EkycStatusType = 'PENDING' | 'VERIFIED' | 'FAILED' | 'MANUAL_REVIEW';
 
 /**
@@ -28,6 +54,8 @@ export interface UserItem {
   /** Vai trò nhân viên đang gán; chỉ có với tài khoản STAFF. */
   staffRoleCode?: string | null;
   staffRoleName?: string | null;
+  /** Tài khoản nhân viên mới chưa đổi mật khẩu tạm. */
+  mustChangePassword?: boolean;
 }
 
 /** Một chức năng trong danh mục phân quyền (`OpsFunction`): quyền Xem luôn có, quyền Thao tác có thể không. */
@@ -58,9 +86,33 @@ export interface StaffRoleRequest {
 }
 
 export interface AssignRoleRequest {
-  role: RoleType;
+  role: InternalRoleType;
   /** Bắt buộc khi `role` là STAFF. */
   staffRoleCode?: string;
+}
+
+/** Tạo tài khoản nội bộ (`POST /api/v1/admin/users`): hệ thống tự sinh mật khẩu tạm. */
+export interface CreateStaffAccountRequest {
+  fullName: string;
+  email: string;
+  /** Tùy chọn, 10 chữ số bắt đầu bằng 0. */
+  phone?: string;
+  role: InternalRoleType;
+  /** Bắt buộc khi `role` là STAFF. */
+  staffRoleCode?: string;
+}
+
+/** Kết quả tạo tài khoản: mật khẩu tạm chỉ trả đúng một lần, không có API đọc lại. */
+export interface StaffAccountCreated {
+  id: number;
+  email: string;
+  fullName: string;
+  role: InternalRoleType;
+  staffRoleCode: string | null;
+  staffRoleName: string | null;
+  temporaryPassword: string;
+  /** Đã chuyển email thông tin đăng nhập sang dịch vụ gửi email (gửi không đảm bảo tới hộp thư). */
+  credentialsEmailSent: boolean;
 }
 
 /** Thống kê tổng số người dùng — khớp `UserStatsResponse` của finora-user. */

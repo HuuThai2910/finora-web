@@ -1,8 +1,8 @@
 import { investmentApi } from '@/lib/api/investmentApi';
 
 /**
- * Lời gọi riêng của trang Tổng quan. Số đếm và số liệu theo kỳ lấy từ API thống kê (feature `statistics`), số của
- * việc sự cố từ `useSystemIncidentCounts`; ở đây chỉ còn tóm tắt sổ lệnh (API thống kê chưa có).
+ * Lời gọi riêng của trang Tổng quan. Số đếm và số liệu theo kỳ lấy từ API thống kê (feature `statistics`), số khoản vay
+ * có sự cố từ bộ lọc của Quản lý khoản vay; ở đây chỉ còn tóm tắt sổ lệnh (API thống kê chưa có).
  */
 
 /** `OrderBookAdminSummaryResponse`: tiền là chuỗi thập phân để không mất chính xác qua JSON. */

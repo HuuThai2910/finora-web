@@ -1,14 +1,18 @@
 import { userServiceApi } from '@/lib/api/userServiceApi';
 import type {
   AssignRoleRequest,
+  CreateStaffAccountRequest,
   CustomerLoginDevice,
   EkycStatusType,
   PageResponse,
   RoleType,
   StaffPermissionFunction,
   StaffRole,
+  StaffAccountCreated,
   StaffRoleRequest,
   UserItem,
+  UserAdvancedFilter,
+  UserScope,
   UserStats,
 } from '../types';
 import { userApi } from './userApi';
@@ -22,6 +26,10 @@ export interface UserListArgs {
   staffRoleCode?: string;
   /** Chuỗi tìm theo họ tên, email, số điện thoại hoặc CCCD. */
   q?: string;
+  /** Nhóm tài khoản lọc ở backend; bỏ trống là mọi tài khoản. */
+  scope?: UserScope;
+  /** Bộ lọc nâng cao (ngày tạo, khóa, tuổi, giới tính, lần đăng nhập cuối). */
+  advanced?: UserAdvancedFilter;
 }
 
 /**
@@ -39,8 +47,8 @@ async function run<T>(call: () => Promise<T>): Promise<{ data: T } | { error: un
 const userQueries = userServiceApi.injectEndpoints({
   endpoints: (builder) => ({
     getUsers: builder.query<PageResponse<UserItem>, UserListArgs>({
-      queryFn: ({ page, size, role, ekycStatus, staffRoleCode, q }) =>
-        run(() => userApi.getUsers(page, size, { role, ekycStatus, staffRoleCode, q })),
+      queryFn: ({ page, size, role, ekycStatus, staffRoleCode, q, scope, advanced }) =>
+        run(() => userApi.getUsers(page, size, { role, ekycStatus, staffRoleCode, q, scope, advanced })),
       providesTags: [{ type: 'UserList', id: 'LIST' }],
     }),
     /** Hồ sơ một người dùng; trang chi tiết khách hàng dùng, nên đổi vai trò/khóa phải làm mới cả tag này. */
@@ -62,6 +70,11 @@ const userQueries = userServiceApi.injectEndpoints({
       invalidatesTags: (_result, _error, { id }) => [
         { type: 'UserList', id: 'LIST' }, 'UserStats', { type: 'User', id: String(id) }, { type: 'StaffRole', id: 'LIST' },
       ],
+    }),
+    // Tài khoản mới làm đổi danh sách, số đếm theo vai trò và số thành viên của vai trò nhân viên.
+    createStaffAccount: builder.mutation<StaffAccountCreated, CreateStaffAccountRequest>({
+      queryFn: (request) => run(() => userApi.createStaffAccount(request)),
+      invalidatesTags: [{ type: 'UserList', id: 'LIST' }, 'UserStats', { type: 'StaffRole', id: 'LIST' }],
     }),
     // Khóa/mở khóa không đổi số đếm, chỉ đổi cờ `locked` trên dòng.
     setUserLocked: builder.mutation<void, { id: number; locked: boolean; reason?: string }>({
@@ -100,6 +113,7 @@ export const {
   useGetUserDevicesQuery,
   useGetUserStatsQuery,
   useAssignUserRoleMutation,
+  useCreateStaffAccountMutation,
   useSetUserLockedMutation,
   useGetStaffPermissionsQuery,
   useGetStaffRolesQuery,

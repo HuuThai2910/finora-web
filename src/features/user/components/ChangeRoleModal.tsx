@@ -5,7 +5,7 @@ import { Modal } from '@/components/Modal';
 import { toast } from '@/lib/toast';
 import { useAssignUserRoleMutation, useGetStaffRolesQuery } from '../api/userQueries';
 import { ASSIGNABLE_ROLES, ROLE_DESCRIPTIONS, ROLE_LABELS } from '../constant';
-import type { RoleType, UserItem } from '../types';
+import type { InternalRoleType, UserItem } from '../types';
 import { RoleChangeSummary } from './RoleChangeSummary';
 
 interface ChangeRoleModalProps {
@@ -21,11 +21,13 @@ const OPTION = 'user-role-option flex items-start gap-2.5 py-2.5 px-3 border bor
 const HINT = 'user-staff-hint text-muted text-[13px] leading-4.5';
 
 /**
- * Hộp thoại đổi vai trò. Chọn "Nhân viên" thì phải chọn thêm vai trò nhân viên (bộ quyền trên web quản trị).
+ * Hộp thoại đổi vai trò của tài khoản nội bộ: qua lại Nhân viên và Quản trị viên, hoặc đổi vai trò nhân viên. Khách
+ * hàng không mở hộp này (backend cũng từ chối biến khách thành nhân viên). Chọn "Nhân viên" thì phải chọn thêm vai trò
+ * nhân viên (bộ quyền trên web quản trị).
  * Kết quả (thành công hoặc lỗi) báo bằng toast; lỗi thì hộp vẫn mở để sửa và thử lại.
  */
 export function ChangeRoleModal({ user, onClose, onDone }: ChangeRoleModalProps) {
-  const [role, setRole] = useState<RoleType>(user.role);
+  const [role, setRole] = useState<InternalRoleType>(user.role === 'ADMIN' ? 'ADMIN' : 'STAFF');
   const [staffRoleCode, setStaffRoleCode] = useState(user.staffRoleCode ?? '');
   const [assignRole, { isLoading }] = useAssignUserRoleMutation();
   const staffRoles = useGetStaffRolesQuery(undefined, { skip: role !== 'STAFF' });

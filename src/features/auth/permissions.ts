@@ -28,7 +28,7 @@ export const OPS_FUNCTION_LABELS: Record<OpsFunctionCode, string> = {
   reschedule: 'Cơ cấu nợ',
   withdrawal: 'Rút tiền',
   reconciliation: 'Đối soát & sự cố',
-  funding: 'Gọi vốn & chuyển nhượng',
+  funding: 'Gọi vốn',
   'funding-settings': 'Cấu hình gọi vốn',
   'secondary-market': 'Chợ chuyển nhượng',
   'loan-product': 'Sản phẩm vay',

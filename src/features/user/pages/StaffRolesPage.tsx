@@ -59,7 +59,7 @@ export default function StaffRolesPage() {
       <header className="ui-page-head">
         <div className="ui-title">
           <h1>Phân quyền</h1>
-          <p>Mỗi vai trò nhân viên quy định màn nào được xem và thao tác nào được làm trên web quản trị.</p>
+          <p>Tạo nhân viên, đổi vai trò và khóa tài khoản; mỗi vai trò nhân viên quy định màn nào được xem và thao tác nào được làm.</p>
         </div>
         <div className="user-head-actions flex flex-wrap gap-2">
           <button type="button" className="ui-btn primary" onClick={() => setAction({ kind: 'create' })}>

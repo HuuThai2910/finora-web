@@ -29,7 +29,6 @@ const EkycReviewDetailPage = page(() => import('@/features/ekyc-review'), 'EkycR
 const FundingPage = page(() => import('@/features/investment'), 'FundingPage');
 const FundingDetailPage = page(() => import('@/features/investment'), 'FundingDetailPage');
 const SecondaryMarketPage = page(() => import('@/features/secondary-market'), 'SecondaryMarketPage');
-const SystemIncidentsPage = page(() => import('@/features/servicing'), 'SystemIncidentsPage');
 const BlockchainProofsPage = page(() => import('@/features/blockchain'), 'BlockchainProofsPage');
 const ActivityLogPage = page(() => import('@/features/activity-log'), 'ActivityLogPage');
 
@@ -88,10 +87,11 @@ export default function App() {
           <Route path="customers/kyc/review/:attemptId" element={<RequirePageAccess access={PAGE_ACCESS.ekycReview}><EkycReviewDetailPage /></RequirePageAccess>} />
           {/* Đường dẫn cũ của trang duyệt riêng; nay duyệt từ menu dòng của trang Khách hàng. */}
           <Route path="customers/ekyc-review" element={<Navigate to="/customers/kyc?ekyc=MANUAL_REVIEW" replace />} />
-          <Route path="reconciliation" element={<Navigate to="/system/incidents" replace />} />
+          {/* Trang "Sự cố hệ thống" đã bỏ: khoản vay có sự cố xem ở Quản lý khoản vay (lọc "Có sự cố"). */}
+          <Route path="reconciliation" element={<Navigate to="/loans?servicing=INCIDENT" replace />} />
+          <Route path="system/incidents" element={<Navigate to="/loans?servicing=INCIDENT" replace />} />
           <Route path="blockchain" element={<Navigate to="/blockchain/proofs" replace />} />
           <Route path="blockchain/proofs" element={<RequirePageAccess access={PAGE_ACCESS.blockchain}><BlockchainProofsPage /></RequirePageAccess>} />
-          <Route path="system/incidents" element={<RequirePageAccess access={PAGE_ACCESS.incidents}><SystemIncidentsPage /></RequirePageAccess>} />
           <Route path="system/activity-logs" element={<RequirePageAccess access={PAGE_ACCESS.activityLogs}><ActivityLogPage /></RequirePageAccess>} />
         </Route>
 
