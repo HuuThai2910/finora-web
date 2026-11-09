@@ -6,6 +6,7 @@ import { ADMIN_APP_ROLES } from '../permissions';
 import type { CurrentUser } from '../types';
 import { AccessDenied } from './AccessDenied';
 import { AuthWait } from './AuthWait';
+import { ForcePasswordChange } from './ForcePasswordChange';
 
 interface ProtectedRouteProps {
   children: ReactNode;
@@ -33,6 +34,12 @@ export function ProtectedRoute({ children, allowedRoles = ADMIN_APP_ROLES }: Pro
   if (!isAuthenticated) {
     // `location` gồm cả pathname và search: đăng nhập lại thì về đúng trang, đúng bộ lọc.
     return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  // Tài khoản nhân viên mới còn mật khẩu tạm: đổi mật khẩu trước khi vào bất kỳ trang nào (URL đang mở giữ nguyên,
+  // đổi xong là vào đúng trang đó).
+  if (profile?.mustChangePassword) {
+    return <ForcePasswordChange />;
   }
 
   if (profile && !allowedRoles.includes(profile.role)) {

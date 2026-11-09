@@ -35,6 +35,14 @@ export interface CurrentUser {
   /** Bản phẳng của `staffRole` (backend trả cả hai). */
   staffRoleCode?: string | null;
   staffRoleName?: string | null;
+  /** Đang dùng mật khẩu tạm do quản trị viên cấp: phải đổi mật khẩu trước khi vào trang quản trị. */
+  mustChangePassword?: boolean;
+}
+
+/** Tự đổi mật khẩu (`POST /api/v1/users/me/change-password`). */
+export interface ChangePasswordRequest {
+  currentPassword: string;
+  newPassword: string;
 }
 
 export interface StaffRoleRef {

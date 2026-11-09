@@ -7,7 +7,7 @@ interface Props {
   isLoading: boolean;
   error: unknown;
   onRetry: () => void;
-  /** Có thì dòng "quá hạn chờ đóng" thành nút mở hộp xác nhận đóng (cần quyền Thao tác "Gọi vốn & Notes"). */
+  /** Có thì dòng "quá hạn chờ đóng" thành nút mở hộp xác nhận đóng (cần quyền Thao tác "Gọi vốn"). */
   onCloseExpired?: () => void;
 }
 

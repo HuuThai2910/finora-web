@@ -12,8 +12,6 @@ export type SidebarIconName =
 export const PAGE_ACCESS = {
   dashboard: { anyView: ['dashboard'] },
   loans: { anyView: ['loan-application', 'collection', 'reschedule', 'reconciliation'] },
-  // Sự kiện trả nợ chờ ghép và lối vào các sự cố đang mở; rút tiền xử lý tại đây khi không mở được trang khách hàng.
-  incidents: { anyView: ['reconciliation', 'withdrawal'] },
   funding: { anyView: ['funding'] },
   secondary: { anyView: ['secondary-market'] },
   products: { anyView: ['loan-product'] },
@@ -66,19 +64,16 @@ export const ADMIN_NAV_SECTIONS: AdminNavigationSection[] = [
         access: PAGE_ACCESS.loans,
         matches: (pathname) => pathname === '/loans' || isLoanReview(pathname),
       },
+      { to: '/products', label: 'Sản phẩm vay', icon: 'grid', access: PAGE_ACCESS.products, matches: (pathname) => pathname === '/products' },
+      // Explorer proof của Blockchain Service (W3D, D54): đối chiếu bằng chứng giao dịch đã neo trên sổ cái.
+      { to: '/blockchain/proofs', label: 'Kiểm toán', icon: 'chain', access: PAGE_ACCESS.blockchain, matches: (pathname) => pathname === '/blockchain/proofs' },
     ],
   },
   {
     label: 'Đầu tư',
     items: [
-      { to: '/investments/funding', label: 'Gọi vốn & chuyển nhượng', icon: 'chart', access: PAGE_ACCESS.funding, matches: (pathname) => pathname.startsWith('/investments/funding') },
+      { to: '/investments/funding', label: 'Gọi vốn', icon: 'chart', access: PAGE_ACCESS.funding, matches: (pathname) => pathname.startsWith('/investments/funding') },
       { to: '/investments/secondary', label: 'Chợ chuyển nhượng', icon: 'file', access: PAGE_ACCESS.secondary, matches: (pathname) => pathname === '/investments/secondary' },
-    ],
-  },
-  {
-    label: 'Sản phẩm',
-    items: [
-      { to: '/products', label: 'Sản phẩm vay', icon: 'grid', access: PAGE_ACCESS.products, matches: (pathname) => pathname === '/products' },
     ],
   },
   {
@@ -90,21 +85,9 @@ export const ADMIN_NAV_SECTIONS: AdminNavigationSection[] = [
     ],
   },
   {
-    // Explorer proof của Blockchain Service (W3D, D54): đã nối API thật qua Gateway; nhân viên cần quyền Xem blockchain.
-    label: 'Kiểm toán',
-    items: [
-      { to: '/blockchain/proofs', label: 'Xác minh giao dịch', icon: 'chain', access: PAGE_ACCESS.blockchain, matches: (pathname) => pathname === '/blockchain/proofs' },
-    ],
-  },
-  {
-    label: 'Cấu hình',
-    items: [
-      { to: '/loans/evaluation', label: 'Chính sách đánh giá AI', icon: 'shield', access: PAGE_ACCESS.aiPolicy, matches: (pathname) => pathname === '/loans/evaluation' },    ],
-  },
-  {
     label: 'Hệ thống',
     items: [
-      { to: '/system/incidents', label: 'Sự cố hệ thống', icon: 'alert', access: PAGE_ACCESS.incidents, matches: (pathname) => pathname === '/system/incidents' },
+      { to: '/loans/evaluation', label: 'Chính sách đánh giá AI', icon: 'shield', access: PAGE_ACCESS.aiPolicy, matches: (pathname) => pathname === '/loans/evaluation' },
       { to: '/system/activity-logs', label: 'Nhật ký hoạt động', icon: 'terminal', access: PAGE_ACCESS.activityLogs, matches: (pathname) => pathname === '/system/activity-logs' },
     ],
   },

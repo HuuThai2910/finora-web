@@ -30,7 +30,7 @@ function CopyIcon() {
  * điều khoản nằm ở thẻ Khoản vay.
  */
 export function ReviewHeader({ application, borrowerName, canViewCustomer, canViewProofs, onCopied }: ReviewHeaderProps) {
-  // Nhân viên đọc và chép mã HS-… (ô "Mở hồ sơ theo mã" nhận cả mã này); LA-… chỉ còn trên URL.
+  // Nhân viên đọc và chép mã HS-… (tìm được ở ô tìm của Quản lý khoản vay); LA-… chỉ còn trên URL.
   const displayCode = application.applicationCode || application.applicationNumber;
   const copy = async () => {
     try {

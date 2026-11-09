@@ -64,6 +64,10 @@ export const authSlice = createSlice({
     clearError: (state) => {
       state.error = null;
     },
+    /** Đã đổi mật khẩu tạm: tắt cờ để ProtectedRoute cho vào trang quản trị (backend cũng đã tắt cờ). */
+    passwordChanged: (state) => {
+      if (state.profile) state.profile.mustChangePassword = false;
+    },
     /**
      * Nhận `auth:unauthorized` (làm mới phiên thất bại). Chỉ báo "hết hạn" khi đang đăng nhập: lần kiểm tra phiên đầu
      * của người chưa đăng nhập cũng phát sự kiện này nhưng không phải là hết phiên.
@@ -143,5 +147,5 @@ export const authSlice = createSlice({
   },
 });
 
-export const { clearAuth, clearError, expireSession } = authSlice.actions;
+export const { clearAuth, clearError, expireSession, passwordChanged } = authSlice.actions;
 export default authSlice.reducer;

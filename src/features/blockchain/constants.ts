@@ -121,8 +121,3 @@ export const ARTIFACT_RESULT_INFO: Record<ArtifactResult, Tagged> = {
  */
 export const MOCK_LEDGER_NOTICE =
   'Bằng chứng này được ghi trên sổ cái giả lập để chạy thử, không nằm trên Hyperledger Fabric nên không dùng làm bằng chứng được.';
-
-/** Giới hạn của bằng chứng (W3D mục 12, LEGAL-CONTRACT-01): nói rõ trên trang để không trình bày quá giá trị thật. */
-export const PROOF_LEGAL_NOTE =
-  'Kết quả trên trang này chứng minh tính toàn vẹn kỹ thuật của dữ liệu, không thay thế chữ ký số hoặc kết luận pháp lý. '
-  + 'Mạng Fabric hiện chạy local để phục vụ đồ án; nhãn “Bản demo” nghĩa là dữ liệu chưa được ghi lên Fabric.';

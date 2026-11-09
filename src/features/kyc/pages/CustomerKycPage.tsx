@@ -1,7 +1,17 @@
 import { useRef } from 'react';
-import { SearchBox } from '@/components/SearchBox';
 import { useSearchParams } from 'react-router-dom';
 import { ErrorNotice } from '@/components/ErrorNotice';
+import {
+  DateRangeField,
+  FilterBar,
+  RangeField,
+  SelectField,
+  rangeChipLabel,
+  rangeError,
+  shortDate,
+  useUrlFilters,
+  type FilterChip,
+} from '@/components/filters';
 import { Icon } from '@/components/Icon';
 import { Pager } from '@/components/Pager';
 import { usePermission } from '@/features/auth';
@@ -29,11 +39,32 @@ const EMPTY_TEXT: Record<KycFilter, string> = {
   FAILED: 'Không có khách hàng xác minh thất bại.',
 };
 
+/** Tham số bộ lọc trên URL; `ekyc` giữ tên cũ để link Tổng quan `?ekyc=MANUAL_REVIEW` mở đúng. */
+const FILTER_KEYS = [
+  'ekyc', 'role', 'locked', 'createdFrom', 'createdTo', 'ageMin', 'ageMax', 'gender', 'lastLoginFrom', 'lastLoginTo',
+] as const;
+
+const ROLE_OPTIONS: Array<{ value: 'BORROWER' | 'INVESTOR'; label: string }> = [
+  { value: 'BORROWER', label: 'Người vay' },
+  { value: 'INVESTOR', label: 'Nhà đầu tư' },
+];
+const GENDER_LABELS: Record<string, string> = { MALE: 'Nam', FEMALE: 'Nữ', OTHER: 'Khác' };
+const LOCK_LABELS: Record<string, string> = { false: 'Đang hoạt động', true: 'Đã khóa' };
+const EKYC_OPTIONS = KYC_FILTERS.filter((item): item is EkycStatusType => item !== 'ALL');
+const orUndefined = (value: string) => value || undefined;
+
+/**
+ * Khách hàng (người vay, nhà đầu tư): hai thẻ biểu đồ đầu trang, dưới là danh sách với thanh lọc dùng chung (ô tìm,
+ * bảng lọc, chip). Bộ lọc chỉ dùng dữ liệu của finora-user — không lọc theo ví hay khoản vay để không gọi chéo service.
+ */
 export default function CustomerKycPage() {
-  // Tab trạng thái và trang nằm trên URL để chia sẻ đường dẫn và giữ chỗ khi quay lại từ trang chi tiết.
   const [searchParams, setSearchParams] = useSearchParams();
-  const requested = searchParams.get('ekyc');
-  const filter: KycFilter = isKycFilter(requested) ? requested : 'ALL';
+  const filters = useUrlFilters(FILTER_KEYS);
+  const { applied, draft } = filters;
+  const filter: KycFilter = isKycFilter(applied.ekyc) ? applied.ekyc : 'ALL';
+  const role = ROLE_OPTIONS.find((item) => item.value === applied.role) ?? null;
+  const locked = applied.locked === 'true' ? true : applied.locked === 'false' ? false : undefined;
+  const gender = applied.gender in GENDER_LABELS ? (applied.gender as 'MALE' | 'FEMALE' | 'OTHER') : undefined;
   const page = readPage(searchParams.get('page'));
   const search = (searchParams.get('q') ?? '').trim();
   const listRef = useRef<HTMLElement>(null);
@@ -42,14 +73,31 @@ export default function CustomerKycPage() {
   const canStats = permission.canView('dashboard');
   // Hàng chờ theo lượt và mục "Duyệt xác minh" ở menu dòng chỉ có khi được Xem "Duyệt xác minh danh tính".
   const canReview = permission.canView('ekyc');
-  // Tab "Chờ duyệt tay" là hàng chờ theo LƯỢT (việc cần làm), không phải danh sách khách; thiếu quyền duyệt thì vẫn
-  // là danh sách khách có trạng thái đó.
-  // Đang tìm thì luôn là danh sách khách (hàng chờ theo lượt không tìm theo khách được).
-  const showQueue = filter === 'MANUAL_REVIEW' && canReview && !search;
+  const otherFilters = FILTER_KEYS.some((key) => key !== 'ekyc' && applied[key]);
+  // "Chờ duyệt tay" là hàng chờ theo LƯỢT (việc cần làm), không phải danh sách khách; thiếu quyền duyệt, đang tìm hoặc
+  // đang lọc thêm tiêu chí khác thì là danh sách khách có trạng thái đó.
+  const showQueue = filter === 'MANUAL_REVIEW' && canReview && !search && !otherFilters;
 
-  // Lọc ở backend để kết quả trải trên toàn bộ người dùng, không chỉ trang đang tải.
+  // Chỉ người vay và nhà đầu tư (scope=CUSTOMER); lọc ở backend để kết quả trải trên toàn bộ khách hàng.
   const users = useGetUsersQuery(
-    { page, size: KYC_LIST_PAGE_SIZE, role: 'ALL', ekycStatus: filter, q: search || undefined },
+    {
+      page,
+      size: KYC_LIST_PAGE_SIZE,
+      role: role?.value ?? 'ALL',
+      ekycStatus: filter,
+      q: search || undefined,
+      scope: 'CUSTOMER',
+      advanced: {
+        locked,
+        gender,
+        createdFrom: orUndefined(applied.createdFrom),
+        createdTo: orUndefined(applied.createdTo),
+        ageMin: applied.ageMin ? Number(applied.ageMin) : undefined,
+        ageMax: applied.ageMax ? Number(applied.ageMax) : undefined,
+        lastLoginFrom: orUndefined(applied.lastLoginFrom),
+        lastLoginTo: orUndefined(applied.lastLoginTo),
+      },
+    },
     { skip: showQueue },
   );
   const queue = useGetEkycAttemptsQuery(
@@ -57,29 +105,60 @@ export default function CustomerKycPage() {
     { skip: !showQueue },
   );
   const stats = useGetUserStatsQuery();
-  // Tổng số lượt chờ (số trên tab) và lượt của từng khách cho menu dòng.
+  // Tổng số lượt chờ và lượt của từng khách cho menu dòng.
   const pending = usePendingAttemptLookup(canReview);
   const customers = users.data?.content ?? [];
 
-  const updateQuery = (nextFilter: KycFilter, nextPage: number, nextSearch = search) => {
-    const params: Record<string, string> = {};
-    if (nextFilter !== 'ALL') params.ekyc = nextFilter;
-    if (nextSearch) params.q = nextSearch;
-    if (nextPage > 0) params.page = String(nextPage + 1);
+  const setParam = (key: string, value: string, replace = false) => {
+    const params = new URLSearchParams(searchParams);
+    if (value) params.set(key, value);
+    else params.delete(key);
+    if (key !== 'page') params.delete('page');
     // Gõ tìm thay URL thay vì thêm mục lịch sử, để nút Quay lại không phải lùi qua từng lần gõ.
-    setSearchParams(params, { replace: nextSearch !== search });
+    setSearchParams(params, { replace });
   };
 
-
-  // Số trên tab là tổng toàn hệ thống (/stats; tab chờ duyệt là tổng số lượt), không phải số dòng của trang đang tải.
-  const tabCount = (tab: KycFilter): number | undefined => {
-    if (tab === 'MANUAL_REVIEW' && canReview) return pending.total;
-    if (!stats.data) return undefined;
-    return tab === 'ALL' ? stats.data.total : stats.data.byEkycStatus[tab] ?? 0;
+  // Số trong ô chọn là tổng toàn hệ thống (/stats; chờ duyệt tay là tổng số lượt), không phải số dòng của trang.
+  const ekycCount = (status: EkycStatusType): number | undefined => {
+    if (status === 'MANUAL_REVIEW' && canReview) return pending.total;
+    return stats.data ? stats.data.byEkycStatus[status] ?? 0 : undefined;
   };
+
+  const errors = {
+    created: rangeError(draft.createdFrom, draft.createdTo, false),
+    age: rangeError(draft.ageMin, draft.ageMax),
+    lastLogin: rangeError(draft.lastLoginFrom, draft.lastLoginTo, false),
+  };
+
+  const chips: FilterChip[] = [];
+  if (filter !== 'ALL') chips.push({ key: 'ekyc', label: `Xác minh: ${ekycDisplay(filter).label}`, onRemove: () => filters.remove('ekyc') });
+  if (role) chips.push({ key: 'role', label: `Vai trò: ${role.label}`, onRemove: () => filters.remove('role') });
+  if (locked != null) chips.push({ key: 'locked', label: `Tài khoản: ${LOCK_LABELS[String(locked)]}`, onRemove: () => filters.remove('locked') });
+  if (applied.createdFrom || applied.createdTo) {
+    chips.push({
+      key: 'created',
+      label: rangeChipLabel('Ngày đăng ký', applied.createdFrom, applied.createdTo, shortDate),
+      onRemove: () => filters.remove('createdFrom', 'createdTo'),
+    });
+  }
+  if (applied.ageMin || applied.ageMax) {
+    chips.push({
+      key: 'age',
+      label: rangeChipLabel('Tuổi', applied.ageMin, applied.ageMax, (value) => value),
+      onRemove: () => filters.remove('ageMin', 'ageMax'),
+    });
+  }
+  if (gender) chips.push({ key: 'gender', label: `Giới tính: ${GENDER_LABELS[gender]}`, onRemove: () => filters.remove('gender') });
+  if (applied.lastLoginFrom || applied.lastLoginTo) {
+    chips.push({
+      key: 'lastLogin',
+      label: rangeChipLabel('Đăng nhập cuối', applied.lastLoginFrom, applied.lastLoginTo, shortDate),
+      onRemove: () => filters.remove('lastLoginFrom', 'lastLoginTo'),
+    });
+  }
 
   const selectFromChart = (status: EkycStatusType) => {
-    updateQuery(status, 0);
+    setParam('ekyc', status);
     listRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
@@ -120,35 +199,79 @@ export default function CustomerKycPage() {
         className="ui-card kyc-list pt-3.5 px-3.5 pb-3 max-[760px]:px-2.5 max-[760px]:pb-2.5"
         aria-label="Danh sách khách hàng"
       >
-        <div className="kyc-list-bar mb-3 flex flex-wrap items-center justify-between gap-3">
-          <div className="ui-tabs" role="tablist" aria-label="Lọc trạng thái xác minh">
-            {KYC_FILTERS.map((tab) => {
-              const count = tabCount(tab);
-              return (
-                <button key={tab} type="button" role="tab" aria-selected={filter === tab} onClick={() => updateQuery(tab, 0)}>
-                  {tab === 'ALL' ? 'Tất cả' : ekycDisplay(tab).label}
-                  {/* Có hồ sơ chờ duyệt tay: số đếm in đậm màu cảnh báo để không bị bỏ sót. */}
-                  {count != null && (
-                    <span
-                      className={tab === 'MANUAL_REVIEW' && count > 0 && filter !== tab
-                        ? 'n kyc-hot text-warning font-bold opacity-100'
-                        : 'n'}
-                    >
-                      {count}
-                    </span>
-                  )}
-                </button>
-              );
-            })}
-          </div>
-          <SearchBox
-            className="kyc-search w-75 max-[760px]:w-full"
-            value={search}
-            onSearch={(next) => updateQuery(filter, 0, next)}
-            label="Tìm khách hàng"
-            placeholder="Tìm tên, email, SĐT hoặc CCCD"
+        <FilterBar
+          className="mb-3"
+          search={{
+            value: search,
+            onSearch: (next) => setParam('q', next, true),
+            label: 'Tìm khách hàng',
+            placeholder: 'Tìm tên, email, SĐT hoặc CCCD',
+          }}
+          activeCount={chips.length}
+          chips={chips}
+          onOpen={filters.resetDraft}
+          onApply={() => {
+            if (Object.values(errors).some(Boolean)) return false;
+            filters.applyDraft();
+            return true;
+          }}
+          onClearAll={filters.clearAll}
+          total={list.data?.totalElements}
+          unit={showQueue ? 'lượt chờ duyệt' : 'khách hàng'}
+          title="Lọc khách hàng"
+        >
+          <SelectField
+            label="Vai trò"
+            value={draft.role}
+            allLabel="Tất cả vai trò"
+            options={ROLE_OPTIONS.map((item) => ({
+              ...item, count: stats.data ? stats.data.byRole[item.value] ?? 0 : undefined,
+            }))}
+            onChange={(value) => filters.setDraft({ role: value })}
           />
-        </div>
+          <SelectField
+            label="Xác minh danh tính"
+            value={isKycFilter(draft.ekyc) && draft.ekyc !== 'ALL' ? draft.ekyc : ''}
+            allLabel="Tất cả trạng thái"
+            options={EKYC_OPTIONS.map((value) => ({ value, label: ekycDisplay(value).label, count: ekycCount(value) }))}
+            onChange={(value) => filters.setDraft({ ekyc: value })}
+          />
+          <DateRangeField
+            label="Ngày đăng ký"
+            from={draft.createdFrom}
+            to={draft.createdTo}
+            error={errors.created}
+            onChange={(from, to) => filters.setDraft({ createdFrom: from, createdTo: to })}
+          />
+          <SelectField
+            label="Trạng thái tài khoản"
+            value={draft.locked}
+            allLabel="Tất cả"
+            options={[{ value: 'false', label: LOCK_LABELS.false }, { value: 'true', label: LOCK_LABELS.true }]}
+            onChange={(value) => filters.setDraft({ locked: value })}
+          />
+          <RangeField
+            label="Tuổi"
+            min={draft.ageMin}
+            max={draft.ageMax}
+            error={errors.age}
+            onChange={(min, max) => filters.setDraft({ ageMin: min, ageMax: max })}
+          />
+          <SelectField
+            label="Giới tính"
+            value={draft.gender}
+            allLabel="Tất cả"
+            options={Object.entries(GENDER_LABELS).map(([value, label]) => ({ value, label }))}
+            onChange={(value) => filters.setDraft({ gender: value })}
+          />
+          <DateRangeField
+            label="Lần đăng nhập cuối"
+            from={draft.lastLoginFrom}
+            to={draft.lastLoginTo}
+            error={errors.lastLogin}
+            onChange={(from, to) => filters.setDraft({ lastLoginFrom: from, lastLoginTo: to })}
+          />
+        </FilterBar>
 
         {list.error ? (
           <ErrorNotice error={list.error} onRetry={list.refetch} />
@@ -162,7 +285,7 @@ export default function CustomerKycPage() {
               ? 'Không còn lượt nào chờ duyệt tay.'
               : search
                 ? `Không tìm thấy khách hàng khớp "${search}". Số điện thoại và CCCD phải gõ đủ số.`
-                : EMPTY_TEXT[filter]}
+                : otherFilters ? 'Không có khách hàng phù hợp với bộ lọc.' : EMPTY_TEXT[filter]}
           </div>
         ) : (
           <div className={list.isFetching ? 'ui-busy' : undefined}>
@@ -181,7 +304,7 @@ export default function CustomerKycPage() {
               total={list.data?.totalElements ?? 0}
               unit={showQueue ? 'lượt chờ duyệt' : 'khách hàng'}
               disabled={list.isFetching}
-              onPage={(next) => updateQuery(filter, next)}
+              onPage={(next) => setParam('page', next > 0 ? String(next + 1) : '')}
             />
           </div>
         )}

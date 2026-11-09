@@ -4,6 +4,6 @@ export { AccessDenied, ACCESS_DENIED_BUTTON_CLASS } from './components/AccessDen
 export { usePermission, type Permissions } from './hooks/usePermission';
 export { useMediaQuery } from './hooks/useMediaQuery';
 export * from './permissions';
-export { default as authReducer, checkAuthSession, loginUser, logoutUser, clearAuth, clearError, expireSession } from './slices/authSlice';
+export { default as authReducer, checkAuthSession, loginUser, logoutUser, clearAuth, clearError, expireSession, passwordChanged } from './slices/authSlice';
 export { authApi } from './api/authApi';
 export * from './types';

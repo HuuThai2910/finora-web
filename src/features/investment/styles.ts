@@ -1,5 +1,5 @@
 /**
- * Chuỗi utility Tailwind dùng ở nhiều thành phần của Gọi vốn & Notes (danh sách, hộp thoại tham số sàn, trang chi tiết).
+ * Chuỗi utility Tailwind dùng ở nhiều thành phần của Gọi vốn (danh sách, hộp thoại tham số sàn, trang chi tiết).
  * Lớp `fu-*`, `fd-*` vẫn để trong JSX làm mốc cho kịch bản kiểm thử; chúng không còn CSS.
  */
 

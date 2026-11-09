@@ -1,5 +1,5 @@
 import type { PillTone } from '@/components/StatusPill';
-import type { EkycStatusType, RoleType } from './types';
+import type { EkycStatusType, InternalRoleType, RoleType } from './types';
 
 export const USER_PAGE_SIZE = 20;
 
@@ -21,10 +21,10 @@ export const ROLE_DESCRIPTIONS: Record<RoleType, string> = {
 };
 
 /**
- * Lựa chọn trong hộp thoại đổi vai trò, quyền tăng dần. Người vay/Nhà đầu tư do khách tự chọn lúc đăng ký trên app
- * nên không cho đổi ở đây; tài khoản khách mở hộp thoại thì chưa thẻ nào được chọn và nút lưu bị khoá cho tới khi chọn.
+ * Vai trò tài khoản nội bộ, quyền tăng dần: lựa chọn của hộp thoại tạo nhân viên và đổi vai trò. Người vay/Nhà đầu tư
+ * do khách tự chọn lúc đăng ký trên app; backend từ chối biến khách hàng thành nhân viên và ngược lại.
  */
-export const ASSIGNABLE_ROLES: RoleType[] = ['STAFF', 'ADMIN'];
+export const ASSIGNABLE_ROLES: InternalRoleType[] = ['STAFF', 'ADMIN'];
 
 /**
  * Nhãn trạng thái xác minh danh tính của tài khoản. `PENDING` là khách chưa làm gì (chưa gửi lượt nào) nên tông xám
@@ -37,11 +37,21 @@ export const EKYC_DISPLAY: Record<EkycStatusType, { label: string; tone: PillTon
   FAILED: { label: 'Thất bại', tone: 'danger' },
 };
 
+/** Bộ lọc vai trò của trang Phân quyền (mọi vai trò). */
 export type RoleFilter = RoleType | 'ALL';
+
+/** Thứ tự lựa chọn vai trò trong bảng lọc trang Phân quyền. */
+export const ROLE_FILTER_OPTIONS: RoleType[] = ['ADMIN', 'STAFF', 'INVESTOR', 'BORROWER'];
 export type EkycFilter = EkycStatusType | 'ALL';
 
+/** Link cũ `?role=ADMIN|STAFF|INVESTOR|BORROWER` vẫn mở đúng bộ lọc. */
 export function isRoleFilter(value: string | null): value is RoleFilter {
   return value === 'ALL' || value === 'ADMIN' || value === 'STAFF' || value === 'INVESTOR' || value === 'BORROWER';
+}
+
+/** Tài khoản nội bộ: chỉ những dòng này có "Đổi vai trò" (backend từ chối đổi vai trò khách hàng). */
+export function isInternalRole(role: RoleType): role is InternalRoleType {
+  return role === 'ADMIN' || role === 'STAFF';
 }
 
 export function isEkycFilter(value: string | null): value is EkycFilter {

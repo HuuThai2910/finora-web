@@ -36,7 +36,7 @@ function sample(items: MarketListing[], total: number): AmountSample {
 }
 
 /**
- * Số liệu đầu trang Gọi vốn & Notes và số đếm trên tab.
+ * Số liệu đầu trang Gọi vốn và số đếm trên tab.
  *
  * Backend không có API đếm hay tổng hợp: số đếm đọc `totalElements` của lời gọi `size=1`;
  * tổng tiền đang gọi vốn và đã đủ vốn cộng trên tối đa {@link SUMMARY_SAMPLE_SIZE} khoản

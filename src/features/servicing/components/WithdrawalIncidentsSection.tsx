@@ -63,7 +63,7 @@ function OwnerCell({ item }: { item: WithdrawalIncident }) {
 
 /**
  * Lệnh rút tiền chờ đối soát (R4, W3B): tiền đã trừ ví nhưng provider chưa trả kết quả cuối. Nằm ở trang chi tiết khách
- * hàng (lọc theo khách); trang Sự cố hệ thống dùng bản cả hàng đợi khi tài khoản không mở được trang khách hàng.
+ * hàng (lọc theo khách).
  * "Tra cứu lại" chỉ hẹn worker hỏi provider ngay theo mã lệnh, không bao giờ gửi lệnh chi thứ hai (D42); provider báo thất
  * bại thì Payment tự hoàn tiền về ví. Xem cần quyền Xem "Rút tiền", tra cứu lại cần quyền Thao tác; một lệnh một lúc.
  */

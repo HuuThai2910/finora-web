@@ -1,14 +1,18 @@
 import { apiFetch } from '@/lib/api/httpClient';
 import type {
   AssignRoleRequest,
+  CreateStaffAccountRequest,
   CustomerLoginDevice,
   EkycStatusType,
   PageResponse,
   RoleType,
   StaffPermissionFunction,
   StaffRole,
+  StaffAccountCreated,
   StaffRoleRequest,
   UserItem,
+  UserAdvancedFilter,
+  UserScope,
   UserStats,
 } from '../types';
 
@@ -31,6 +35,8 @@ export const userApi = {
       ekycStatus?: EkycStatusType | 'ALL';
       staffRoleCode?: string;
       q?: string;
+      scope?: UserScope;
+      advanced?: UserAdvancedFilter;
     } = {}
   ): Promise<PageResponse<UserItem>> => {
     const params = new URLSearchParams({ page: String(page), size: String(size) });
@@ -41,6 +47,12 @@ export const userApi = {
     if (filters.staffRoleCode) params.set('staffRoleCode', filters.staffRoleCode);
     // Tìm theo một phần họ tên/email hoặc đúng số điện thoại/CCCD (backend tự băm để so).
     if (filters.q) params.set('q', filters.q);
+    // Nhóm tài khoản lọc ở backend để phân trang và tổng số đúng (trang Phân quyền chỉ xem tài khoản nội bộ).
+    if (filters.scope) params.set('scope', filters.scope);
+    // Bảng lọc nâng cao: chỉ gửi trường có giá trị.
+    Object.entries(filters.advanced ?? {}).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') params.set(key, String(value));
+    });
     return apiFetch<PageResponse<UserItem>>(`/api/v1/admin/users?${params}`);
   },
 
@@ -66,7 +78,19 @@ export const userApi = {
       method: 'POST',
     }),
 
-  /** Đổi vai trò; STAFF phải kèm `staffRoleCode` (backend trả 400 nếu thiếu). */
+  /**
+   * Tạo tài khoản nhân viên/quản trị viên bằng thông tin riêng (chỉ ADMIN). Phản hồi mang mật khẩu tạm đúng một lần.
+   */
+  createStaffAccount: (request: CreateStaffAccountRequest): Promise<StaffAccountCreated> =>
+    apiFetch<StaffAccountCreated>('/api/v1/admin/users', {
+      method: 'POST',
+      body: JSON.stringify(request),
+    }),
+
+  /**
+   * Đổi vai trò tài khoản nội bộ (STAFF và ADMIN, đổi vai trò nhân viên); STAFF phải kèm `staffRoleCode`. Backend từ
+   * chối tài khoản khách hàng và vai trò khách hàng.
+   */
   assignRole: (id: number, request: AssignRoleRequest): Promise<void> =>
     apiFetch<void>(`/api/v1/admin/users/${id}/roles`, {
       method: 'POST',

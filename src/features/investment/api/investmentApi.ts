@@ -20,6 +20,25 @@ export interface ListingSearchParams {
   q?: string;
   /** `rate` (lãi cao trước, mặc định), `newest`, `closing` (sắp hết hạn trước), `amount`. */
   sort?: ListingSort;
+  /** Bảng lọc nâng cao của trang Gọi vốn (app nhà đầu tư không gửi): khoảng tiền, tiến độ %, lãi, kỳ hạn, điểm. */
+  amountMin?: string;
+  amountMax?: string;
+  fundedPercentMin?: string;
+  fundedPercentMax?: string;
+  rateMin?: string;
+  rateMax?: string;
+  termMin?: string;
+  termMax?: string;
+  scoreMin?: string;
+  scoreMax?: string;
+  /** Nhiều hạng, dạng `A,B`. */
+  grades?: string;
+  purposeCode?: string;
+  /** Hạn gọi vốn và ngày mở gọi vốn (`YYYY-MM-DD`, giờ VN, gồm hai đầu). */
+  closesFrom?: string;
+  closesTo?: string;
+  openedFrom?: string;
+  openedTo?: string;
   page?: number;
   size?: number;
 }
