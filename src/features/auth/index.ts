@@ -7,3 +7,4 @@ export * from './permissions';
 export { default as authReducer, checkAuthSession, loginUser, logoutUser, clearAuth, clearError, expireSession, passwordChanged } from './slices/authSlice';
 export { authApi } from './api/authApi';
 export * from './types';
+export { BrandMark } from './components/BrandMark';

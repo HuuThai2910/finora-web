@@ -4,11 +4,15 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App';
 import { AppProviders } from './app/providers';
+import { SystemWakeGate } from './features/system-wake';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <AppProviders>
-      <App />
+      {/* VM backend tự tắt khi rảnh: cổng này gọi /api/wake để bật lại và chờ hệ thống sẵn sàng. */}
+      <SystemWakeGate>
+        <App />
+      </SystemWakeGate>
     </AppProviders>
   </StrictMode>,
 );
