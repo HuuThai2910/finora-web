@@ -14,8 +14,8 @@ interface Props {
 
 /**
  * Tra bằng chứng theo tham chiếu nghiệp vụ, đúng hai tham số `referenceType` và `referenceId` mà explorer nhận. Bản
- * nháp là state của form; chỉ khi bấm "Tra cứu" mới ghi lên URL và gọi API. Hồ sơ vay nhận cả mã LA-… (đổi ra ID số
- * trước khi tra) lẫn ID số.
+ * nháp là state của form; chỉ khi bấm "Tra cứu" mới ghi lên URL và gọi API. Hồ sơ vay nhận mã hồ sơ/hợp đồng (HS-…,
+ * HĐ-…, mã tra cứu cũ; đổi ra ID số trước khi tra) lẫn ID số; hợp đồng nhận mã HĐ-… (đổi ra mã tra cứu) lẫn mã LC-….
  */
 export function ProofSearchForm({ applied, onSearch, onClear }: Props) {
   const [type, setType] = useState<ProofReferenceType>(applied?.type ?? 'LOAN_APPLICATION');

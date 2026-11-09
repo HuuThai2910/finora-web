@@ -30,10 +30,12 @@ function CopyIcon() {
  * điều khoản nằm ở thẻ Khoản vay.
  */
 export function ReviewHeader({ application, borrowerName, canViewCustomer, canViewProofs, onCopied }: ReviewHeaderProps) {
+  // Nhân viên đọc và chép mã HS-… (ô "Mở hồ sơ theo mã" nhận cả mã này); LA-… chỉ còn trên URL.
+  const displayCode = application.applicationCode || application.applicationNumber;
   const copy = async () => {
     try {
-      await navigator.clipboard.writeText(application.applicationNumber);
-      onCopied(`Đã chép mã hồ sơ ${application.applicationNumber}.`);
+      await navigator.clipboard.writeText(displayCode);
+      onCopied(`Đã chép mã hồ sơ ${displayCode}.`);
     } catch {
       // Trình duyệt chặn clipboard (http, quyền): báo để người dùng tự chọn và chép.
       toast.warning('Trình duyệt chặn chép tự động. Hãy chọn mã hồ sơ rồi chép thủ công.');
@@ -61,7 +63,7 @@ export function ReviewHeader({ application, borrowerName, canViewCustomer, canVi
           </StatusPill>
         </div>
         <p className="lr-meta flex items-center gap-1.5 flex-wrap">
-          <span className="ui-mono text-[12px]">{application.applicationNumber}</span>
+          <span className="ui-mono text-[12px]">{displayCode}</span>
           <button
             type="button"
             className="lr-copy grid place-items-center size-6 rounded-sm text-muted hover:bg-surface-muted hover:text-primary [&_svg]:size-3.25"

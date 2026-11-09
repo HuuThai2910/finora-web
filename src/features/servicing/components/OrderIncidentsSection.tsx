@@ -1,23 +1,23 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { ErrorNotice } from '@/components/ErrorNotice';
 import { StatusPill } from '@/components/StatusPill';
 import { usePermission } from '@/features/auth';
+import { toast } from '@/lib/toast';
 import { formatDateTime } from '@/utils';
-import { useOrderIncidentsQuery } from '../api/investmentIncidentApi';
+import { useOrderIncidentsQuery, useRetryOrderIncidentMutation } from '../api/investmentIncidentApi';
 import { SERVICING_PAGE_SIZE } from '../constant';
 import { money } from '../formatters';
-import { SVC_ACT_CELL, SVC_ACT_HEAD, SVC_SUBHEAD } from '../styles';
+import { SVC_ACT_CELL, SVC_ACT_HEAD } from '../styles';
 import type { OrderIncident } from '../types';
 import { ErrorCell } from './ErrorCell';
 import { QueueBody } from './QueueBody';
+import { ServicingCard } from './ServicingCard';
 import { UserName } from './UserName';
 
 interface Props {
-  /** Mã của thao tác đang chạy trên cả tab; một thao tác một lúc để không gửi chồng. */
-  running: string | null;
-  /** Có quyền Thao tác "Đối soát & sự cố". */
-  canFix: boolean;
-  onRetry: (item: OrderIncident) => void;
+  /** Không có lệnh nào cần xử lý thì không vẽ gì (trang danh sách gọi vốn), thay cho dòng "Không có". */
+  hideWhenEmpty?: boolean;
 }
 
 function OrderIncidentIssue({ item }: { item: OrderIncident }) {
@@ -26,35 +26,55 @@ function OrderIncidentIssue({ item }: { item: OrderIncident }) {
   return <StatusPill tone="info">Chưa rõ đã giữ tiền</StatusPill>;
 }
 
-/** Khoản gọi vốn của lệnh: liên kết sang trang gọi vốn khi tài khoản xem được, nếu không thì chỉ là chữ. */
+/** Khoản gọi vốn của lệnh: liên kết sang trang chi tiết khi tài khoản xem được, nếu không thì chỉ là chữ. */
 function ListingRef({ listingId }: { listingId: number }) {
-  const label = `Gọi vốn #${listingId}`;
+  const label = `Khoản gọi vốn #${listingId}`;
   if (!usePermission().canView('funding')) return <>{label}</>;
   return <Link className="ui-link" to={`/investments/funding/${listingId}`}>{label}</Link>;
 }
 
 /**
- * Lệnh góp vốn chưa khớp với ví (Investment, R3): tiền giữ của nhà đầu tư chưa xử lý xong. "Thử lại" hẹn worker làm
- * tiếp ngay sau khi vận hành đã xử lý nguyên nhân. Hàng đợi tự giữ trang của mình; thao tác đi qua `onRetry` để cả tab
- * chỉ chạy một việc một lúc. Nhà đầu tư hiện bằng tên (tra theo mã người dùng) thay cho mã thô.
+ * Lệnh góp vốn chưa khớp với ví (Investment, R3): tiền giữ của nhà đầu tư chưa xử lý xong. Nằm ở trang danh sách Gọi vốn
+ * & Notes vì lệnh lỗi thuộc nhiều khoản gọi vốn khác nhau, có khi khoản đã đóng: vận hành cần thấy ngay từ danh sách
+ * thay vì mở từng khoản. "Thử lại" hẹn worker làm tiếp ngay sau khi đã xử lý nguyên nhân; một lệnh một lúc. Xem cần
+ * quyền Xem "Đối soát & sự cố", thử lại cần quyền Thao tác như trước.
  */
-export function OrderIncidentsSection({ running, canFix, onRetry }: Props) {
+export function OrderIncidentsSection({ hideWhenEmpty = false }: Props) {
+  const canFix = usePermission().canAct('reconciliation');
   const [page, setPage] = useState(0);
   const orders = useOrderIncidentsQuery({ page, size: SERVICING_PAGE_SIZE });
+  const [retry] = useRetryOrderIncidentMutation();
+  const [running, setRunning] = useState<string | null>(null);
+  const [failed, setFailed] = useState<{ item: OrderIncident; error: unknown } | null>(null);
+  const total = orders.data?.totalElements ?? 0;
+
+  const run = async (item: OrderIncident) => {
+    if (running) return;
+    setRunning(item.orderReference);
+    setFailed(null);
+    try {
+      await retry(item.orderReference).unwrap();
+      toast.success('Đã hẹn thử lại lệnh góp vốn; kết quả cập nhật sau lượt xử lý kế tiếp của hệ thống.');
+    } catch (error) {
+      setFailed({ item, error });
+    } finally {
+      setRunning(null);
+    }
+  };
+
+  if (hideWhenEmpty && !orders.error && !failed && total === 0) return null;
 
   return (
-    <>
-      <div className={SVC_SUBHEAD}>
-        <h2>Lệnh góp vốn chưa khớp với ví</h2>
-        {orders.data && orders.data.totalElements > 0 && <span>Tiền giữ của nhà đầu tư chưa xử lý xong</span>}
-      </div>
+    <ServicingCard title="Lệnh góp vốn chưa khớp với ví" aside={total > 0 ? `${total} lệnh, tiền giữ của nhà đầu tư chưa xử lý xong` : undefined}>
+      {failed && <div className="mb-2"><ErrorNotice error={failed.error} onRetry={() => run(failed.item)} /></div>}
       <QueueBody
         error={orders.error}
         isLoading={orders.isLoading}
         isFetching={orders.isFetching}
         onRetry={orders.refetch}
-        total={orders.data?.totalElements ?? 0}
+        total={total}
         emptyText="Không có lệnh góp vốn cần xử lý."
+        compactEmpty
         page={page}
         unit="lệnh"
         onPage={setPage}
@@ -76,8 +96,8 @@ export function OrderIncidentsSection({ running, canFix, onRetry }: Props) {
               {(orders.data?.content ?? []).map((item) => (
                 <tr key={item.orderReference}>
                   <td>
-                    <span className="ui-mono">{item.orderReference}</span>
-                    <span className="ui-sub"><ListingRef listingId={item.listingId} /></span>
+                    <ListingRef listingId={item.listingId} />
+                    <span className="ui-sub">Đặt lúc {formatDateTime(item.createdAt)}</span>
                   </td>
                   <td><UserName userId={item.investorId} fallback={`Nhà đầu tư #${item.investorId}`} /></td>
                   <td className="num">{money(item.amount)}</td>
@@ -91,7 +111,7 @@ export function OrderIncidentsSection({ running, canFix, onRetry }: Props) {
                   </td>
                   <td className={SVC_ACT_CELL}>
                     {canFix && (
-                      <button type="button" className="ui-btn soft" disabled={running != null} onClick={() => onRetry(item)}>
+                      <button type="button" className="ui-btn soft" disabled={running != null} onClick={() => run(item)}>
                         {running === item.orderReference ? 'Đang gửi...' : 'Thử lại'}
                       </button>
                     )}
@@ -102,6 +122,6 @@ export function OrderIncidentsSection({ running, canFix, onRetry }: Props) {
           </table>
         </div>
       </QueueBody>
-    </>
+    </ServicingCard>
   );
 }

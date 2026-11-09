@@ -29,7 +29,7 @@ const EkycReviewDetailPage = page(() => import('@/features/ekyc-review'), 'EkycR
 const FundingPage = page(() => import('@/features/investment'), 'FundingPage');
 const FundingDetailPage = page(() => import('@/features/investment'), 'FundingDetailPage');
 const SecondaryMarketPage = page(() => import('@/features/secondary-market'), 'SecondaryMarketPage');
-const ServicingOperationsPage = page(() => import('@/features/servicing'), 'ServicingOperationsPage');
+const SystemIncidentsPage = page(() => import('@/features/servicing'), 'SystemIncidentsPage');
 const BlockchainProofsPage = page(() => import('@/features/blockchain'), 'BlockchainProofsPage');
 const ActivityLogPage = page(() => import('@/features/activity-log'), 'ActivityLogPage');
 
@@ -70,8 +70,10 @@ export default function App() {
           <Route path="loans" element={<RequirePageAccess access={PAGE_ACCESS.loans}><LoanListPage /></RequirePageAccess>} />
           <Route path="loans/:applicationNumber/review" element={<RequirePageAccess access={PAGE_ACCESS.loans}><LoanReviewPage /></RequirePageAccess>} />
           <Route path="loans/approval" element={<Navigate to="/loans?status=PENDING_REVIEW" replace />} />
-          <Route path="loans/overdue" element={<RequirePageAccess access={PAGE_ACCESS.operations}><ServicingOperationsPage /></RequirePageAccess>} />
-          <Route path="loans/operations" element={<RequirePageAccess access={PAGE_ACCESS.operations}><ServicingOperationsPage /></RequirePageAccess>} />
+          {/* Trang Vận hành khoản vay đã bỏ: việc của từng khoản vay nằm ở tab "Sau giải ngân" của hồ sơ, danh sách lọc sẵn
+              ở Quản lý khoản vay. Đường dẫn cũ chuyển hướng để link và bookmark không gãy. */}
+          <Route path="loans/overdue" element={<Navigate to="/loans?servicing=OVERDUE" replace />} />
+          <Route path="loans/operations" element={<Navigate to="/loans" replace />} />
           <Route path="disbursement" element={<Navigate to="/loans" replace />} />
           <Route path="loans/evaluation" element={<RequirePageAccess access={PAGE_ACCESS.aiPolicy}><AiPolicyPage /></RequirePageAccess>} />
           <Route path="investments/funding" element={<RequirePageAccess access={PAGE_ACCESS.funding}><FundingPage /></RequirePageAccess>} />
@@ -86,9 +88,10 @@ export default function App() {
           <Route path="customers/kyc/review/:attemptId" element={<RequirePageAccess access={PAGE_ACCESS.ekycReview}><EkycReviewDetailPage /></RequirePageAccess>} />
           {/* Đường dẫn cũ của trang duyệt riêng; nay duyệt từ menu dòng của trang Khách hàng. */}
           <Route path="customers/ekyc-review" element={<Navigate to="/customers/kyc?ekyc=MANUAL_REVIEW" replace />} />
-          <Route path="reconciliation" element={<RequirePageAccess access={PAGE_ACCESS.operations}><ServicingOperationsPage /></RequirePageAccess>} />
+          <Route path="reconciliation" element={<Navigate to="/system/incidents" replace />} />
           <Route path="blockchain" element={<Navigate to="/blockchain/proofs" replace />} />
           <Route path="blockchain/proofs" element={<RequirePageAccess access={PAGE_ACCESS.blockchain}><BlockchainProofsPage /></RequirePageAccess>} />
+          <Route path="system/incidents" element={<RequirePageAccess access={PAGE_ACCESS.incidents}><SystemIncidentsPage /></RequirePageAccess>} />
           <Route path="system/activity-logs" element={<RequirePageAccess access={PAGE_ACCESS.activityLogs}><ActivityLogPage /></RequirePageAccess>} />
         </Route>
 

@@ -10,6 +10,7 @@ import { usePermission } from '@/features/auth';
 import { loanApi } from '@/lib/api/loanApi';
 import { useGetAdminProductsQuery } from '../api/productApi';
 import { ErrorToast } from '@/components/ErrorToast';
+import { SearchBox } from '@/components/SearchBox';
 import { CreateProductModal } from '../components/CreateProductModal';
 import { ProductDetailDrawer } from '../components/ProductDetailDrawer';
 import type { ConfirmAction } from '../components/ProductDrawerActions';
@@ -49,9 +50,11 @@ export default function ProductListPage() {
   const filter: ProductFilter = isProductFilter(requested) ? requested : 'ALL';
   const page = readPage(searchParams.get('page'));
   const openId = readProductId(searchParams.get('product'));
+  const search = (searchParams.get('q') ?? '').trim();
 
   const list = useGetAdminProductsQuery({
     status: filter === 'ALL' ? undefined : filter,
+    q: search || undefined,
     page,
     size: PRODUCT_LIST_PAGE_SIZE,
   });
@@ -69,15 +72,17 @@ export default function ProductListPage() {
   const products = list.data?.data ?? [];
   const canEditProducts = canAct('loan-product');
 
-  const writeQuery = (next: { filter?: ProductFilter; page?: number; productId?: number | null }) => {
+  const writeQuery = (next: { filter?: ProductFilter; page?: number; productId?: number | null; q?: string }) => {
     const params: Record<string, string> = {};
     const nextFilter = next.filter ?? filter;
     const nextPage = next.page ?? page;
     const nextProduct = next.productId === undefined ? openId : next.productId;
+    const nextSearch = next.q ?? search;
     if (nextFilter !== 'ALL') params.status = nextFilter;
+    if (nextSearch) params.q = nextSearch;
     if (nextPage > 0) params.page = String(nextPage + 1);
     if (nextProduct != null) params.product = String(nextProduct);
-    setSearchParams(params);
+    setSearchParams(params, { replace: next.q !== undefined && next.q !== search });
   };
 
   const updateQuery = (nextFilter: ProductFilter, nextPage: number) => {
@@ -179,6 +184,13 @@ export default function ProductListPage() {
               </button>
             ))}
           </div>
+          <SearchBox
+            className="prod-search w-65 max-[760px]:w-full"
+            value={search}
+            onSearch={(next) => writeQuery({ q: next, page: 0 })}
+            label="Tìm sản phẩm vay"
+            placeholder="Tìm theo tên hoặc mã sản phẩm"
+          />
         </div>
 
         {rowAction.error && <ErrorToast error={rowAction.error} />}
@@ -189,7 +201,9 @@ export default function ProductListPage() {
           <div className="ui-empty" aria-busy="true">Đang tải danh sách sản phẩm...</div>
         ) : products.length === 0 ? (
           <div className="ui-empty">
-            {filter !== 'ALL'
+            {search
+              ? `Không tìm thấy sản phẩm khớp "${search}".`
+              : filter !== 'ALL'
               ? 'Chưa có sản phẩm ở trạng thái này.'
               : canEditProducts ? 'Chưa có sản phẩm vay nào. Bấm "Tạo sản phẩm" để bắt đầu.' : 'Chưa có sản phẩm vay nào.'}
           </div>

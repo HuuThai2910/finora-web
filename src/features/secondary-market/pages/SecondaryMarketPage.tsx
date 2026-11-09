@@ -3,6 +3,7 @@ import type { AppDispatch } from '@/app/store';
 import { ErrorNotice } from '@/components/ErrorNotice';
 import { Icon } from '@/components/Icon';
 import { Pager } from '@/components/Pager';
+import { SearchBox } from '@/components/SearchBox';
 import { usePermission } from '@/features/auth';
 import { investmentApi } from '@/lib/api/investmentApi';
 import {
@@ -59,27 +60,32 @@ function tradeCount(summary: OrderBookAdminSummary | undefined, filter: TradeFil
  *
  * Trang này **chỉ đọc**. Đặt và hủy lệnh là việc của nhà đầu tư trên app: backend lấy danh tính từ
  * token, nên nếu quản trị đặt lệnh thì lệnh thuộc về chính tài khoản quản trị, sai nghiệp vụ.
- * Biểu đồ giá trị khớp theo ngày và giá bình quân lấy từ API thống kê của Investment; ô tìm kiếm bị bỏ vì
- * API danh sách không có tham số tìm.
+ * Biểu đồ giá trị khớp theo ngày và giá bình quân lấy từ API thống kê của Investment. Ô tìm áp cho danh sách đang
+ * xem (tham số `q` của API): mã hồ sơ/hợp đồng của khoản vay, thêm mã lần khớp và số giấy ở hai tab sau.
  */
 export function SecondaryMarketPage() {
   const dispatch = useDispatch<AppDispatch>();
   const market = useMarketView();
-  const { view, tradeFilter, documentFilter, page } = market;
+  const { view, tradeFilter, documentFilter, page, q } = market;
+  const search = q || undefined;
   const canStats = usePermission().canView('dashboard');
 
   const summary = useGetOrderBookAdminSummaryQuery();
   // Sổ lệnh luôn tải (trang 0 khi đang xem giao dịch) để tab "Sổ lệnh" có số đếm thật từ totalElements.
-  const books = useGetOrderBooksQuery({ page: view === 'BOOKS' ? page : 0, size: MARKET_PAGE_SIZE });
+  const books = useGetOrderBooksQuery({
+    page: view === 'BOOKS' ? page : 0,
+    size: MARKET_PAGE_SIZE,
+    q: view === 'BOOKS' ? search : undefined,
+  });
   const trades = useGetAdminTradesQuery(
-    { page, size: MARKET_PAGE_SIZE, settlement: tradeFilter === 'ALL' ? undefined : tradeFilter },
+    { page, size: MARKET_PAGE_SIZE, settlement: tradeFilter === 'ALL' ? undefined : tradeFilter, q: search },
     { skip: view !== 'TRADES' },
   );
   // Giấy xác nhận lỗi đếm cho ô "Cần đối soát" và tab; đang lập chỉ để đếm trên bộ lọc của tab.
   const failedDocs = useGetTransferDocumentsQuery({ status: 'FAILED', ...COUNT_ONLY });
   const pendingDocs = useGetTransferDocumentsQuery({ status: 'PENDING', ...COUNT_ONLY });
   const documents = useGetTransferDocumentsQuery(
-    { status: documentFilter, page, size: MARKET_PAGE_SIZE },
+    { status: documentFilter, page, size: MARKET_PAGE_SIZE, q: search },
     { skip: view !== 'DOCUMENTS' },
   );
   const active = view === 'BOOKS' ? books : view === 'TRADES' ? trades : documents;
@@ -103,11 +109,13 @@ export function SecondaryMarketPage() {
 
   const rowCount = active.data?.content.length ?? 0;
   const total = active.data?.totalElements ?? 0;
-  const emptyText = view === 'BOOKS'
-    ? 'Chưa có khoản vay nào có Note đang lưu hành.'
+  const emptyText = q
+    ? `Không tìm thấy kết quả khớp "${q}".`
+    : view === 'BOOKS'
+    ? 'Chưa có khoản vay nào có phần vốn đang lưu hành.'
     : view === 'DOCUMENTS'
       ? documentFilter === 'FAILED' ? 'Không có giấy xác nhận nào lập lỗi.' : 'Không có giấy xác nhận nào đang lập.'
-      : tradeFilter === 'ALL' ? 'Chưa có lần khớp nào trên chợ Notes.' : 'Không có lần khớp nào ở trạng thái này.';
+      : tradeFilter === 'ALL' ? 'Chưa có lần khớp nào trên chợ chuyển nhượng.' : 'Không có lần khớp nào ở trạng thái này.';
   const docTabCount = failedDocs.data && pendingDocs.data
     ? failedDocs.data.totalElements + pendingDocs.data.totalElements
     : undefined;
@@ -115,7 +123,7 @@ export function SecondaryMarketPage() {
   return (
     <section className="ui-page">
       <header className="ui-page-head">
-        <div className="ui-title"><h1>Chợ thứ cấp Notes</h1></div>
+        <div className="ui-title"><h1>Chợ chuyển nhượng</h1></div>
         <button type="button" className="ui-btn ghost" onClick={reload} disabled={busy}>
           <Icon name="refresh" />
           {busy ? 'Đang tải...' : 'Làm mới'}
@@ -149,6 +157,15 @@ export function SecondaryMarketPage() {
               Giấy xác nhận{docTabCount != null && <span className="n">{docTabCount}</span>}
             </button>
           </div>
+          <SearchBox
+            className="sm-search w-72 max-[760px]:w-full"
+            value={q}
+            onSearch={market.setSearch}
+            label="Tìm trong danh sách"
+            placeholder={view === 'BOOKS'
+              ? 'Tìm theo mã hồ sơ hoặc mã hợp đồng'
+              : view === 'TRADES' ? 'Tìm theo mã lần khớp, mã hồ sơ, hợp đồng' : 'Tìm theo số giấy, mã lần khớp, hồ sơ'}
+          />
           {view === 'TRADES' && (
             <div className={SEG} role="tablist" aria-label="Trạng thái thanh toán">
               {TRADE_FILTERS.map((filter) => {

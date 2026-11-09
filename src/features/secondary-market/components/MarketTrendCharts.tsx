@@ -51,7 +51,7 @@ export function MarketTrendCharts() {
   const common = { isLoading: series.isLoading, error: series.error, onRetry: series.refetch };
 
   return (
-    <section className="sm-charts grid grid-cols-2 gap-4 max-[1000px]:grid-cols-[minmax(0,1fr)]" aria-label="Biểu đồ chợ Notes">
+    <section className="sm-charts grid grid-cols-2 gap-4 max-[1000px]:grid-cols-[minmax(0,1fr)]" aria-label="Biểu đồ chợ chuyển nhượng">
       <ChartCard id="smValueTitle" title="Giá trị khớp theo ngày" aside={`${DAYS} ngày`} isEmpty={trades === 0} {...common}>
         {points && valueOption && (
           <>
@@ -103,7 +103,7 @@ export function MarketTrendCharts() {
               ariaLabel={`Biểu đồ đường giá khớp bình quân trượt 7 ngày, tính bằng phần trăm dư nợ gốc, bình quân ${DAYS} ngày ${price(rolling.all)}`}
             />
             <ChartDataTable
-              headers={['Ngày', 'Bình quân 7 ngày', 'Trong ngày', 'Số Note']}
+              headers={['Ngày', 'Bình quân 7 ngày', 'Trong ngày', 'Số phần vốn']}
               rows={rolling.rows.map((row) => [
                 bucketTitle(row.bucketStart, 'DAY'),
                 price(row.rolling),

@@ -2,7 +2,7 @@ import { investmentApi } from '@/lib/api/investmentApi';
 
 /**
  * Lời gọi riêng của trang Tổng quan. Số đếm và số liệu theo kỳ lấy từ API thống kê (feature `statistics`), số của
- * hàng đợi vận hành từ `useServicingCounts`; ở đây chỉ còn tóm tắt sổ lệnh (API thống kê chưa có).
+ * việc sự cố từ `useSystemIncidentCounts`; ở đây chỉ còn tóm tắt sổ lệnh (API thống kê chưa có).
  */
 
 /** `OrderBookAdminSummaryResponse`: tiền là chuỗi thập phân để không mất chính xác qua JSON. */

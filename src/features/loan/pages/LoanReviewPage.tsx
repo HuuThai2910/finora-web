@@ -3,6 +3,7 @@ import { Link, useLocation, useParams, useSearchParams } from 'react-router-dom'
 import { ErrorNotice } from '@/components/ErrorNotice';
 import { toast } from '@/lib/toast';
 import { usePermission } from '@/features/auth';
+import { LOAN_SERVICING_FUNCTIONS, LoanServicingTab } from '@/features/servicing';
 import { toUiApiError } from '@/lib/api/errors';
 import { useBackToList } from '@/lib/navigation';
 import { useGetReviewDetailQuery } from '../api/loanReviewApi';
@@ -12,6 +13,7 @@ import { ReviewHeader } from '../components/review/ReviewHeader';
 import { ReviewOverviewTab } from '../components/review/ReviewOverviewTab';
 import {
   approveBlockedReason,
+  hasServicing,
   isReviewTab,
   REVIEW_TABS,
   scoringRetryBlockedReason,
@@ -55,15 +57,20 @@ function LoanReviewView({ applicationNumber }: { applicationNumber: string }) {
   const [searchParams, setSearchParams] = useSearchParams();
   const location = useLocation();
   const requestedTab = searchParams.get('tab');
-  const tab: ReviewTabId = isReviewTab(requestedTab) ? requestedTab : 'review';
-
   const detail = useGetReviewDetailQuery(applicationNumber, { skip: !applicationNumber });
   const application = detail.data;
+  const permission = usePermission();
+  // Tab "Sau giải ngân": hồ sơ đã vào giải ngân và tài khoản xem được thu hồi, cơ cấu hoặc đối soát.
+  const showServicing = application != null && hasServicing(application)
+    && LOAN_SERVICING_FUNCTIONS.some(permission.canView);
+  const tabs = REVIEW_TABS.filter((item) => item.id !== 'servicing' || showServicing);
+  const tab: ReviewTabId = isReviewTab(requestedTab) && tabs.some((item) => item.id === requestedTab)
+    ? requestedTab
+    : 'review';
   // Hồ sơ chờ thẩm định cần điểm CIC, số lần tra cứu ngay ở tab Thẩm định nên tải giải thích luôn.
   const needExplanation = tab === 'model' || application?.status === 'PENDING_REVIEW';
   const explanation = useAssessmentExplanation(applicationNumber, application?.assessment ?? null, needExplanation);
   const decision = useReviewDecision(application);
-  const permission = usePermission();
   // Duyệt, từ chối và yêu cầu chấm lại cần quyền Thao tác "Hồ sơ vay"; chỉ có quyền Xem thì trang chỉ đọc.
   const canAct = permission.canAct('loan-application');
   // Kết quả thao tác báo bằng toast dùng chung (`@/lib/toast`).
@@ -132,7 +139,7 @@ function LoanReviewView({ applicationNumber }: { applicationNumber: string }) {
             role="tablist"
             aria-label="Nội dung hồ sơ vay"
           >
-            {REVIEW_TABS.map((item) => (
+            {tabs.map((item) => (
               <button key={item.id} type="button" role="tab" className={TAB} aria-selected={tab === item.id} onClick={() => selectTab(item.id)}>
                 {item.label}
               </button>
@@ -158,6 +165,9 @@ function LoanReviewView({ applicationNumber }: { applicationNumber: string }) {
             ) : null}
             {tab === 'history' ? (
               <HistoryTab history={application.recentHistory} timeline={application.timeline} displayName={displayName} />
+            ) : null}
+            {tab === 'servicing' ? (
+              <LoanServicingTab applicationId={application.id} loanNumber={application.loanNumber ?? null} />
             ) : null}
           </div>
         </div>

@@ -67,7 +67,7 @@ export function AdminSidebar({ sections, pathname, sidebarRef, onClose, onLogout
                   to={item.to}
                   end
                   // Dùng hàm để NavLink không tự gắn lớp "active" theo tiền tố đường dẫn
-                  // (/loans/operations nằm dưới /loans); mục đang chọn do `matches` quyết định.
+                  // (/loans/evaluation nằm dưới /loans); mục đang chọn do `matches` quyết định.
                   className={() => `${SIDEBAR_ITEM}${active ? ' active' : ''}`}
                   aria-current={active ? 'page' : undefined}
                 >

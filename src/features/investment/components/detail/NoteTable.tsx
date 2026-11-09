@@ -27,8 +27,8 @@ export function NoteTable({ commitments, nameOf }: Props) {
   const [page, setPage] = useState(0);
 
   if (error) return <ErrorNotice error={error} onRetry={retry} />;
-  if (isLoading) return <div className="ui-card ui-empty" aria-busy="true">Đang tải danh sách Note...</div>;
-  if (notes.length === 0) return <div className="ui-card ui-empty">Khoản vay chưa có Note nào.</div>;
+  if (isLoading) return <div className="ui-card ui-empty" aria-busy="true">Đang tải danh sách phần vốn...</div>;
+  if (notes.length === 0) return <div className="ui-card ui-empty">Khoản vay chưa có phần vốn nào.</div>;
 
   const current = Math.min(page, Math.ceil(notes.length / FUNDING_PAGE_SIZE) - 1);
   const rows = notes.slice(current * FUNDING_PAGE_SIZE, (current + 1) * FUNDING_PAGE_SIZE);
@@ -46,7 +46,7 @@ export function NoteTable({ commitments, nameOf }: Props) {
         <table className="ui-table">
           <thead>
             <tr>
-              <th>Mã Note</th>
+              <th>Mã phần vốn</th>
               <th>Người góp vốn</th>
               <th className="num">Mệnh giá</th>
               <th className="num">Dư nợ gốc</th>
@@ -72,7 +72,7 @@ export function NoteTable({ commitments, nameOf }: Props) {
           </tbody>
         </table>
       </div>
-      <Pager page={current} size={FUNDING_PAGE_SIZE} total={notes.length} unit="Note" onPage={setPage} />
+      <Pager page={current} size={FUNDING_PAGE_SIZE} total={notes.length} unit="phần vốn" onPage={setPage} />
     </div>
   );
 }

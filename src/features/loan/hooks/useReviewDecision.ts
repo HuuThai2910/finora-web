@@ -74,7 +74,7 @@ export function useReviewDecision(application: AdminLoanReviewDetail | undefined
         idempotencyKey: keyFor(approveKey, 'admin-approve', application.version),
       }).unwrap();
       toast.success(result.contractNumber
-        ? `Đã duyệt hồ sơ và tạo hợp đồng ${result.contractNumber}.`
+        ? `Đã duyệt hồ sơ và tạo hợp đồng ${result.contractCode || result.contractNumber}.`
         : 'Đã duyệt hồ sơ. Điều khoản bất lợi hơn lúc nộp nên hệ thống đang chờ người vay xác nhận trước khi tạo hợp đồng.');
       approveKey.current = null;
       return true;

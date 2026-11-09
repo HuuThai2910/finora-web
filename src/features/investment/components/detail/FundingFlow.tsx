@@ -145,14 +145,14 @@ export function FundingFlow(props: Props) {
     if (index === STAGE_INDEX.FINALIZED) {
       if (props.investorsError) return <div className="fd-work grid gap-2.5 mt-2"><ErrorNotice error={props.investorsError} onRetry={props.onRetryInvestors} /></div>;
       if (listing.status === 'FULLY_FUNDED' && stage.pending && stage.steps[index] !== 'done') {
-        return <p className={HINT} aria-busy="true">Đang kiểm tra phần vốn...</p>;
+        return <p className={HINT} aria-busy="true">Đang kiểm tra các khoản góp vốn...</p>;
       }
       if (stage.awaitingDisbursement) {
         // Cùng câu với nhãn trạng thái ở đầu trang và bảng danh sách (`fundedWaitLabel`).
         return (
           <p className={HINT}>
             <b className="fd-wait text-secondary font-semibold">{fundedWaitLabel(listing) ?? 'Chờ giải ngân'}.</b>{' '}
-            Hệ thống tự khóa vốn và phát hành Note khi khoản vay được giải ngân; đến lúc đó tiền nhà đầu tư vẫn chỉ được
+            Hệ thống tự khóa vốn và phát hành phần vốn khi khoản vay được giải ngân; đến lúc đó tiền nhà đầu tư vẫn chỉ được
             giữ trong ví.
           </p>
         );
@@ -161,7 +161,7 @@ export function FundingFlow(props: Props) {
         return (
           <StepButton
             kind="finalize" label="Khóa vốn (sửa lỗi)" busyLabel="Đang khóa vốn..."
-            hint="Chỉ dùng khi khoản vay đã giải ngân mà phần vốn chưa được khóa tự động."
+            hint="Chỉ dùng khi khoản vay đã giải ngân mà các khoản góp vốn chưa được khóa tự động."
             props={{ ...props, onClick: props.onFinalize }}
           />
         );
@@ -174,14 +174,14 @@ export function FundingFlow(props: Props) {
           className="ui-link fd-proof-link w-max text-[12px]"
           to={`/blockchain/proofs?referenceType=NOTE_ISSUANCE&referenceId=${listing.listingId}`}
         >
-          Xác minh phát hành Note
+          Xác minh phát hành phần vốn
         </Link>
       );
     }
     if (index === STAGE_INDEX.NOTES_ISSUED && stage.nextAction === 'ACTIVATE_NOTES') {
       return (
         <StepButton
-          kind="activate" label={`Phát hành ${formatNumber(liveNotes)} Note (sửa lỗi)`} busyLabel="Đang phát hành..."
+          kind="activate" label={`Phát hành ${formatNumber(liveNotes)} phần vốn (sửa lỗi)`} busyLabel="Đang phát hành..."
           props={{ ...props, onClick: props.onActivate }}
         />
       );

@@ -126,8 +126,20 @@ export interface AssessmentEvidence {
   scoredAt: string | null;
 }
 
+/**
+ * Việc vận hành đang mở của khoản vay thuộc hồ sơ (`ApplicationServicingFlag` của Loan): đang quá hạn (có hồ sơ thu hồi
+ * mở), có yêu cầu cơ cấu chờ thẩm định, có sự cố (sai lệch đối soát, số liệu cũ, giải ngân chờ ghi hệ thống lõi).
+ */
+export type ServicingFlag = 'OVERDUE' | 'RESCHEDULE_PENDING' | 'INCIDENT';
+
+/** Trạng thái khoản vay đang phục vụ (`FinoraLoanStatus`). */
+export type ServicedLoanStatus = 'ACTIVE' | 'RESTRUCTURING' | 'SETTLED' | 'DEFAULTED' | 'WRITTEN_OFF';
+
 export interface AdminLoanReviewSummary {
+  /** Mã tra cứu `LA-…`: khóa trên URL và API, không hiện trên màn hình. */
   applicationNumber: string;
+  /** Mã hiển thị `HS-yyyyMMdd-XXXX` nhân viên đọc và tra cứu; backend cũ chưa trả thì dùng mã tra cứu. */
+  applicationCode?: string | null;
   borrowerId: string;
   requestedAmount: number;
   requestedTermMonths: number;
@@ -147,6 +159,10 @@ export interface AdminLoanReviewSummary {
   adminDecidedAt: string | null;
   /** Mục đích vay (`LoanPurpose`) để bảng danh sách hiện icon và nhãn mà không gọi chi tiết từng hồ sơ. */
   purposeCode: string;
+  /** Mã khoản vay `LN-…`; null khi hồ sơ chưa giải ngân xong (backend cũ không có). */
+  loanNumber?: string | null;
+  /** Việc vận hành đang mở để gắn nhãn cảnh báo trên dòng (backend cũ không có). */
+  servicingFlags?: ServicingFlag[];
 }
 
 export interface AdminLoanReviewDetail extends AdminLoanReviewSummary {
@@ -154,6 +170,8 @@ export interface AdminLoanReviewDetail extends AdminLoanReviewSummary {
   id: number;
   /** Số hợp đồng; null cho tới khi hợp đồng được lập (sau khi khoản vay đủ vốn). */
   contractNumber: string | null;
+  /** Mã hiển thị `HĐ-…` của hợp đồng; null khi chưa có hợp đồng. */
+  contractCode?: string | null;
   /** Mã lý do AI chuyển hồ sơ cho người thẩm định; rỗng khi AI không chuyển hoặc lần chấm cũ chưa lưu lý do. */
   aiReviewReasons?: string[];
   purposeDetail: string | null;
@@ -169,6 +187,10 @@ export interface AdminLoanReviewDetail extends AdminLoanReviewSummary {
   timeline?: LoanTimelineItem[];
   termsVersion: string | null;
   termsExpiresAt: string | null;
+  /** Trạng thái khoản vay; null khi chưa kích hoạt. */
+  loanStatus?: ServicedLoanStatus | null;
+  /** Trạng thái saga giải ngân; null khi hồ sơ chưa vào giải ngân. Có giá trị thì trang hiện tab "Sau giải ngân". */
+  disbursementStatus?: string | null;
 }
 
 /**
@@ -228,6 +250,8 @@ export interface AdminDecisionResponse {
   termsVersion: string | null;
   termsExpiresAt: string | null;
   contractNumber: string | null;
+  /** Mã hiển thị `HĐ-…`; null khi chưa có hợp đồng. */
+  contractCode?: string | null;
   contractStatus: string | null;
   contractVersion: number | null;
   documentHash: string | null;
@@ -253,3 +277,13 @@ export type {
   TomTatYeuTo,
   DienGiaiNguoiDung,
 } from './aiExplanationTypes';
+
+/** Cặp mã của một hồ sơ: `applicationNumber` để mở trang/gọi API, `applicationCode` để hiện cho người đọc. */
+export interface ApplicationReference {
+  id: number;
+  applicationNumber: string;
+  applicationCode?: string | null;
+  /** Cặp mã hợp đồng; chỉ có ở kết quả tra theo mã và khi hồ sơ đã có hợp đồng. */
+  contractNumber?: string | null;
+  contractCode?: string | null;
+}

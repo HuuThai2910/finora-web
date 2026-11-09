@@ -53,7 +53,7 @@ export function TransferDocumentTable({ documents, onOpenBook }: Props) {
               <PartiesCell buyerId={doc.buyerId} sellerId={doc.sellerId} nameOf={displayName} />
               <td className="num">
                 <span className="strong">{formatMoneyVnd(doc.amount)}</span>
-                <span className="ui-sub">{doc.quantity} Note</span>
+                <span className="ui-sub">{doc.quantity} phần vốn</span>
               </td>
               <td className="sm-doc min-w-42.5 max-w-70 whitespace-normal">
                 <TransferDocumentCell tradeReference={doc.tradeReference} settled doc={doc} />

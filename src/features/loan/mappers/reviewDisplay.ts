@@ -3,16 +3,26 @@ import { findBusinessLabel, formatMoney, formatPercent } from '../formatters';
 import type { AdminLoanReviewDetail, RuleTraceItem, YeuToGop } from '../types';
 
 /** Tab của trang chi tiết hồ sơ; giá trị nằm trên URL (`?tab=`) để chia sẻ đúng màn đang xem. */
-export type ReviewTabId = 'review' | 'model' | 'history';
+export type ReviewTabId = 'review' | 'model' | 'history' | 'servicing';
 
+/**
+ * Tab "Sau giải ngân" chỉ có với hồ sơ đã vào giải ngân (có saga hoặc đã có khoản vay) và tài khoản xem được một trong
+ * các việc sau giải ngân; trang tự bỏ tab này khi không đủ điều kiện.
+ */
 export const REVIEW_TABS: Array<{ id: ReviewTabId; label: string }> = [
   { id: 'review', label: 'Thẩm định' },
   { id: 'model', label: 'Chi tiết chấm điểm' },
   { id: 'history', label: 'Lịch sử xử lý' },
+  { id: 'servicing', label: 'Sau giải ngân' },
 ];
 
 export function isReviewTab(value: string | null): value is ReviewTabId {
-  return value === 'review' || value === 'model' || value === 'history';
+  return value === 'review' || value === 'model' || value === 'history' || value === 'servicing';
+}
+
+/** Hồ sơ đã vào giải ngân: có saga giải ngân hoặc đã có khoản vay đang phục vụ. */
+export function hasServicing(application: Pick<AdminLoanReviewDetail, 'loanNumber' | 'disbursementStatus'>): boolean {
+  return Boolean(application.loanNumber || application.disbursementStatus);
 }
 
 /** Mã lý do từ chối khớp enum `AdminDecisionReasonCode` của Loan Service (trừ POLICY_APPROVED dành cho duyệt). */

@@ -16,7 +16,7 @@ export const FUNDING_STAGES: ReadonlyArray<{ key: FundingStageKey; label: string
   { key: 'OPEN', label: 'Gọi vốn' },
   { key: 'FUNDED', label: 'Đủ vốn' },
   { key: 'FINALIZED', label: 'Khóa vốn' },
-  { key: 'NOTES_ISSUED', label: 'Phát hành Note' },
+  { key: 'NOTES_ISSUED', label: 'Phát hành phần vốn' },
 ];
 
 /** Vị trí của từng chặng trong `FUNDING_STAGES`, để màn hình không phải nhớ số thứ tự. */

@@ -1,14 +1,7 @@
 /**
- * Chuỗi utility Tailwind dùng ở nhiều thành phần của Vận hành khoản vay. Lớp `svc-*` đứng đầu mỗi chuỗi không còn CSS;
+ * Chuỗi utility Tailwind dùng ở nhiều thành phần xử lý sau giải ngân và sự cố. Lớp `svc-*` đứng đầu mỗi chuỗi không còn CSS;
  * giữ làm mốc cho kịch bản kiểm thử giao diện và truy vấn DOM.
  */
-
-/** Đoạn giải thích ở đầu một hàng đợi. */
-export const SVC_NOTE = 'svc-note mx-0.5 mb-3 rounded-md bg-surface-muted px-3 py-2.5 text-[13px] text-secondary';
-
-/** Tiêu đề một hàng đợi con trong tab (vạch ngăn với hàng đợi phía trên), dòng phụ bên phải. */
-export const SVC_SUBHEAD = 'svc-subhead mt-4 flex items-baseline justify-between gap-3 border-t border-t-divider px-1 pt-3.5 pb-2.5 '
-  + '[&_h2]:text-[14px] [&_h2]:font-semibold [&_span]:text-[12px] [&_span]:text-muted';
 
 /** Ô chữ dài trong bảng (lỗi, lý do, giá trị lệch): xuống dòng được, chữ nhỏ hơn ô thường. */
 export const SVC_WRAP_CELL = 'svc-wrap min-w-55 max-w-85 whitespace-normal text-[13px] text-secondary';

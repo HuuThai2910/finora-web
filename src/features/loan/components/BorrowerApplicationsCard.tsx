@@ -61,7 +61,7 @@ export function BorrowerApplicationsCard({
                 <tr key={item.applicationNumber}>
                   <td>
                     <Link className="ui-link ui-mono" to={`/loans/${encodeURIComponent(item.applicationNumber)}/review`}>
-                      {item.applicationNumber}
+                      {item.applicationCode || item.applicationNumber}
                     </Link>
                   </td>
                   <td className="num">{formatCurrency(item.requestedAmount)}</td>

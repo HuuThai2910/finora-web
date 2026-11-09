@@ -1,5 +1,8 @@
 import { useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { SearchBox } from '@/components/SearchBox';
 import { usePermission } from '@/features/auth';
+import { matchesSearch } from '@/utils';
 import { useRuleEngine } from '../hooks/useRuleEngine';
 import { AiErrorNotice } from './AiErrorNotice';
 import { IconEdit, IconPlus } from './icons';
@@ -17,6 +20,21 @@ import { CARD, CARD_HEAD, CARD_TITLE, HEAD_MAIN, META, META_STRONG } from './sty
  */
 export default function RuleEnginePanel() {
   const re = useRuleEngine();
+  // Bộ luật tải hết một lần nên lọc ở client (mã, mô tả luật, tên trường); từ khóa giữ trên URL. Đang sửa thì hiện đủ
+  // để không giấu luật đang chỉnh hay luật mới thêm.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const search = re.editing ? '' : (searchParams.get('q') ?? '').trim();
+  const updateSearch = (next: string) => {
+    const params = new URLSearchParams(searchParams);
+    if (next) params.set('q', next);
+    else params.delete('q');
+    setSearchParams(params, { replace: true });
+  };
+  const visible = (index: number) => {
+    const luat = re.rules[index];
+    return matchesSearch(search, luat.ma, luat.mo_ta, luat.truong, re.danhMuc.get(luat.truong)?.mo_ta);
+  };
+  const shownCount = search ? re.rules.filter((_, index) => visible(index)).length : re.rules.length;
   // Sửa bộ luật cần quyền Thao tác "Chính sách AI"; chỉ có quyền Xem thì không có nút chỉnh sửa.
   const canEdit = usePermission().canAct('ai-policy');
   const { loiTaiThe, formError } = re;
@@ -77,6 +95,18 @@ export default function RuleEnginePanel() {
             phải bằng chứng người vay rủi ro.
           </p>
 
+          {!re.editing && re.rules.length > 0 && (
+            <div className="rl-toolbar flex justify-end py-2.5 px-4 border-b border-b-line">
+              <SearchBox
+                className="rl-search w-72 max-[760px]:w-full"
+                value={search}
+                onSearch={updateSearch}
+                label="Tìm luật chấm điểm"
+                placeholder="Tìm theo mô tả luật hoặc trường dữ liệu"
+              />
+            </div>
+          )}
+
           {(re.formError || re.conflict) && (
             <div className="rl-state pt-3 px-4 pb-0">
               {re.formError
@@ -101,7 +131,12 @@ export default function RuleEnginePanel() {
                 Chưa có luật nào. Bấm "Chỉnh sửa luật" để thêm.
               </p>
             )}
-            {re.rules.map((luat, i) => (re.meta[i]?.daXoa ? (
+            {search && shownCount === 0 && (
+              <p className="rl-empty col-span-full py-6 px-4 text-secondary text-[13px] text-center">
+                Không tìm thấy luật khớp "{search}".
+              </p>
+            )}
+            {re.rules.map((luat, i) => (!visible(i) ? null : re.meta[i]?.daXoa ? (
               <DeletedRuleCard key={i} ten={luat.mo_ta} onUndo={() => re.hoanTacXoa(i)} />
             ) : (
               <RuleCard

@@ -32,7 +32,7 @@ const sum = (levels: PriceLevel[], key: 'quantity' | 'orderCount') =>
 function depthLead(book: OrderBookSnapshot): string {
   const side = (who: string, verb: string, levels: PriceLevel[]) => {
     const notes = sum(levels, 'quantity');
-    return notes ? `${who} chờ ${formatNumber(notes)} Note trong ${formatNumber(sum(levels, 'orderCount'))} lệnh` : `${who} chưa ai đặt ${verb}`;
+    return notes ? `${who} chờ ${formatNumber(notes)} phần vốn trong ${formatNumber(sum(levels, 'orderCount'))} lệnh` : `${who} chưa ai đặt ${verb}`;
   };
   // Backend chỉ gửi tối đa SNAPSHOT_DEPTH mức mỗi phía; chạm trần thì nói rõ con số chỉ tính trên các mức đó.
   const capped = book.bids.length >= SNAPSHOT_DEPTH || book.asks.length >= SNAPSHOT_DEPTH;
@@ -43,8 +43,8 @@ function BookBody({ book }: { book: OrderBookSnapshot }) {
   const hasDepth = book.bids.length > 0 || book.asks.length > 0;
   const depthOption = useMemo(() => buildDepthOption(book.bids, book.asks), [book.bids, book.asks]);
   const facts: Array<[string, string]> = [
-    ['Dư nợ tham chiếu mỗi Note', formatMoneyVnd(book.referenceOutstanding)],
-    ['Mệnh giá Note', formatMoneyVnd(book.noteDenomination)],
+    ['Dư nợ tham chiếu mỗi phần vốn', formatMoneyVnd(book.referenceOutstanding)],
+    ['Mệnh giá mỗi phần vốn', formatMoneyVnd(book.noteDenomination)],
     ['Lãi suất', formatAnnualRate(book.annualInterestRate)],
     ['Kỳ hạn', `${book.termMonths} tháng`],
     ['Khớp gần nhất', book.lastTradePercent == null ? 'Chưa khớp' : formatPrice(book.lastTradePercent)],
@@ -73,14 +73,14 @@ function BookBody({ book }: { book: OrderBookSnapshot }) {
       )}
 
       <section aria-labelledby="sm-depth-title">
-        <div className={SECTION_HEAD}><h3 id="sm-depth-title">Độ sâu sổ lệnh</h3><span className={SECTION_NOTE}>số Note cộng dồn</span></div>
+        <div className={SECTION_HEAD}><h3 id="sm-depth-title">Độ sâu sổ lệnh</h3><span className={SECTION_NOTE}>số phần vốn cộng dồn</span></div>
         <p className="sm-depth-lead mt-0.5 text-secondary text-[13px]">{depthLead(book)}</p>
         {hasDepth && (
           <EChart
             className="sm-depth h-50 mt-2"
             option={depthOption}
             notMerge
-            ariaLabel="Biểu đồ độ sâu: số Note cộng dồn bên mua và bên bán theo giá, số liệu chi tiết ở thang giá bên dưới"
+            ariaLabel="Biểu đồ độ sâu: số phần vốn cộng dồn bên mua và bên bán theo giá, số liệu chi tiết ở thang giá bên dưới"
           />
         )}
       </section>
@@ -111,7 +111,7 @@ function BookBody({ book }: { book: OrderBookSnapshot }) {
                   {SIDE_LABEL[tick.aggressorSide]}
                 </span>
                 <span className="p font-medium">{formatPrice(tick.pricePercent)}</span>
-                <span className="q text-secondary text-right">{tick.quantity} Note</span>
+                <span className="q text-secondary text-right">{tick.quantity} phần</span>
               </li>
             ))}
           </ol>

@@ -45,7 +45,7 @@ export function InvestorTable({ investors, isLoading, error, onRetry, nameOf }: 
             <tr>
               <th>Nhà đầu tư</th>
               <th className="num">Số tiền</th>
-              <th className="num">Số Note</th>
+              <th className="num">Số phần vốn</th>
               <th className="num">Tỷ lệ</th>
               <th>Trạng thái</th>
               <th>Đặt lệnh lúc</th>
@@ -72,7 +72,7 @@ export function InvestorTable({ investors, isLoading, error, onRetry, nameOf }: 
           </tbody>
         </table>
       </div>
-      <Pager page={current} size={FUNDING_PAGE_SIZE} total={sorted.length} unit="phần vốn" onPage={setPage} />
+      <Pager page={current} size={FUNDING_PAGE_SIZE} total={sorted.length} unit="khoản góp" onPage={setPage} />
     </div>
   );
 }

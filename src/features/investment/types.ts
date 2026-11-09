@@ -12,6 +12,9 @@ export interface MarketListing {
   loanId: number;
   /** Mã hồ sơ vay công khai bên Loan (`LA-...`), dùng mở trang thẩm định `/loans/:applicationNumber/review`. */
   applicationNumber?: string | null;
+  /** Mã hiển thị `HS-…`/`HĐ-…`; khoản vay niêm yết trước khi Loan có mã để null. */
+  applicationCode?: string | null;
+  contractCode?: string | null;
   purpose: string;
   region: string;
   creditGrade: string;

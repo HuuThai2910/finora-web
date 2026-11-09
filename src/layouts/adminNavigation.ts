@@ -6,13 +6,14 @@ export type SidebarIconName =
 
 /**
  * Quyền cần để mở từng trang quản trị (khớp `OpsFunction` của backend). Menu ẩn mục không xem được, route hiện thẻ
- * "Không có quyền truy cập". Vận hành khoản vay gom bốn hàng đợi nên chỉ cần quyền Xem một trong số đó; bên trong trang
- * chỉ hiện nhóm việc xem được.
+ * "Không có quyền truy cập". Quản lý khoản vay mở cho cả nhân viên thu hồi, cơ cấu, đối soát vì việc sau giải ngân của
+ * từng khoản vay nằm ở tab "Sau giải ngân" của hồ sơ; nút xét duyệt hồ sơ vẫn chỉ theo quyền Thao tác "Hồ sơ vay".
  */
 export const PAGE_ACCESS = {
   dashboard: { anyView: ['dashboard'] },
-  loans: { anyView: ['loan-application'] },
-  operations: { anyView: ['collection', 'reschedule', 'withdrawal', 'reconciliation'] },
+  loans: { anyView: ['loan-application', 'collection', 'reschedule', 'reconciliation'] },
+  // Sự kiện trả nợ chờ ghép và lối vào các sự cố đang mở; rút tiền xử lý tại đây khi không mở được trang khách hàng.
+  incidents: { anyView: ['reconciliation', 'withdrawal'] },
   funding: { anyView: ['funding'] },
   secondary: { anyView: ['secondary-market'] },
   products: { anyView: ['loan-product'] },
@@ -45,8 +46,8 @@ export interface AdminNavigationSection {
 const isLoanReview = (pathname: string) => /^\/loans\/[^/]+\/review$/.test(pathname);
 
 /**
- * Menu chỉ liệt kê chức năng đã nối API. Chức năng chưa có (Auto-Invest quản trị,
- * giám sát giải ngân…) được thêm vào khi backend sẵn sàng, không hiện mục "Sắp triển khai".
+ * Menu chỉ liệt kê chức năng đã nối API. Chức năng chưa có (giám sát giải ngân…)
+ * được thêm vào khi backend sẵn sàng, không hiện mục "Sắp triển khai".
  */
 export const ADMIN_NAV_SECTIONS: AdminNavigationSection[] = [
   {
@@ -65,20 +66,13 @@ export const ADMIN_NAV_SECTIONS: AdminNavigationSection[] = [
         access: PAGE_ACCESS.loans,
         matches: (pathname) => pathname === '/loans' || isLoanReview(pathname),
       },
-      {
-        to: '/loans/operations',
-        label: 'Vận hành khoản vay',
-        icon: 'workflow',
-        access: PAGE_ACCESS.operations,
-        matches: (pathname) => ['/loans/operations', '/loans/overdue', '/reconciliation'].includes(pathname),
-      },
     ],
   },
   {
     label: 'Đầu tư',
     items: [
-      { to: '/investments/funding', label: 'Gọi vốn & Notes', icon: 'chart', access: PAGE_ACCESS.funding, matches: (pathname) => pathname.startsWith('/investments/funding') },
-      { to: '/investments/secondary', label: 'Chợ thứ cấp Notes', icon: 'file', access: PAGE_ACCESS.secondary, matches: (pathname) => pathname === '/investments/secondary' },
+      { to: '/investments/funding', label: 'Gọi vốn & chuyển nhượng', icon: 'chart', access: PAGE_ACCESS.funding, matches: (pathname) => pathname.startsWith('/investments/funding') },
+      { to: '/investments/secondary', label: 'Chợ chuyển nhượng', icon: 'file', access: PAGE_ACCESS.secondary, matches: (pathname) => pathname === '/investments/secondary' },
     ],
   },
   {
@@ -110,6 +104,7 @@ export const ADMIN_NAV_SECTIONS: AdminNavigationSection[] = [
   {
     label: 'Hệ thống',
     items: [
+      { to: '/system/incidents', label: 'Sự cố hệ thống', icon: 'alert', access: PAGE_ACCESS.incidents, matches: (pathname) => pathname === '/system/incidents' },
       { to: '/system/activity-logs', label: 'Nhật ký hoạt động', icon: 'terminal', access: PAGE_ACCESS.activityLogs, matches: (pathname) => pathname === '/system/activity-logs' },
     ],
   },

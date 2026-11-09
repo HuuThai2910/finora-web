@@ -1,32 +1,20 @@
 import type { PillTone } from '@/components/StatusPill';
-import type { OpsFunctionCode } from '@/features/auth';
 import type {
-  CollectionActionType, CollectionStage, FinoraLoanStatus, ReconciliationIncidentType, RepaymentType, RescheduleType,
-  WalletOwnerType,
+  CollectionActionType, CollectionCaseStatus, CollectionStage, FinoraLoanStatus, ReconciliationIncidentType,
+  RepaymentType, RescheduleStatus, RescheduleType, WalletOwnerType,
 } from './types';
 
 /** Bảng danh sách quản trị: 10 dòng mỗi trang. */
 export const SERVICING_PAGE_SIZE = 10;
 
-/** Lịch sử xử lý trong ngăn hồ sơ: số lần ghi nhận gần nhất tải một lần. */
+/** Lịch sử xử lý của hồ sơ thu hồi: số lần ghi nhận gần nhất tải một lần. */
 export const ACTION_HISTORY_SIZE = 20;
 
-export type ServicingTab = 'collection' | 'reschedule' | 'reconciliation' | 'quarantine' | 'incidents';
-
 /**
- * `functions`: chức năng phân quyền của nhóm việc; nhân viên có quyền Xem một trong số đó mới thấy tab. Sự cố giao dịch
- * gồm hàng đợi đối soát tiền và lệnh rút tiền chờ đối soát, nên mở cho cả hai quyền (mỗi phần hiện theo quyền riêng).
+ * Việc của một khoản vay trên trang hồ sơ thường chỉ vài dòng (một khoản vay có ít đợt thu hồi, ít yêu cầu cơ cấu), nên
+ * mỗi khối tải một lần tối đa chừng này dòng thay cho phân trang.
  */
-export const SERVICING_TABS: ReadonlyArray<{ key: ServicingTab; label: string; functions: OpsFunctionCode[] }> = [
-  { key: 'collection', label: 'Quá hạn & thu hồi', functions: ['collection'] },
-  { key: 'reschedule', label: 'Yêu cầu cơ cấu', functions: ['reschedule'] },
-  { key: 'reconciliation', label: 'Đối soát', functions: ['reconciliation'] },
-  { key: 'quarantine', label: 'Sự kiện trả nợ chờ ghép', functions: ['reconciliation'] },
-  { key: 'incidents', label: 'Sự cố giao dịch', functions: ['reconciliation', 'withdrawal'] },
-];
-
-export const isServicingTab = (value: string | null): value is ServicingTab =>
-  SERVICING_TABS.some((tab) => tab.key === value);
+export const LOAN_SCOPED_SIZE = 20;
 
 /**
  * Mức độ thu hồi và khoảng số ngày quá hạn, đúng ranh giới `CollectionStage.fromDaysPastDue` của
@@ -41,9 +29,6 @@ export const COLLECTION_STAGES: ReadonlyArray<{
   { stage: 'INTENSIVE', label: 'Thu hồi tăng cường', range: '181 đến 360 ngày', debtGroup: 4, tone: 'danger' },
   { stage: 'LOSS', label: 'Có nguy cơ mất vốn', range: 'Trên 360 ngày', debtGroup: 5, tone: 'danger' },
 ];
-
-export const isCollectionStage = (value: string | null): value is CollectionStage =>
-  COLLECTION_STAGES.some((item) => item.stage === value);
 
 export const stageInfo = (stage: CollectionStage) =>
   COLLECTION_STAGES.find((item) => item.stage === stage)
@@ -80,6 +65,30 @@ export const MANUAL_ACTION_TYPES: ReadonlyArray<{
 export const HUMAN_ACTIONS: ReadonlySet<CollectionActionType> = new Set([
   'BORROWER_CONTACTED', 'PROMISE_TO_PAY', 'LEGAL_REVIEW', 'FIELD_COLLECTION', 'WRITE_OFF_RECOMMENDED',
 ]);
+
+/** Kết quả của một đợt thu hồi đã đóng. */
+export const COLLECTION_CASE_STATUS_LABEL: Record<CollectionCaseStatus, string> = {
+  OPEN: 'Đang thu hồi',
+  CURED: 'Đã trả hết phần quá hạn',
+  SETTLED: 'Đã tất toán',
+  WRITTEN_OFF: 'Đã xóa nợ',
+};
+
+/** Nhãn và màu trạng thái yêu cầu cơ cấu; các bước đang ghi hệ thống lõi gộp một nhãn. */
+export const RESCHEDULE_STATUS: Record<RescheduleStatus, { label: string; tone: PillTone }> = {
+  PENDING_REVIEW: { label: 'Chờ thẩm định', tone: 'warning' },
+  PENDING_INVESTOR_CONSENT: { label: 'Chờ nhà đầu tư đồng ý', tone: 'info' },
+  INVESTOR_REJECTED: { label: 'Nhà đầu tư không đồng ý', tone: 'neutral' },
+  REJECTED: { label: 'Đã từ chối', tone: 'neutral' },
+  CREATE_PENDING: { label: 'Đang áp dụng lịch mới', tone: 'info' },
+  CREATING: { label: 'Đang áp dụng lịch mới', tone: 'info' },
+  APPROVAL_PENDING: { label: 'Đang áp dụng lịch mới', tone: 'info' },
+  APPROVING: { label: 'Đang áp dụng lịch mới', tone: 'info' },
+  COMPLETED: { label: 'Đã áp dụng lịch mới', tone: 'success' },
+  RECONCILIATION_REQUIRED: { label: 'Cần đối soát', tone: 'warning' },
+  MANUAL_REVIEW: { label: 'Cần xử lý lỗi', tone: 'danger' },
+  CANCELLED: { label: 'Đã đóng, giữ lịch cũ', tone: 'neutral' },
+};
 
 export const RESCHEDULE_TYPE_LABEL: Record<RescheduleType, string> = {
   TERM_EXTENSION: 'Gia hạn thêm kỳ',

@@ -1,3 +1,6 @@
+import type { PillTone } from '@/components/StatusPill';
+import type { ServicingFlag } from './types';
+
 export const LOAN_PAGE_SIZE = 20;
 
 /** Một trang danh sách hồ sơ trên web quản trị (theo quy tắc bảng: 10 dòng mỗi trang). */
@@ -26,3 +29,14 @@ export function isHiddenApplicationFilter(value: string | null): value is Hidden
 
 /** Mọi bộ lọc trạng thái đọc được từ URL của trang danh sách. */
 export type ApplicationListFilter = ApplicationFilter | HiddenApplicationFilter;
+
+/** Nhãn và màu cờ việc sau giải ngân trên dòng hồ sơ; cùng tên với tab lọc tương ứng. */
+export const SERVICING_FLAG_LABELS: Record<ServicingFlag, { label: string; tone: PillTone }> = {
+  OVERDUE: { label: 'Đang quá hạn', tone: 'danger' },
+  RESCHEDULE_PENDING: { label: 'Chờ duyệt cơ cấu', tone: 'warning' },
+  INCIDENT: { label: 'Có sự cố', tone: 'warning' },
+};
+
+export function isServicingFlag(value: string | null): value is ServicingFlag {
+  return value === 'OVERDUE' || value === 'RESCHEDULE_PENDING' || value === 'INCIDENT';
+}

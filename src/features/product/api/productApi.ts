@@ -14,6 +14,8 @@ export interface ProductListParams {
   size?: number;
   status?: LoanProductStatus;
   coreSyncStatus?: CoreSyncStatus;
+  /** Ô tìm: tên hoặc mã sản phẩm, khớp một phần không phân biệt hoa thường ở server. */
+  q?: string;
 }
 
 const productApi = loanApi.injectEndpoints({

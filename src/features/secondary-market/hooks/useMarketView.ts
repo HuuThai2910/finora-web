@@ -15,6 +15,8 @@ export interface MarketViewState {
   page: number;
   /** Đợt đang mở trong ngăn sổ lệnh. */
   openListingId: number | null;
+  /** Từ khóa ô tìm (mã hồ sơ, mã hợp đồng, mã lần khớp, số giấy); áp cho danh sách đang xem. */
+  q: string;
 }
 
 const VIEW_PARAM: Record<MarketView, string | null> = { BOOKS: null, TRADES: 'trades', DOCUMENTS: 'documents' };
@@ -53,6 +55,7 @@ export function useMarketView() {
     documentFilter: params.get('doc') === 'PENDING' ? 'PENDING' : 'FAILED',
     page: readPage(params.get('page')),
     openListingId: readId(params.get('book')),
+    q: (params.get('q') ?? '').trim(),
   };
 
   const write = (next: MarketViewState) => {
@@ -63,7 +66,8 @@ export function useMarketView() {
     if (next.view === 'DOCUMENTS' && next.documentFilter !== 'FAILED') query.doc = next.documentFilter;
     if (next.page > 0) query.page = String(next.page + 1);
     if (next.openListingId != null) query.book = String(next.openListingId);
-    setParams(query);
+    if (next.q) query.q = next.q;
+    setParams(query, { replace: next.q !== state.q });
   };
 
   return {
@@ -73,6 +77,8 @@ export function useMarketView() {
     setTradeFilter: (tradeFilter: TradeFilter) => write({ ...state, tradeFilter, page: 0 }),
     showDocuments: (documentFilter: DocumentFilter) => write({ ...state, view: 'DOCUMENTS', documentFilter, page: 0 }),
     setPage: (page: number) => write({ ...state, page }),
+    /** Đổi từ khóa thì về trang đầu (số trang cũ không còn đúng với danh sách mới). */
+    setSearch: (q: string) => write({ ...state, q, page: 0 }),
     openBook: (listingId: number) => write({ ...state, openListingId: listingId }),
     closeBook: () => write({ ...state, openListingId: null }),
   };

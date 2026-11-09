@@ -10,6 +10,7 @@ import {
   recommendationTone,
   unscoredLabel,
 } from '../mappers/applicationListDisplay';
+import { SERVICING_FLAG_LABELS } from '../constant';
 import type { AdminLoanReviewSummary } from '../types';
 import { ApplicationPurposeCell } from './ApplicationPurposeCell';
 
@@ -21,6 +22,8 @@ interface ApplicationTableProps {
   isVerified: (actorId: string) => boolean;
   /** Tô màu điểm theo khuyến nghị (chỉ ở tab Chờ thẩm định). */
   toneScores: boolean;
+  /** Mở thẳng tab này của trang hồ sơ (vd. "servicing" khi đang lọc khoản vay quá hạn). */
+  openTab?: string;
 }
 
 /** Dấu xác minh eKYC cạnh tên người vay (mockup loans.html). */
@@ -39,14 +42,15 @@ const HIDE_SM = 'hide-sm max-[760px]:hidden';
 // Màu điểm theo khuyến nghị (lớp tone do recommendationTone trả về), chỉ gắn khi bảng bật `toneScores`.
 const SCORE = 'loan-score font-bold tabular-nums [&.success]:text-success [&.warning]:text-warning [&.danger]:text-danger';
 
-const reviewPath = (applicationNumber: string) => `/loans/${encodeURIComponent(applicationNumber)}/review`;
+const reviewPath = (applicationNumber: string, tab?: string) =>
+  `/loans/${encodeURIComponent(applicationNumber)}/review${tab ? `?tab=${tab}` : ''}`;
 
 /** Bảng hồ sơ vay. Cả dòng bấm được để mở hồ sơ; nút cuối dòng giữ cho người dùng bàn phím và đọc màn hình. */
-export function ApplicationTable({ applications, displayName, isVerified, toneScores }: ApplicationTableProps) {
+export function ApplicationTable({ applications, displayName, isVerified, toneScores, openTab }: ApplicationTableProps) {
   const navigate = useNavigate();
   // Nhớ URL danh sách (tab, trang) để chi tiết quay về đúng chỗ.
   const listState = fromListState(useLocation());
-  const open = (applicationNumber: string) => navigate(reviewPath(applicationNumber), { state: listState });
+  const open = (applicationNumber: string) => navigate(reviewPath(applicationNumber, openTab), { state: listState });
 
   return (
     <div className="ui-table-wrap">
@@ -85,6 +89,7 @@ export function ApplicationTable({ applications, displayName, isVerified, toneSc
                 <td>
                   <ApplicationPurposeCell
                     applicationNumber={application.applicationNumber}
+                    applicationCode={application.applicationCode}
                     purposeCode={application.purposeCode ?? null}
                     borrower={borrower}
                   />
@@ -94,6 +99,16 @@ export function ApplicationTable({ applications, displayName, isVerified, toneSc
                     {APPLICATION_STATUS_LABELS[application.status] ?? application.status}
                   </StatusPill>
                   <span className="ui-sub">nộp {formatCompactDateTime(application.submittedAt)}</span>
+                  {/* Nhãn cảnh báo việc sau giải ngân đang mở (quá hạn, chờ duyệt cơ cấu, sự cố). */}
+                  {(application.servicingFlags?.length ?? 0) > 0 && (
+                    <span className="loan-flags mt-1 flex flex-wrap gap-1">
+                      {application.servicingFlags!.map((flag) => (
+                        <StatusPill key={flag} tone={SERVICING_FLAG_LABELS[flag]?.tone ?? 'warning'} small>
+                          {SERVICING_FLAG_LABELS[flag]?.label ?? 'Cần xử lý'}
+                        </StatusPill>
+                      ))}
+                    </span>
+                  )}
                 </td>
                 <td className={HIDE_SM}>
                   <span className="ui-person">
@@ -124,7 +139,7 @@ export function ApplicationTable({ applications, displayName, isVerified, toneSc
                   )}
                 </td>
                 <td className="num">
-                  <Link className="ui-btn soft" to={reviewPath(application.applicationNumber)} state={listState}>
+                  <Link className="ui-btn soft" to={reviewPath(application.applicationNumber, openTab)} state={listState}>
                     {isPending ? 'Thẩm định' : 'Chi tiết'}
                     <Icon name="arrowRight" />
                   </Link>

@@ -160,7 +160,7 @@ export function PeriodKpiPanel({ stats, selected, onSelect }: PeriodKpiPanelProp
         ) : (
           <>
             <span className="dash-trend-note text-[12px] text-muted">Bình quân 7 ngày</span>
-            <EChart className="dash-trend-plot min-h-45 flex-1" option={trend.option} ariaLabel={`Biểu đồ đường ${selected === 'committed' ? 'vốn gọi được' : 'phí chợ Notes'} bình quân 7 ngày, ${period} ngày gần nhất`} />
+            <EChart className="dash-trend-plot min-h-45 flex-1" option={trend.option} ariaLabel={`Biểu đồ đường ${selected === 'committed' ? 'vốn gọi được' : 'phí chợ chuyển nhượng'} bình quân 7 ngày, ${period} ngày gần nhất`} />
           </>
         )}
       </div>

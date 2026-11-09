@@ -7,7 +7,8 @@ import {
   fundingDetailPath, NOTE_STATUS_LABEL, NOTE_STATUS_TONE, useGetInvestorNotesQuery,
 } from '@/features/investment';
 import { BorrowerApplicationsCard } from '@/features/loan';
-import type { UserItem } from '@/features/user';
+import { WithdrawalIncidentsSection } from '@/features/servicing';
+import { useGetUserDevicesQuery, type UserItem } from '@/features/user';
 import { formatCurrency, formatDateTime } from '@/utils/format';
 
 const CARD = 'ui-card pt-3.5 px-4.5 pb-4 max-[600px]:px-3.5';
@@ -84,6 +85,63 @@ export function EkycHistoryCard({ customerId }: { customerId: number }) {
   );
 }
 
+/**
+ * Thiết bị khách đã đăng nhập (LOGIN-DEVICE-001), gần nhất trước: để nhân viên hỗ trợ đối chiếu khi khách báo lạ máy.
+ * Không hiện mã thiết bị; IP đầy đủ như Nhật ký hoạt động.
+ */
+export function LoginDevicesCard({ customerId }: { customerId: number }) {
+  const devices = useGetUserDevicesQuery(customerId);
+  const rows = devices.data ?? [];
+
+  return (
+    <section className={`${CARD} cust-devices`} aria-label="Thiết bị đăng nhập">
+      <div className={HEAD}>
+        <h2 className={TITLE}>Thiết bị đăng nhập</h2>
+        {devices.data && <span className="text-[12px] text-muted">{rows.length} thiết bị</span>}
+      </div>
+      {devices.error ? (
+        <ErrorNotice error={devices.error} onRetry={devices.refetch} />
+      ) : devices.isLoading ? (
+        <p className="ui-empty" aria-busy="true">Đang tải thiết bị đăng nhập...</p>
+      ) : rows.length === 0 ? (
+        <p className="ui-empty">Chưa ghi nhận thiết bị nào (thiết bị được ghi từ lần đăng nhập sau khi có tính năng này).</p>
+      ) : (
+        <div className="ui-table-wrap">
+          <table className="ui-table">
+            <thead>
+              <tr>
+                <th>Thiết bị</th>
+                <th>Đăng nhập gần nhất</th>
+                <th className="max-[760px]:hidden">Địa chỉ IP</th>
+                <th className="num max-[760px]:hidden">Số lần</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((device) => (
+                <tr key={device.id}>
+                  <td>
+                    <span className="font-medium">{device.deviceName}</span>
+                    <span className="ui-sub">
+                      {[device.osName, device.clientType === 'WEB' ? 'Trình duyệt' : 'Ứng dụng di động',
+                        device.appVersion ? `bản ${device.appVersion}` : null].filter(Boolean).join(' · ')}
+                    </span>
+                  </td>
+                  <td>
+                    {formatDateTime(device.lastLoginAt)}
+                    <span className="ui-sub">Lần đầu {formatDateTime(device.firstLoginAt)}</span>
+                  </td>
+                  <td className="max-[760px]:hidden">{device.ipAddress ? <span className="ui-mono">{device.ipAddress}</span> : '-'}</td>
+                  <td className="num max-[760px]:hidden">{device.loginCount}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </section>
+  );
+}
+
 /** Note khách đang giữ khi là nhà đầu tư; dữ liệu từ finora-investment theo ID người dùng. */
 export function InvestorNotesCard({ customerId }: { customerId: number }) {
   const notes = useGetInvestorNotesQuery({ investorId: String(customerId), page: 0, size: 10 });
@@ -92,21 +150,21 @@ export function InvestorNotesCard({ customerId }: { customerId: number }) {
   return (
     <section className={`${CARD} cust-notes`} aria-label="Khoản đầu tư">
       <div className={HEAD}>
-        <h2 className={TITLE}>Khoản đầu tư (Note)</h2>
-        {notes.data && <span className="text-[12px] text-muted">{notes.data.totalElements} Note</span>}
+        <h2 className={TITLE}>Khoản đầu tư (phần vốn)</h2>
+        {notes.data && <span className="text-[12px] text-muted">{notes.data.totalElements} phần vốn</span>}
       </div>
       {notes.error ? (
         <ErrorNotice error={notes.error} onRetry={notes.refetch} />
       ) : notes.isLoading ? (
         <p className="ui-empty" aria-busy="true">Đang tải khoản đầu tư...</p>
       ) : rows.length === 0 ? (
-        <p className="ui-empty">Khách chưa giữ Note nào.</p>
+        <p className="ui-empty">Khách chưa giữ phần vốn nào.</p>
       ) : (
         <div className="ui-table-wrap">
           <table className="ui-table">
             <thead>
               <tr>
-                <th>Mã Note</th>
+                <th>Mã phần vốn</th>
                 <th className="num">Gốc góp</th>
                 <th className="num">Gốc còn lại</th>
                 <th className="num">Lãi đã nhận</th>
@@ -139,8 +197,9 @@ export function InvestorNotesCard({ customerId }: { customerId: number }) {
 }
 
 /**
- * Toàn cảnh khách: hồ sơ vay (khi được xem Hồ sơ vay), khoản đầu tư (Xem Gọi vốn hoặc Khách hàng) và lịch sử xác
- * minh. Mỗi mục gọi API của service sở hữu dữ liệu, lọc theo ID người dùng ở backend.
+ * Toàn cảnh khách: hồ sơ vay (khi được xem Hồ sơ vay), khoản đầu tư (Xem Gọi vốn hoặc Khách hàng), lệnh rút tiền chờ
+ * đối soát (Xem "Rút tiền") và lịch sử xác minh. Mỗi mục gọi API của service sở hữu dữ liệu, lọc theo ID người dùng ở
+ * backend.
  */
 export function CustomerOverviewSections({ customer }: { customer: UserItem }) {
   const { canView } = usePermission();
@@ -157,7 +216,12 @@ export function CustomerOverviewSections({ customer }: { customer: UserItem }) {
         />
       )}
       {showNotes && <InvestorNotesCard customerId={customer.id} />}
+      {/* Lệnh rút đã trừ ví nhưng chưa có kết quả cuối; "Tra cứu lại" cần quyền Thao tác "Rút tiền". */}
+      {canView('withdrawal') && customer.role !== 'STAFF' && customer.role !== 'ADMIN' && (
+        <WithdrawalIncidentsSection ownerId={String(customer.id)} />
+      )}
       <EkycHistoryCard customerId={customer.id} />
+      <LoginDevicesCard customerId={customer.id} />
     </div>
   );
 }

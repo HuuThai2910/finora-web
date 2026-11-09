@@ -1,6 +1,6 @@
 import { loanApi } from '@/lib/api/loanApi';
 import type {
-  CollectionAction, CollectionCase, CollectionCaseStatus, CollectionStage, CreateCollectionActionRequest,
+  CollectionAction, CollectionCase, CollectionCaseStatus, CreateCollectionActionRequest,
   DisbursementSagaRepair, PageResponse, QuarantinedRepaymentEvent, ReconciliationIncident, RescheduleDecision,
   RescheduleRecoveryAction, RescheduleRequest, RescheduleStatus, StaleLoan,
 } from '../types';
@@ -8,14 +8,16 @@ import type {
 export interface PageArgs { page: number; size: number }
 
 /**
- * Mỗi hàng đợi một id tag riêng để mutation chỉ làm mới đúng danh sách bị ảnh hưởng, kể cả
- * các truy vấn `size=1` dùng để đếm số trên tab.
+ * Mỗi nhóm việc một id tag riêng để mutation chỉ làm mới đúng danh sách bị ảnh hưởng. Thao tác làm đổi nhãn việc vận
+ * hành của hồ sơ (quá hạn, chờ duyệt cơ cấu, sự cố) làm mới cả danh sách và chi tiết hồ sơ (tag `AdminApplication*`).
  */
 const tag = (id: string) => ({ type: 'ServicingOperations' as const, id });
+const APPLICATION_TAGS = ['AdminApplication', { type: 'AdminApplicationList' as const, id: 'LIST' }] as const;
 
 export const servicingApi = loanApi.injectEndpoints({
   endpoints: (builder) => ({
-    collectionCases: builder.query<PageResponse<CollectionCase>, PageArgs & { status?: CollectionCaseStatus; stage?: CollectionStage }>({
+    /** Hồ sơ thu hồi của một khoản vay (phần "Sau giải ngân" của trang hồ sơ), mới mở trước. */
+    collectionCases: builder.query<PageResponse<CollectionCase>, PageArgs & { loanNumber: string; status?: CollectionCaseStatus }>({
       query: (params) => ({ url: '/admin/collection-cases', params }),
       providesTags: [tag('COLLECTION')],
     }),
@@ -32,7 +34,8 @@ export const servicingApi = loanApi.injectEndpoints({
       }),
       invalidatesTags: (_result, _error, { caseId }) => [tag(`ACTIONS-${caseId}`)],
     }),
-    rescheduleRequests: builder.query<PageResponse<RescheduleRequest>, PageArgs & { status?: RescheduleStatus }>({
+    /** Yêu cầu cơ cấu của một khoản vay, mới nhất trước; không gửi `status` là mọi trạng thái. */
+    rescheduleRequests: builder.query<PageResponse<RescheduleRequest>, PageArgs & { loanNumber: string; status?: RescheduleStatus }>({
       query: (params) => ({ url: '/admin/loan-reschedule-requests', params }),
       providesTags: [tag('RESCHEDULE')],
     }),
@@ -43,7 +46,7 @@ export const servicingApi = loanApi.injectEndpoints({
         body: { comment },
         headers: { 'Idempotency-Key': key },
       }),
-      invalidatesTags: [tag('RESCHEDULE')],
+      invalidatesTags: [tag('RESCHEDULE'), ...APPLICATION_TAGS],
     }),
     recoverReschedule: builder.mutation<RescheduleRequest, { requestId: string; action: RescheduleRecoveryAction; comment?: string; key?: string }>({
       query: ({ requestId, action, comment, key }) => ({
@@ -53,37 +56,42 @@ export const servicingApi = loanApi.injectEndpoints({
       }),
       invalidatesTags: [tag('RESCHEDULE')],
     }),
-    staleLoans: builder.query<PageResponse<StaleLoan>, PageArgs>({
-      query: (params) => ({ url: '/admin/loan-servicing-reconciliation', params }),
+    /** Số liệu FINORA đang lưu của một khoản vay so với lịch đồng bộ hệ thống lõi; chỉ đọc, không gọi hệ thống lõi. */
+    loanServicingStatus: builder.query<StaleLoan, string>({
+      query: (loanNumber) => `/admin/loan-servicing-reconciliation/${encodeURIComponent(loanNumber)}`,
       providesTags: [tag('RECONCILIATION')],
     }),
-    reconciliationIncidents: builder.query<PageResponse<ReconciliationIncident>, PageArgs>({
+    /** Sai lệch đang mở của một khoản vay. */
+    reconciliationIncidents: builder.query<PageResponse<ReconciliationIncident>, PageArgs & { loanNumber: string }>({
       query: (params) => ({ url: '/admin/loan-servicing-reconciliation/incidents', params: { ...params, status: 'OPEN' } }),
       providesTags: [tag('INCIDENTS')],
     }),
-    // Đối soát đọc lại hệ thống lõi: số liệu quá hạn và sai lệch có thể đổi theo, nên làm mới cả ba hàng đợi.
+    // Đối soát đọc lại hệ thống lõi: số liệu quá hạn và sai lệch có thể đổi theo, nên làm mới cả thu hồi và nhãn hồ sơ.
     reconcileLoan: builder.mutation<StaleLoan, string>({
       query: (loanNumber) => ({ url: `/admin/loan-servicing-reconciliation/${loanNumber}/reconcile`, method: 'POST' }),
-      invalidatesTags: [tag('RECONCILIATION'), tag('INCIDENTS'), tag('COLLECTION')],
+      invalidatesTags: [tag('RECONCILIATION'), tag('INCIDENTS'), tag('COLLECTION'), ...APPLICATION_TAGS],
     }),
     quarantinedEvents: builder.query<PageResponse<QuarantinedRepaymentEvent>, PageArgs>({
       query: (params) => ({ url: '/admin/repayment-event-quarantine', params: { ...params, status: 'PENDING' } }),
       providesTags: [tag('QUARANTINE')],
     }),
-    // Ghép được sự kiện trả nợ thì khoản vay có thể hết quá hạn, nên làm mới cả hàng đợi thu hồi.
+    // Ghép được sự kiện trả nợ thì khoản vay có thể hết quá hạn, nên làm mới cả thu hồi và nhãn hồ sơ.
     replayQuarantine: builder.mutation<QuarantinedRepaymentEvent, string>({
       query: (eventId) => ({ url: `/admin/repayment-event-quarantine/${eventId}/replay`, method: 'POST' }),
-      invalidatesTags: [tag('QUARANTINE'), tag('COLLECTION')],
+      invalidatesTags: [tag('QUARANTINE'), tag('COLLECTION'), ...APPLICATION_TAGS],
     }),
-    // Saga giải ngân hết lượt ghi Fineract tự động (R2): tiền đã giải ngân, khoản vay chưa có ở hệ thống lõi.
-    repairSagas: builder.query<PageResponse<DisbursementSagaRepair>, PageArgs>({
+    /**
+     * Saga giải ngân hết lượt ghi Fineract tự động (R2): tiền đã giải ngân, khoản vay chưa có ở hệ thống lõi. Có
+     * `loanApplicationId` thì chỉ đọc saga của hồ sơ đó.
+     */
+    repairSagas: builder.query<PageResponse<DisbursementSagaRepair>, PageArgs & { loanApplicationId?: number }>({
       query: (params) => ({ url: '/admin/disbursement-sagas', params: { ...params, status: 'REPAIR_REQUIRED' } }),
       providesTags: [tag('SAGA_REPAIR')],
     }),
     // Chỉ đưa bước ghi Fineract về hàng chờ; booking đối chiếu theo số hợp đồng nên không tạo khoản vay thứ hai.
     requeueSaga: builder.mutation<DisbursementSagaRepair, { sagaId: string; note: string }>({
       query: ({ sagaId, note }) => ({ url: `/admin/disbursement-sagas/${sagaId}/requeue`, method: 'POST', body: { note } }),
-      invalidatesTags: [tag('SAGA_REPAIR')],
+      invalidatesTags: [tag('SAGA_REPAIR'), ...APPLICATION_TAGS],
     }),
   }),
 });
@@ -91,7 +99,7 @@ export const servicingApi = loanApi.injectEndpoints({
 export const {
   useCollectionCasesQuery, useCollectionActionsQuery, useRecordCollectionActionMutation,
   useRescheduleRequestsQuery, useDecideRescheduleMutation, useRecoverRescheduleMutation,
-  useStaleLoansQuery, useReconciliationIncidentsQuery, useReconcileLoanMutation,
+  useLoanServicingStatusQuery, useReconciliationIncidentsQuery, useReconcileLoanMutation,
   useQuarantinedEventsQuery, useReplayQuarantineMutation,
   useRepairSagasQuery, useRequeueSagaMutation,
 } = servicingApi;

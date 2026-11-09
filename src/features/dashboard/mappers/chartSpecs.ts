@@ -23,7 +23,6 @@ import type { DashboardChartKey } from '../types';
 import { formatDelta } from './periodKpis';
 import { rollingAverage } from './rolling';
 import {
-  buildAutoInvestOption,
   buildFundingOption,
   buildFunnelOption,
   buildGradesOption,
@@ -256,7 +255,7 @@ function marketSpec(stats: DashboardStatistics): ChartSpec {
   return {
     status: 'ready',
     option: buildTradedValueOption(series.points, stats.chartBucket),
-    ariaLabel: `Biểu đồ cột giá trị khớp lệnh chợ Notes ${stats.chartBucket === 'DAY' ? 'theo ngày' : 'theo tuần'}`,
+    ariaLabel: `Biểu đồ cột giá trị khớp lệnh chợ chuyển nhượng ${stats.chartBucket === 'DAY' ? 'theo ngày' : 'theo tuần'}`,
     lead: ['Nền tảng thu ', { strong: money(fee) }, ' phí trên ', { strong: money(value) }, ' giá trị khớp.'],
     rows: [
       ['Giá trị khớp', money(value)],
@@ -270,40 +269,12 @@ function marketSpec(stats: DashboardStatistics): ChartSpec {
   };
 }
 
-function autoSpec(stats: DashboardStatistics): ChartSpec {
-  const pending = gate([stats.investmentChart]);
-  if (pending) return pending;
-  const series = stats.investmentChart.currentData;
-  if (!series) return { status: 'loading' };
-  const placed = sumOf(series.points, (point) => point.autoInvestPlaced);
-  const skipped = sumOf(series.points, (point) => point.autoInvestSkipped);
-  if (placed + skipped === 0) return { status: 'empty' };
-  const configs = stats.investmentSummary.currentData?.autoInvest.activeConfigs;
-  return {
-    status: 'ready',
-    option: buildAutoInvestOption(series.points, stats.chartBucket),
-    ariaLabel: `Biểu đồ cột chồng số lần Auto-Invest đặt lệnh và bỏ qua ${stats.chartBucket === 'DAY' ? 'theo ngày' : 'theo tuần'}`,
-    lead: configs == null
-      ? ['Auto-Invest đặt được ', { strong: sharePercent(placed, placed + skipped) }, ' số lần xét.']
-      : [{ strong: formatNumber(configs) }, ' cấu hình Auto-Invest đang bật; đặt được ', { strong: sharePercent(placed, placed + skipped) }, ' số lần xét.'],
-    rows: [
-      ['Lần xét', formatNumber(placed + skipped)],
-      ['Đặt lệnh thành công', formatNumber(placed)],
-      ['Bỏ qua', formatNumber(skipped)],
-      ['Tỷ lệ đặt được lệnh', sharePercent(placed, placed + skipped)],
-    ],
-    strongRows: 1,
-    note: unitNote(stats.chartBucket),
-  };
-}
-
 const SPECS: Record<DashboardChartKey, (stats: DashboardStatistics) => ChartSpec> = {
   funding: fundingSpec,
   funnel: funnelSpec,
   grades: gradesSpec,
   overdue: overdueSpec,
   market: marketSpec,
-  auto: autoSpec,
 };
 
 /** Dữ liệu và trạng thái của biểu đồ đang chọn; chỉ biểu đồ đang chọn được dựng option. */

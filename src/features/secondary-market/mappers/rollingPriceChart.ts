@@ -124,7 +124,7 @@ export function buildRollingPriceOption(rows: readonly RollingPriceRow[]): Chart
           lines.push({ label: 'Trong ngày', value: 'không khớp' });
         } else {
           lines.push({ label: 'Trong ngày', value: formatPricePercent(row.daily) });
-          lines.push({ label: 'Số Note khớp', value: chartNumber(row.quantity) });
+          lines.push({ label: 'Số phần vốn khớp', value: chartNumber(row.quantity) });
         }
         return tooltipHtml(bucketTitle(row.bucketStart, 'DAY'), lines);
       },

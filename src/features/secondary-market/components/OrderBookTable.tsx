@@ -63,7 +63,7 @@ export function OrderBookTable({ books, openListingId, onOpen }: Props) {
                       onOpen(book.listingId);
                     }}
                   >
-                    Khoản vay #{book.loanId}
+                    {book.applicationCode ? `Hồ sơ ${book.applicationCode}` : `Khoản vay #${book.loanId}`}
                   </button>
                   {book.defaulted && <StatusPill tone="danger" small>Nợ xấu</StatusPill>}
                 </span>

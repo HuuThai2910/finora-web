@@ -4,8 +4,13 @@ export { default as LoanReviewPage } from './pages/LoanReviewPage';
 export { useActorNames } from './hooks/useActorNames';
 export { APPLICATION_STATUS_LABELS } from './formatters';
 export { applicationStatusTone, formatCompactDateTime, shortApplicationNumber } from './mappers/applicationListDisplay';
-export type { AdminLoanReviewSummary, LoanApplicationStatus } from './types';
-export { useGetAdminApplicationsQuery, useGetApplicationNumbersQuery, useLazyGetReviewDetailQuery } from './api/loanReviewApi';
+export type { AdminLoanReviewSummary, LoanApplicationStatus, ServicingFlag } from './types';
+export {
+  useGetAdminApplicationsQuery,
+  useGetApplicationNumbersQuery,
+  useLazyGetReviewDetailQuery,
+  useLazyLookupApplicationQuery,
+} from './api/loanReviewApi';
 export { BorrowerApplicationsCard } from './components/BorrowerApplicationsCard';
 export { ApplicationRef } from './components/ApplicationRef';
 export { useApplicationNumbers } from './hooks/useApplicationNumbers';

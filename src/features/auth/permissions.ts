@@ -28,9 +28,9 @@ export const OPS_FUNCTION_LABELS: Record<OpsFunctionCode, string> = {
   reschedule: 'Cơ cấu nợ',
   withdrawal: 'Rút tiền',
   reconciliation: 'Đối soát & sự cố',
-  funding: 'Gọi vốn & Notes',
+  funding: 'Gọi vốn & chuyển nhượng',
   'funding-settings': 'Cấu hình gọi vốn',
-  'secondary-market': 'Chợ thứ cấp',
+  'secondary-market': 'Chợ chuyển nhượng',
   'loan-product': 'Sản phẩm vay',
   customer: 'Khách hàng',
   ekyc: 'Duyệt xác minh danh tính',
@@ -46,7 +46,7 @@ export const ADMIN_APP_ROLES: ReadonlyArray<CurrentUser['role']> = ['ADMIN', 'ST
 
 /**
  * Điều kiện mở một trang quản trị: `adminOnly` chỉ cho ADMIN (cấu hình vai trò, gán vai trò), `anyView` cho ai có
- * quyền Xem ít nhất một chức năng trong danh sách (trang gom nhiều hàng đợi như Vận hành khoản vay).
+ * quyền Xem ít nhất một chức năng trong danh sách (trang mở cho nhiều nhóm nhân viên như Quản lý khoản vay).
  */
 export type PageAccess = { adminOnly: true } | { anyView: OpsFunctionCode[] };
 

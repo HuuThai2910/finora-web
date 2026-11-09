@@ -77,7 +77,7 @@ export function TradeTable({ trades, onOpenBook }: Props) {
               <td className="num">{formatPrice(trade.pricePercent)}</td>
               <td className="num">
                 <span className="strong">{formatMoneyVnd(trade.amount)}</span>
-                <span className="ui-sub">{trade.quantity} Note, phí {formatMoneyVnd(trade.platformFee)}</span>
+                <span className="ui-sub">{trade.quantity} phần vốn, phí {formatMoneyVnd(trade.platformFee)}</span>
               </td>
               <td className="sm-st min-w-42.5 max-w-55 whitespace-normal">
                 <StatusPill tone={SETTLEMENT_TONE[trade.settlementStatus]}>{SETTLEMENT_LABEL[trade.settlementStatus]}</StatusPill>

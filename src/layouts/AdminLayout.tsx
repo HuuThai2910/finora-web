@@ -12,7 +12,7 @@ import { PageChunkFallback } from '@/components/GlobalProgressBar';
 import { NotificationBell } from '@/features/staff-inbox';
 import { AccountMenuHeader } from './AccountMenuHeader';
 import { permissionSummary } from './accountSummary';
-import { getAdminBreadcrumb, visibleNavSections } from './adminNavigation';
+import { getAdminBreadcrumb, PAGE_ACCESS, visibleNavSections } from './adminNavigation';
 import { AdminSidebar } from './AdminSidebar';
 import { OpenApplicationBox } from './OpenApplicationBox';
 import { useNavDrawer } from './useNavDrawer';
@@ -28,7 +28,7 @@ export default function AdminLayout() {
   const navigate = useNavigate();
   const dispatch = useDispatch<AppDispatch>();
   const { profile, user } = useSelector((state: RootState) => state.auth);
-  const { canAccess, canView } = usePermission();
+  const { canAccess } = usePermission();
   // Nhân viên chỉ thấy mục có quyền Xem; quản trị viên thấy đủ.
   const navSections = visibleNavSections(canAccess);
   const roleLabel = profile?.role === 'STAFF' ? profile.staffRole?.name || profile.staffRoleName || 'Nhân viên' : 'Quản trị viên';
@@ -100,8 +100,8 @@ export default function AdminLayout() {
             <span className="current truncate text-primary font-semibold" aria-current="page">{breadcrumb.current}</span>
           </nav>
           <div className="header-actions flex items-center gap-3 max-[1024px]:ml-auto max-[760px]:gap-1.5">
-            {/* Mở hồ sơ theo mã chỉ có ích với ai xem được hồ sơ vay. */}
-            {canView('loan-application') && <OpenApplicationBox />}
+            {/* Ô mở hồ sơ theo mã: ai mở được trang hồ sơ vay (kể cả nhân viên thu hồi, cơ cấu, đối soát) đều dùng được. */}
+            {canAccess(PAGE_ACCESS.loans) && <OpenApplicationBox />}
             <NotificationBell />
             {/* Menu tài khoản như mockup (soft.js): đầu menu là ai đang đăng nhập và quyền, dưới là Đăng xuất. */}
             <RowMenu

@@ -77,7 +77,7 @@ export function NotificationBell() {
       { key: 'review', fn: 'loan-application', title: 'Hồ sơ chờ thẩm định', to: '/loans?status=PENDING_REVIEW', count: byStatus ? byStatus.PENDING_REVIEW ?? 0 : undefined },
       { key: 'retry', fn: 'loan-application', title: 'Hồ sơ chờ chấm lại điểm', to: '/loans?status=SCORING_RETRY_PENDING', count: byStatus ? byStatus.SCORING_RETRY_PENDING ?? 0 : undefined },
       { key: 'draft', fn: 'funding', title: 'Khoản vay chờ duyệt lên sàn', to: '/investments/funding?tab=DRAFT', count: investment.data ? investment.data.listings.byStatus.DRAFT ?? 0 : undefined },
-      { key: 'reschedule', fn: 'reschedule', title: 'Yêu cầu cơ cấu chờ duyệt', to: '/loans/operations?tab=reschedule', count: loan.data ? loan.data.reschedules.byStatus.PENDING_REVIEW ?? 0 : undefined },
+      { key: 'reschedule', fn: 'reschedule', title: 'Yêu cầu cơ cấu chờ duyệt', to: '/loans?servicing=RESCHEDULE_PENDING', count: loan.data ? loan.data.reschedules.byStatus.PENDING_REVIEW ?? 0 : undefined },
       { key: 'ekyc', fn: 'customer', title: 'Xác minh danh tính chờ duyệt tay', to: '/customers/kyc?ekyc=MANUAL_REVIEW', count: users.data ? users.data.byEkycStatus.MANUAL_REVIEW ?? 0 : undefined },
     ] satisfies WorkItem[]).filter((item) => canView(item.fn) && item.count !== undefined);
   }, [loan.data, investment.data, users.data, canView]);

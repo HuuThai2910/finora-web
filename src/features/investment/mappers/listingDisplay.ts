@@ -36,11 +36,11 @@ export function stepStatus(listing: MarketListing, stage: ListingStageView | nul
   if (listing.status === 'FULLY_FUNDED') {
     const settled = stage && !stage.pending;
     // Dữ liệu cũ có thể đã phát hành Note mà không có mốc giải ngân: tin chặng đã suy ra trước.
-    if (settled && stage.steps.every((step) => step === 'done')) return { label: 'Đã phát hành Note', tone: 'success' };
+    if (settled && stage.steps.every((step) => step === 'done')) return { label: 'Đã phát hành phần vốn', tone: 'success' };
     const wait = fundedWaitLabel(listing);
     if (wait) return { label: wait, tone: 'info' };
     if (settled && stage.nextAction === 'FINALIZE') return { label: 'Chờ khóa vốn', tone: 'warning' };
-    if (settled && stage.nextAction === 'ACTIVATE_NOTES') return { label: 'Chờ phát hành Note', tone: 'warning' };
+    if (settled && stage.nextAction === 'ACTIVATE_NOTES') return { label: 'Chờ phát hành phần vốn', tone: 'warning' };
   }
   return { label: statusLabel(listing.status), tone: statusTone(listing.status) };
 }

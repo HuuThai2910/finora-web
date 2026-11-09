@@ -1,6 +1,7 @@
 import { userServiceApi } from '@/lib/api/userServiceApi';
 import type {
   AssignRoleRequest,
+  CustomerLoginDevice,
   EkycStatusType,
   PageResponse,
   RoleType,
@@ -47,6 +48,10 @@ const userQueries = userServiceApi.injectEndpoints({
       queryFn: (id) => run(() => userApi.getUserById(id)),
       providesTags: (_result, _error, id) => [{ type: 'User', id }],
     }),
+    getUserDevices: builder.query<CustomerLoginDevice[], number>({
+      queryFn: (id) => run(() => userApi.getUserDevices(id)),
+      providesTags: (_result, _error, id) => [{ type: 'User', id: String(id) }],
+    }),
     getUserStats: builder.query<UserStats, void>({
       queryFn: () => run(() => userApi.getStats()),
       providesTags: ['UserStats'],
@@ -92,6 +97,7 @@ const userQueries = userServiceApi.injectEndpoints({
 export const {
   useGetUsersQuery,
   useGetUserQuery,
+  useGetUserDevicesQuery,
   useGetUserStatsQuery,
   useAssignUserRoleMutation,
   useSetUserLockedMutation,

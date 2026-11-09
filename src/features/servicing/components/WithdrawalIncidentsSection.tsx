@@ -1,20 +1,22 @@
 import { useState } from 'react';
+import { ErrorNotice } from '@/components/ErrorNotice';
 import { StatusPill } from '@/components/StatusPill';
 import { usePermission } from '@/features/auth';
+import { toast } from '@/lib/toast';
 import { formatDateTime } from '@/utils';
-import { useWithdrawalIncidentsQuery } from '../api/paymentIncidentApi';
+import { useRecheckWithdrawalMutation, useWithdrawalIncidentsQuery } from '../api/paymentIncidentApi';
 import { SERVICING_PAGE_SIZE, WALLET_OWNER_LABEL } from '../constant';
 import { money } from '../formatters';
 import { useUserLabel } from '../hooks/useUserLabel';
-import { SVC_ACT_CELL, SVC_ACT_HEAD, SVC_SUBHEAD } from '../styles';
+import { SVC_ACT_CELL, SVC_ACT_HEAD } from '../styles';
 import type { WithdrawalIncident } from '../types';
 import { ErrorCell } from './ErrorCell';
 import { QueueBody } from './QueueBody';
+import { ServicingCard } from './ServicingCard';
 
 interface Props {
-  /** Mã của thao tác đang chạy trên cả tab; một thao tác một lúc để không gửi chồng. */
-  running: string | null;
-  onRecheck: (item: WithdrawalIncident) => void;
+  /** Mã khách hàng (chủ ví): trang chi tiết khách hàng chỉ đọc lệnh của khách đó. Không truyền là cả hàng đợi. */
+  ownerId?: string;
 }
 
 /**
@@ -60,28 +62,45 @@ function OwnerCell({ item }: { item: WithdrawalIncident }) {
 }
 
 /**
- * Lệnh rút tiền chờ đối soát (R4, W3B): tiền đã trừ ví nhưng provider chưa trả kết quả cuối. "Tra cứu lại" chỉ hẹn
- * worker hỏi provider ngay theo mã lệnh, không bao giờ gửi lệnh chi thứ hai (D42); provider báo thất bại thì Payment
- * tự hoàn tiền về ví. Hàng đợi tự giữ trang của mình; thao tác đi qua `onRecheck` để cả tab chỉ chạy một việc một lúc.
+ * Lệnh rút tiền chờ đối soát (R4, W3B): tiền đã trừ ví nhưng provider chưa trả kết quả cuối. Nằm ở trang chi tiết khách
+ * hàng (lọc theo khách); trang Sự cố hệ thống dùng bản cả hàng đợi khi tài khoản không mở được trang khách hàng.
+ * "Tra cứu lại" chỉ hẹn worker hỏi provider ngay theo mã lệnh, không bao giờ gửi lệnh chi thứ hai (D42); provider báo thất
+ * bại thì Payment tự hoàn tiền về ví. Xem cần quyền Xem "Rút tiền", tra cứu lại cần quyền Thao tác; một lệnh một lúc.
  */
-export function WithdrawalIncidentsSection({ running, onRecheck }: Props) {
+export function WithdrawalIncidentsSection({ ownerId }: Props) {
   const canRecheck = usePermission().canAct('withdrawal');
   const [page, setPage] = useState(0);
-  const withdrawals = useWithdrawalIncidentsQuery({ page, size: SERVICING_PAGE_SIZE });
+  const withdrawals = useWithdrawalIncidentsQuery({ page, size: SERVICING_PAGE_SIZE, ...(ownerId ? { ownerId } : {}) });
+  const [recheck] = useRecheckWithdrawalMutation();
+  const [running, setRunning] = useState<string | null>(null);
+  const [failed, setFailed] = useState<{ item: WithdrawalIncident; error: unknown } | null>(null);
+  const total = withdrawals.data?.totalElements ?? 0;
+
+  const run = async (item: WithdrawalIncident) => {
+    if (running) return;
+    setRunning(item.withdrawalId);
+    setFailed(null);
+    try {
+      await recheck(item.withdrawalId).unwrap();
+      toast.success('Đã hẹn tra cứu lại lệnh rút với nhà cung cấp; kết quả cập nhật sau lượt xử lý kế tiếp.');
+    } catch (error) {
+      setFailed({ item, error });
+    } finally {
+      setRunning(null);
+    }
+  };
 
   return (
-    <>
-      <div className={SVC_SUBHEAD}>
-        <h2>Lệnh rút tiền chờ đối soát</h2>
-        {withdrawals.data && withdrawals.data.totalElements > 0 && <span>Tiền đã trừ ví, chỉ tra cứu theo mã lệnh, không chi lại</span>}
-      </div>
+    <ServicingCard title="Lệnh rút tiền chờ đối soát" aside={total > 0 ? 'Tiền đã trừ ví, chỉ tra cứu theo mã lệnh' : undefined}>
+      {failed && <div className="mb-2"><ErrorNotice error={failed.error} onRetry={() => run(failed.item)} /></div>}
       <QueueBody
         error={withdrawals.error}
         isLoading={withdrawals.isLoading}
         isFetching={withdrawals.isFetching}
         onRetry={withdrawals.refetch}
-        total={withdrawals.data?.totalElements ?? 0}
+        total={total}
         emptyText="Không có lệnh rút tiền đang chờ kết quả."
+        compactEmpty
         page={page}
         unit="lệnh"
         onPage={setPage}
@@ -91,7 +110,7 @@ export function WithdrawalIncidentsSection({ running, onRecheck }: Props) {
             <thead>
               <tr>
                 <th>Lệnh rút</th>
-                <th>Chủ ví</th>
+                {!ownerId && <th>Chủ ví</th>}
                 <th className="num">Số tiền</th>
                 <th>Tài khoản nhận</th>
                 <th>Lỗi gần nhất</th>
@@ -103,17 +122,16 @@ export function WithdrawalIncidentsSection({ running, onRecheck }: Props) {
               {(withdrawals.data?.content ?? []).map((item) => (
                 <tr key={item.withdrawalId}>
                   <td>
-                    <span className="ui-mono">{item.withdrawalId}</span>
-                    <span className="ui-sub">Tạo {formatDateTime(item.createdAt)}</span>
+                    {formatDateTime(item.createdAt)}
+                    <span className="ui-sub">{WALLET_OWNER_LABEL[item.ownerType] ?? item.ownerType}</span>
                   </td>
-                  <OwnerCell item={item} />
+                  {!ownerId && <OwnerCell item={item} />}
                   <td className="num">{money(item.amount)}</td>
                   {/* Nhà cung cấp và mã tham chiếu ở dòng phụ của tài khoản nhận; số lần gửi/tra cứu ở dòng phụ của tình
                       trạng: bảng bớt hai cột nên vừa màn 1050px mà vẫn đủ thông tin. */}
                   <td>
                     <span className="ui-mono">{item.accountNumberMasked}</span>
                     <span className="ui-sub">{item.bankCode}, qua {item.provider}</span>
-                    {item.providerReference && <span className="ui-sub ui-mono">{item.providerReference}</span>}
                   </td>
                   <ErrorCell code={item.errorCode} detail={item.errorDetail} />
                   <td className="min-w-50 whitespace-normal">
@@ -131,7 +149,7 @@ export function WithdrawalIncidentsSection({ running, onRecheck }: Props) {
                         className="ui-btn soft"
                         disabled={running != null || !needsOperator(item)}
                         title={recheckBlockedReason(item)}
-                        onClick={() => onRecheck(item)}
+                        onClick={() => run(item)}
                       >
                         {running === item.withdrawalId ? 'Đang gửi...' : 'Tra cứu lại'}
                       </button>
@@ -143,6 +161,6 @@ export function WithdrawalIncidentsSection({ running, onRecheck }: Props) {
           </table>
         </div>
       </QueueBody>
-    </>
+    </ServicingCard>
   );
 }
