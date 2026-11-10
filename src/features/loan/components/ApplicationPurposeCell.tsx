@@ -22,7 +22,7 @@ const PURPOSE_PATHS: Record<string, string[]> = {
 /** Icon tài liệu khi hồ sơ không có mục đích vay. */
 const FILE_PATHS = ['M14 2H6a2 2 0 0 0-2 2v16h16V8Z', 'M14 2v6h6', 'M8 13h8', 'M8 17h6'];
 
-function PurposeIcon({ purpose }: { purpose: string | null }) {
+export function PurposeIcon({ purpose }: { purpose: string | null }) {
   const paths = purpose == null ? FILE_PATHS : PURPOSE_PATHS[purpose] ?? PURPOSE_PATHS.OTHER;
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">

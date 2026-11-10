@@ -29,6 +29,8 @@ const EkycReviewDetailPage = page(() => import('@/features/ekyc-review'), 'EkycR
 const FundingPage = page(() => import('@/features/investment'), 'FundingPage');
 const FundingDetailPage = page(() => import('@/features/investment'), 'FundingDetailPage');
 const SecondaryMarketPage = page(() => import('@/features/secondary-market'), 'SecondaryMarketPage');
+const OrderBookDetailPage = page(() => import('@/features/secondary-market'), 'OrderBookDetailPage');
+const TradeDetailPage = page(() => import('@/features/secondary-market'), 'TradeDetailPage');
 const BlockchainProofsPage = page(() => import('@/features/blockchain'), 'BlockchainProofsPage');
 const ActivityLogPage = page(() => import('@/features/activity-log'), 'ActivityLogPage');
 
@@ -78,6 +80,8 @@ export default function App() {
           <Route path="investments/funding" element={<RequirePageAccess access={PAGE_ACCESS.funding}><FundingPage /></RequirePageAccess>} />
           <Route path="investments/funding/:listingId" element={<RequirePageAccess access={PAGE_ACCESS.funding}><FundingDetailPage /></RequirePageAccess>} />
           <Route path="investments/secondary" element={<RequirePageAccess access={PAGE_ACCESS.secondary}><SecondaryMarketPage /></RequirePageAccess>} />
+          <Route path="investments/secondary/:listingId" element={<RequirePageAccess access={PAGE_ACCESS.secondary}><OrderBookDetailPage /></RequirePageAccess>} />
+          <Route path="investments/secondary/:listingId/trades/:tradeReference" element={<RequirePageAccess access={PAGE_ACCESS.secondary}><TradeDetailPage /></RequirePageAccess>} />
           <Route path="products" element={<RequirePageAccess access={PAGE_ACCESS.products}><ProductListPage /></RequirePageAccess>} />
           <Route path="products/config" element={<Navigate to="/products" replace />} />
           <Route path="users" element={<RequirePageAccess access={PAGE_ACCESS.users}><UserListPage /></RequirePageAccess>} />

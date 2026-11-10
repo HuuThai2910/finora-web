@@ -26,16 +26,21 @@ interface HistoryTabProps {
   /** Lịch sử đầy đủ từ backend; backend cũ không có thì dùng lịch sử trạng thái hồ sơ. */
   timeline?: LoanTimelineItem[];
   displayName: (actorId: string | null | undefined) => string;
+  /**
+   * Bản gọn cho trang chi tiết Gọi vốn: lịch sử đã lọc sẵn theo đợt gọi vốn nên không có nút lọc giai đoạn, dòng phụ
+   * chỉ ghi thời điểm và người thực hiện.
+   */
+  compact?: boolean;
 }
 
 /**
  * Lịch sử xử lý của hồ sơ từ lúc nộp tới khi khoản vay đóng: thẩm định, gọi vốn (kể cả nhà đầu tư rút và gọi vốn bổ
  * sung), ký hợp đồng, giải ngân, gia hạn/cơ cấu, thu hồi nợ. Backend trả mới nhất trước.
  */
-export function HistoryTab({ history, timeline, displayName }: HistoryTabProps) {
+export function HistoryTab({ history, timeline, displayName, compact = false }: HistoryTabProps) {
   const items = useMemo(() => timeline ?? historyAsTimeline(history), [timeline, history]);
   const [stage, setStage] = useState<TimelineStage | null>(null);
-  const stages = (Object.keys(TIMELINE_STAGE_LABELS) as TimelineStage[])
+  const stages = compact ? [] : (Object.keys(TIMELINE_STAGE_LABELS) as TimelineStage[])
     .filter((key) => items.some((item) => item.stage === key));
   const visible = stage ? items.filter((item) => item.stage === stage) : items;
 
@@ -72,7 +77,8 @@ export function HistoryTab({ history, timeline, displayName }: HistoryTabProps) 
                       <p key={note} className={`lr-timeline-reasons ${NOTE}`}>{note}</p>
                     ))}
                     <span className="lr-timeline-meta block mt-0.5 text-muted text-[12px]">
-                      {formatDateTime(item.occurredAt)} · {TIMELINE_STAGE_LABELS[item.stage]} · {formatBusinessLabel(item.actorType)}
+                      {formatDateTime(item.occurredAt)}
+                      {compact ? null : ` · ${TIMELINE_STAGE_LABELS[item.stage]}`} · {formatBusinessLabel(item.actorType)}
                       {/* Người vay và tiến trình tự động không cần tên; quản trị viên và nhà đầu tư tra theo danh bạ. */}
                       {item.actorType === 'ADMIN' || item.actorType === 'INVESTOR' ? `: ${displayName(item.actorId)}` : null}
                     </span>

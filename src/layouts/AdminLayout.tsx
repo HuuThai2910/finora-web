@@ -96,6 +96,13 @@ export default function AdminLayout() {
                 <span className="sep text-line-strong" aria-hidden="true">/</span>
               </>
             )}
+            {breadcrumb.middle && (
+              <>
+                {/* Cấp giữa nhớ đúng tab và bộ lọc đã mở trang chi tiết (vd. tab Giao dịch của sổ lệnh). */}
+                <Link className="whitespace-nowrap hover:text-primary" to={backToListUrl(location.state, breadcrumb.middle.to)}>{breadcrumb.middle.label}</Link>
+                <span className="sep text-line-strong" aria-hidden="true">/</span>
+              </>
+            )}
             <span className="current truncate text-primary font-semibold" aria-current="page">{breadcrumb.current}</span>
           </nav>
           <div className="header-actions flex items-center gap-3 max-[1024px]:ml-auto max-[760px]:gap-1.5">

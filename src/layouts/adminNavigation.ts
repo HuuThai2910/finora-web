@@ -73,7 +73,7 @@ export const ADMIN_NAV_SECTIONS: AdminNavigationSection[] = [
     label: 'Đầu tư',
     items: [
       { to: '/investments/funding', label: 'Gọi vốn', icon: 'chart', access: PAGE_ACCESS.funding, matches: (pathname) => pathname.startsWith('/investments/funding') },
-      { to: '/investments/secondary', label: 'Chợ chuyển nhượng', icon: 'file', access: PAGE_ACCESS.secondary, matches: (pathname) => pathname === '/investments/secondary' },
+      { to: '/investments/secondary', label: 'Chợ chuyển nhượng', icon: 'file', access: PAGE_ACCESS.secondary, matches: (pathname) => pathname.startsWith('/investments/secondary') },
     ],
   },
   {
@@ -114,6 +114,8 @@ export interface AdminBreadcrumb {
   section: string;
   /** Mục menu chứa trang; có khi đang ở trang chi tiết để bấm quay về danh sách. */
   parent: { label: string; to: string } | null;
+  /** Cấp giữa của trang chi tiết lồng hai cấp (chi tiết giao dịch nằm trong một sổ lệnh). */
+  middle?: { label: string; to: string };
   current: string;
 }
 
@@ -122,7 +124,15 @@ const DETAIL_TITLES: Array<[RegExp, string]> = [
   [/^\/customers\/kyc\/review\/[^/]+$/, 'Chi tiết lượt xác minh'],
   [/^\/customers\/kyc\/[^/]+$/, 'Chi tiết khách hàng'],
   [/^\/investments\/funding\/[^/]+$/, 'Chi tiết khoản gọi vốn'],
+  [/^\/investments\/secondary\/[^/]+$/, 'Sổ lệnh'],
+  [/^\/investments\/secondary\/[^/]+\/trades\/[^/]+$/, 'Chi tiết giao dịch'],
 ];
+
+/** Trang chi tiết lồng hai cấp: cấp giữa suy từ đường dẫn (mã sổ lệnh của giao dịch). */
+function middleCrumb(pathname: string): AdminBreadcrumb['middle'] {
+  const trade = /^\/investments\/secondary\/([^/]+)\/trades\/[^/]+$/.exec(pathname);
+  return trade ? { label: 'Sổ lệnh', to: `/investments/secondary/${trade[1]}` } : undefined;
+}
 
 /** Breadcrumb ở header: nhóm menu / trang (trang chi tiết thêm một cấp về danh sách). */
 export function getAdminBreadcrumb(pathname: string): AdminBreadcrumb {
@@ -131,7 +141,7 @@ export function getAdminBreadcrumb(pathname: string): AdminBreadcrumb {
     if (!item) continue;
     const detail = DETAIL_TITLES.find(([pattern]) => pattern.test(pathname));
     return detail
-      ? { section: section.label, parent: { label: item.label, to: item.to }, current: detail[1] }
+      ? { section: section.label, parent: { label: item.label, to: item.to }, middle: middleCrumb(pathname), current: detail[1] }
       : { section: section.label, parent: null, current: item.label };
   }
   return { section: '', parent: null, current: 'Quản trị' };

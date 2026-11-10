@@ -5,68 +5,38 @@ import type { CommitmentStatus, ListingStatus, NoteStatus } from './types';
 export const FUNDING_PAGE_SIZE = 10;
 
 /**
- * Số khoản tối đa tải về để cộng tổng tiền cho dải số liệu đầu trang.
- * Đúng bằng giới hạn `size` của backend; vượt quá thì giao diện ghi rõ phạm vi.
+ * Lựa chọn "Trạng thái" trong bảng lọc. Chỉ đưa những gì API `GET /market/listings?status=` lọc được thật: chặng chờ
+ * ký, chờ giải ngân, đã phát hành cùng là `FULLY_FUNDED` ở backend nên gộp một lựa chọn; gọi vốn bổ sung nằm trong
+ * `OPEN`. Bản nháp chỉ còn ở dữ liệu cũ (link cũ `?tab=DRAFT` của Tổng quan), chỉ hiện khi đang lọc đúng nó.
  */
-export const SUMMARY_SAMPLE_SIZE = 100;
-
-/** Nhãn tiếng Việt cho trạng thái gọi vốn; nhánh mặc định giữ UI không vỡ khi backend thêm trạng thái mới. */
-export const LISTING_STATUS_LABEL: Record<ListingStatus, string> = {
-  DRAFT: 'Chờ duyệt',
-  OPEN: 'Đang gọi vốn',
-  FULLY_FUNDED: 'Đã đủ vốn',
-  CLOSED: 'Đã đóng',
-  CANCELLED: 'Đã hủy',
-};
-
-/** Chờ duyệt là việc của quản trị nên tô cam; đã đóng là kết thúc bình thường nên để xám. */
-export const LISTING_STATUS_TONE: Record<ListingStatus, PillTone> = {
-  DRAFT: 'warning',
-  OPEN: 'info',
-  FULLY_FUNDED: 'success',
-  CLOSED: 'neutral',
-  CANCELLED: 'danger',
-};
-
-export const statusLabel = (status: string): string =>
-  LISTING_STATUS_LABEL[status as ListingStatus] ?? status;
-
-export const statusTone = (status: string): PillTone =>
-  LISTING_STATUS_TONE[status as ListingStatus] ?? 'neutral';
-
-/** Tab lọc của bảng danh sách: 'ALL' hoặc đúng một trạng thái backend nhận. */
-export type ListingTab = 'ALL' | ListingStatus;
-
-export const LISTING_TABS: ReadonlyArray<{ value: ListingTab; label: string }> = [
-  { value: 'ALL', label: 'Tất cả' },
-  { value: 'DRAFT', label: 'Chờ duyệt' },
-  { value: 'OPEN', label: 'Đang gọi vốn' },
-  { value: 'FULLY_FUNDED', label: 'Đã đủ vốn' },
-  { value: 'CLOSED', label: 'Đã đóng' },
+export const STATUS_FILTER_OPTIONS: ReadonlyArray<{ value: ListingStatus; label: string }> = [
+  { value: 'OPEN', label: 'Đang gọi vốn, gồm gọi vốn bổ sung' },
+  { value: 'FULLY_FUNDED', label: 'Đã đủ vốn: chờ ký, chờ giải ngân, đã phát hành' },
+  { value: 'CLOSED', label: 'Đã đóng, hết hạn' },
   { value: 'CANCELLED', label: 'Đã hủy' },
+  { value: 'DRAFT', label: 'Bản nháp (dữ liệu cũ)' },
 ];
 
-export const isListingTab = (value: string | null): value is ListingTab =>
-  LISTING_TABS.some((tab) => tab.value === value);
-
-/** Lý do finora-loan hủy đợt gọi vốn đã đủ vốn; cả ba trường hợp đều không giải ngân và nhả tiền giữ. */
-export const LISTING_CANCELLATION_LABEL: Record<string, string> = {
-  CONTRACT_DECLINED: 'Hợp đồng bị từ chối ký',
-  CONTRACT_EXPIRED: 'Hợp đồng hết hạn ký',
-  DISBURSEMENT_FAILED: 'Giải ngân thất bại',
-};
-
-/** Nhãn và tông màu cho trạng thái phần vốn của một nhà đầu tư. */
-export const COMMITMENT_LABEL: Record<CommitmentStatus, string> = {
-  ACTIVE: 'Đang giữ chỗ',
-  FINALIZED: 'Đã khóa vốn',
+/** Nhãn ngắn cho chip lọc. */
+export const STATUS_FILTER_CHIP: Record<ListingStatus, string> = {
+  DRAFT: 'Bản nháp',
+  OPEN: 'Đang gọi vốn',
+  FULLY_FUNDED: 'Đã đủ vốn',
+  CLOSED: 'Đã đóng, hết hạn',
   CANCELLED: 'Đã hủy',
 };
 
-export const COMMITMENT_TONE: Record<CommitmentStatus, PillTone> = {
-  ACTIVE: 'info',
-  FINALIZED: 'success',
-  CANCELLED: 'danger',
+export const isListingStatus = (value: string | null): value is ListingStatus =>
+  STATUS_FILTER_OPTIONS.some((option) => option.value === value);
+
+/**
+ * Tiền góp của một nhà đầu tư theo trạng thái phần vốn: còn giữ trong ví (chưa giải ngân), đã khóa và chuyển cho người
+ * vay khi giải ngân, hoặc đã nhả về ví (tự rút, không ký, khoản vay đóng hay hủy).
+ */
+export const MONEY_STATE: Record<CommitmentStatus, { label: string; tone: PillTone }> = {
+  ACTIVE: { label: 'Đang giữ trong ví', tone: 'info' },
+  FINALIZED: { label: 'Đã chuyển cho người vay', tone: 'success' },
+  CANCELLED: { label: 'Đã hoàn về ví', tone: 'neutral' },
 };
 
 export const NOTE_STATUS_LABEL: Record<NoteStatus, string> = {
@@ -83,9 +53,6 @@ export const NOTE_STATUS_TONE: Record<NoteStatus, PillTone> = {
 
 /** Các mệnh giá thường dùng; mệnh giá càng nhỏ thì phần lẻ bị cắt càng ít. */
 export const DENOMINATION_OPTIONS = ['1000000', '500000', '200000', '100000', '50000', '10000'];
-
-/** Số ngày gọi vốn khi chưa tải được tham số sàn. */
-export const DEFAULT_FUNDING_DAYS = 14;
 
 /** Giới hạn số ngày gọi vốn, cùng quy tắc với backend. */
 export const FUNDING_DAYS_MIN = 1;

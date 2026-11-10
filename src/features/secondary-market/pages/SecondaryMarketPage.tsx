@@ -1,243 +1,191 @@
 import { useDispatch } from 'react-redux';
+import { useSearchParams } from 'react-router-dom';
 import type { AppDispatch } from '@/app/store';
 import { ErrorNotice } from '@/components/ErrorNotice';
+import {
+  FilterBar,
+  RangeField,
+  SelectField,
+  ToggleGroupField,
+  rangeChipLabel,
+  rangeError,
+  splitList,
+  useUrlFilters,
+  type FilterChip,
+} from '@/components/filters';
 import { Icon } from '@/components/Icon';
 import { Pager } from '@/components/Pager';
-import { SearchBox } from '@/components/SearchBox';
-import { usePermission } from '@/features/auth';
 import { investmentApi } from '@/lib/api/investmentApi';
+import { useGetAdminOrderBooksQuery } from '../api/orderBookApi';
+import { BookListTable } from '../components/BookListTable';
 import {
-  useGetAdminTradesQuery,
-  useGetOrderBookAdminSummaryQuery,
-  useGetOrderBooksQuery,
-  useGetTransferDocumentsQuery,
-} from '../api/orderBookApi';
-import { MarketSummaryCard } from '../components/MarketSummaryCard';
-import { MarketTrendCharts } from '../components/MarketTrendCharts';
-import { OrderBookDrawer } from '../components/OrderBookDrawer';
-import { OrderBookTable } from '../components/OrderBookTable';
-import { TradeTable } from '../components/TradeTable';
-import { TransferDocumentTable } from '../components/TransferDocumentTable';
-import { MARKET_PAGE_SIZE, SETTLEMENT_LABEL } from '../constant';
-import { useMarketView, type DocumentFilter, type TradeFilter } from '../hooks/useMarketView';
-import type { OrderBookAdminSummary } from '../types';
+  BOOK_SORT_OPTIONS,
+  BOOK_STATES,
+  BOOK_STATE_META,
+  GRADE_OPTIONS,
+  MARKET_PAGE_SIZE,
+  isBookState,
+} from '../constant';
+import type { BookSort } from '../types';
 
-const TRADE_FILTERS: ReadonlyArray<{ value: TradeFilter; label: string }> = [
-  { value: 'ALL', label: 'Tất cả' },
-  { value: 'PENDING', label: SETTLEMENT_LABEL.PENDING },
-  { value: 'SETTLED', label: SETTLEMENT_LABEL.SETTLED },
-  { value: 'FAILED', label: SETTLEMENT_LABEL.FAILED },
-];
+/** Tham số bộ lọc trên URL; rỗng là không lọc. Ô tìm (`q`) và trang (`page`) nằm riêng. */
+const FILTER_KEYS = ['state', 'grade', 'rateMin', 'rateMax', 'sort'] as const;
 
-const DOCUMENT_FILTERS: ReadonlyArray<{ value: DocumentFilter; label: string }> = [
-  { value: 'FAILED', label: 'Lập lỗi' },
-  { value: 'PENDING', label: 'Đang lập' },
-];
+const orUndefined = (value: string) => value || undefined;
+const percent = (value: string) => `${value.replace('.', ',')}%`;
+const isSort = (value: string): value is Exclude<BookSort, 'RECENT'> =>
+  BOOK_SORT_OPTIONS.some((option) => option.value === value);
 
-/** Chỉ đọc `totalElements`: đếm văn bản theo trạng thái mà không tải cả danh sách. */
-const COUNT_ONLY = { page: 0, size: 1 } as const;
-
-/** Nhóm nút lọc phụ (`sm-seg`) của tab Giao dịch và Giấy xác nhận. */
-const SEG = 'sm-seg inline-flex flex-wrap gap-0.5 max-w-full p-0.75 bg-surface-muted border border-line rounded-md';
-/** Bộ lọc thanh toán: nhóm nút liền khối, phụ hơn tab chính. Nút đang chọn nền trắng viền mảnh. */
-const SEG_BUTTON =
-  'inline-flex items-center gap-1.5 h-7 px-3 rounded-sm text-secondary text-[13px] font-medium whitespace-nowrap ' +
-  'hover:text-primary aria-selected:bg-white aria-selected:text-primary aria-selected:shadow-[0_0_0_1px_var(--color-line)]';
-/** Số đếm trong nút lọc; nút "Cần đối soát" có lần khớp lỗi (`is-danger`) thì số màu đỏ. */
-const SEG_COUNT = 'text-muted font-normal tabular-nums in-[button.is-danger]:text-danger in-[button.is-danger]:font-medium';
-
-/** Số lần khớp theo trạng thái thanh toán, lấy từ API summary (tính trên toàn chợ). */
-function tradeCount(summary: OrderBookAdminSummary | undefined, filter: TradeFilter): number | undefined {
-  if (!summary) return undefined;
-  if (filter === 'PENDING') return summary.pendingCount;
-  if (filter === 'SETTLED') return summary.settledCount;
-  if (filter === 'FAILED') return summary.failedCount;
-  return summary.pendingCount + summary.settledCount + summary.failedCount;
+/** Số trang trên URL tính từ 1 cho dễ đọc; giá trị lạ coi như trang đầu. */
+function readPage(raw: string | null): number {
+  const parsed = Number(raw);
+  return Number.isInteger(parsed) && parsed > 1 ? parsed - 1 : 0;
 }
 
 /**
- * Giám sát chợ Notes, sổ lệnh Ask/Bid.
- *
- * Trang này **chỉ đọc**. Đặt và hủy lệnh là việc của nhà đầu tư trên app: backend lấy danh tính từ
- * token, nên nếu quản trị đặt lệnh thì lệnh thuộc về chính tài khoản quản trị, sai nghiệp vụ.
- * Biểu đồ giá trị khớp theo ngày và giá bình quân lấy từ API thống kê của Investment. Ô tìm áp cho danh sách đang
- * xem (tham số `q` của API): mã hồ sơ/hợp đồng của khoản vay, thêm mã lần khớp và số giấy ở hai tab sau.
+ * Chợ chuyển nhượng: sổ lệnh của từng khoản vay còn phần vốn lưu hành; mở một khoản để xem lệnh chờ, các lần khớp và
+ * phần vốn. Trang chỉ đọc. Lọc, sắp xếp và phân trang ở server; ô tìm, bộ lọc và trang nằm trên URL để quay lại đúng chỗ.
  */
 export function SecondaryMarketPage() {
   const dispatch = useDispatch<AppDispatch>();
-  const market = useMarketView();
-  const { view, tradeFilter, documentFilter, page, q } = market;
-  const search = q || undefined;
-  const canStats = usePermission().canView('dashboard');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const filters = useUrlFilters(FILTER_KEYS);
+  const { applied, draft } = filters;
+  const page = readPage(searchParams.get('page'));
+  const search = (searchParams.get('q') ?? '').trim();
+  const grades = splitList(applied.grade);
+  const state = isBookState(applied.state) ? applied.state : undefined;
 
-  const summary = useGetOrderBookAdminSummaryQuery();
-  // Sổ lệnh luôn tải (trang 0 khi đang xem giao dịch) để tab "Sổ lệnh" có số đếm thật từ totalElements.
-  const books = useGetOrderBooksQuery({
-    page: view === 'BOOKS' ? page : 0,
+  const list = useGetAdminOrderBooksQuery({
+    q: search || undefined,
+    state,
+    grades: grades.length > 0 ? grades.join(',') : undefined,
+    rateMin: orUndefined(applied.rateMin),
+    rateMax: orUndefined(applied.rateMax),
+    sort: isSort(applied.sort) ? applied.sort : undefined,
+    page,
     size: MARKET_PAGE_SIZE,
-    q: view === 'BOOKS' ? search : undefined,
   });
-  const trades = useGetAdminTradesQuery(
-    { page, size: MARKET_PAGE_SIZE, settlement: tradeFilter === 'ALL' ? undefined : tradeFilter, q: search },
-    { skip: view !== 'TRADES' },
-  );
-  // Giấy xác nhận lỗi đếm cho ô "Cần đối soát" và tab; đang lập chỉ để đếm trên bộ lọc của tab.
-  const failedDocs = useGetTransferDocumentsQuery({ status: 'FAILED', ...COUNT_ONLY });
-  const pendingDocs = useGetTransferDocumentsQuery({ status: 'PENDING', ...COUNT_ONLY });
-  const documents = useGetTransferDocumentsQuery(
-    { status: documentFilter, page, size: MARKET_PAGE_SIZE, q: search },
-    { skip: view !== 'DOCUMENTS' },
-  );
-  const active = view === 'BOOKS' ? books : view === 'TRADES' ? trades : documents;
-  const docCount = (filter: DocumentFilter) => (filter === 'FAILED' ? failedDocs.data : pendingDocs.data)?.totalElements;
-  const busy = active.isFetching || summary.isFetching;
+  const books = list.data?.content ?? [];
+  const rateRangeError = rangeError(draft.rateMin, draft.rateMax);
 
-  const reload = () => {
-    // Giấy xác nhận có tag riêng: văn bản đang lập có thể đã phát hành xong kể từ lần tải trước.
-    dispatch(investmentApi.util.invalidateTags(['OrderBooks', 'TransferDocuments']));
-  };
+  const chips: FilterChip[] = [];
+  if (state) chips.push({ key: 'state', label: `Trạng thái: ${BOOK_STATE_META[state].label}`, onRemove: () => filters.remove('state') });
+  if (grades.length > 0) chips.push({ key: 'grade', label: `Hạng: ${grades.join(', ')}`, onRemove: () => filters.remove('grade') });
+  if (applied.rateMin || applied.rateMax) {
+    chips.push({
+      key: 'rate',
+      label: rangeChipLabel('Lãi suất', applied.rateMin, applied.rateMax, percent),
+      onRemove: () => filters.remove('rateMin', 'rateMax'),
+    });
+  }
+  const sortLabel = BOOK_SORT_OPTIONS.find((option) => option.value === applied.sort)?.label;
+  if (sortLabel) chips.push({ key: 'sort', label: `Sắp xếp: ${sortLabel.toLocaleLowerCase('vi-VN')}`, onRemove: () => filters.remove('sort') });
+  const filtered = Boolean(search) || chips.some((chip) => chip.key !== 'sort');
 
-  const scrollToList = () => document.getElementById('sm-list')?.scrollIntoView({ block: 'start' });
-  const showTrades = (status: TradeFilter) => {
-    market.setView('TRADES', status);
-    scrollToList();
+  const updateParam = (key: string, value: string, replace = false) => {
+    const params = new URLSearchParams(searchParams);
+    if (value) params.set(key, value);
+    else params.delete(key);
+    if (key !== 'page') params.delete('page');
+    setSearchParams(params, { replace });
   };
-  const showFailedDocuments = () => {
-    market.showDocuments('FAILED');
-    scrollToList();
-  };
-
-  const rowCount = active.data?.content.length ?? 0;
-  const total = active.data?.totalElements ?? 0;
-  const emptyText = q
-    ? `Không tìm thấy kết quả khớp "${q}".`
-    : view === 'BOOKS'
-    ? 'Chưa có khoản vay nào có phần vốn đang lưu hành.'
-    : view === 'DOCUMENTS'
-      ? documentFilter === 'FAILED' ? 'Không có giấy xác nhận nào lập lỗi.' : 'Không có giấy xác nhận nào đang lập.'
-      : tradeFilter === 'ALL' ? 'Chưa có lần khớp nào trên chợ chuyển nhượng.' : 'Không có lần khớp nào ở trạng thái này.';
-  const docTabCount = failedDocs.data && pendingDocs.data
-    ? failedDocs.data.totalElements + pendingDocs.data.totalElements
-    : undefined;
 
   return (
     <section className="ui-page">
       <header className="ui-page-head">
-        <div className="ui-title"><h1>Chợ chuyển nhượng</h1></div>
-        <button type="button" className="ui-btn ghost" onClick={reload} disabled={busy}>
-          <Icon name="refresh" />
-          {busy ? 'Đang tải...' : 'Làm mới'}
-        </button>
+        <div className="ui-title">
+          <h1>Chợ chuyển nhượng</h1>
+          <p>Sổ lệnh của từng khoản vay; mở một khoản để xem các lần khớp, thanh toán và giấy xác nhận.</p>
+        </div>
       </header>
 
-      <MarketSummaryCard
-        summary={summary.data}
-        isLoading={summary.isLoading}
-        error={summary.error}
-        onRetry={summary.refetch}
-        onShowTrades={showTrades}
-        failedDocuments={failedDocs.data?.totalElements}
-        onShowFailedDocuments={showFailedDocuments}
-      />
-
-      {/* Biểu đồ xu hướng đọc series thống kê, cần quyền Xem "Tổng quan & thống kê". */}
-      {canStats && <MarketTrendCharts />}
-
-      <section className="ui-card sm-list pt-3.5 px-3.5 pb-3" id="sm-list" aria-label="Sổ lệnh và giao dịch">
-        <div className="sm-list-head flex items-center justify-between gap-3 flex-wrap mb-3 max-[760px]:flex-col max-[760px]:items-stretch">
-          <div className="ui-tabs" role="tablist" aria-label="Xem theo">
-            <button type="button" role="tab" aria-selected={view === 'BOOKS'} onClick={() => market.setView('BOOKS')}>
-              Sổ lệnh{books.data && <span className="n">{books.data.totalElements}</span>}
+      <section className="ui-card pt-3.5 px-3.5 pb-3 max-[760px]:px-2.5 max-[760px]:pb-2.5" aria-label="Sổ lệnh">
+        <FilterBar
+          className="mb-3"
+          search={{
+            value: search,
+            onSearch: (next) => updateParam('q', next, true),
+            label: 'Tìm sổ lệnh',
+            placeholder: 'Tìm mã hồ sơ, mã hợp đồng, người vay',
+          }}
+          activeCount={chips.length}
+          chips={chips}
+          onOpen={filters.resetDraft}
+          onApply={() => {
+            if (rateRangeError) return false;
+            filters.applyDraft();
+            return true;
+          }}
+          onClearAll={filters.clearAll}
+          title="Lọc sổ lệnh"
+          actions={(
+            <button
+              type="button"
+              className="ui-btn ghost"
+              onClick={() => dispatch(investmentApi.util.invalidateTags(['OrderBooks']))}
+              disabled={list.isFetching}
+            >
+              <Icon name="refresh" />
+              {list.isFetching ? 'Đang tải...' : 'Làm mới'}
             </button>
-            <button type="button" role="tab" aria-selected={view === 'TRADES'} onClick={() => market.setView('TRADES')}>
-              Giao dịch{summary.data && <span className="n">{tradeCount(summary.data, 'ALL')}</span>}
-            </button>
-            {/* Giấy xác nhận chưa phát hành được (lỗi hoặc đang lập); văn bản đã phát hành xem ở cột cuối bảng giao dịch. */}
-            <button type="button" role="tab" aria-selected={view === 'DOCUMENTS'} onClick={() => market.showDocuments('FAILED')}>
-              Giấy xác nhận{docTabCount != null && <span className="n">{docTabCount}</span>}
-            </button>
-          </div>
-          <SearchBox
-            className="sm-search w-72 max-[760px]:w-full"
-            value={q}
-            onSearch={market.setSearch}
-            label="Tìm trong danh sách"
-            placeholder={view === 'BOOKS'
-              ? 'Tìm theo mã hồ sơ hoặc mã hợp đồng'
-              : view === 'TRADES' ? 'Tìm theo mã lần khớp, mã hồ sơ, hợp đồng' : 'Tìm theo số giấy, mã lần khớp, hồ sơ'}
+          )}
+        >
+          <SelectField
+            label="Trạng thái"
+            value={isBookState(draft.state) ? draft.state : ''}
+            allLabel="Tất cả trạng thái"
+            options={BOOK_STATES.map((value) => ({ value, label: BOOK_STATE_META[value].label }))}
+            onChange={(value) => filters.setDraft({ state: value })}
           />
-          {view === 'TRADES' && (
-            <div className={SEG} role="tablist" aria-label="Trạng thái thanh toán">
-              {TRADE_FILTERS.map((filter) => {
-                const count = tradeCount(summary.data, filter.value);
-                return (
-                  <button
-                    key={filter.value}
-                    type="button"
-                    role="tab"
-                    aria-selected={tradeFilter === filter.value}
-                    className={filter.value === 'FAILED' && count ? `is-danger ${SEG_BUTTON}` : SEG_BUTTON}
-                    onClick={() => market.setTradeFilter(filter.value)}
-                  >
-                    {filter.label}
-                    {count != null && <span className={SEG_COUNT}>{count}</span>}
-                  </button>
-                );
-              })}
-            </div>
-          )}
-          {view === 'DOCUMENTS' && (
-            <div className={SEG} role="tablist" aria-label="Trạng thái giấy xác nhận">
-              {DOCUMENT_FILTERS.map((filter) => {
-                const count = docCount(filter.value);
-                return (
-                  <button
-                    key={filter.value}
-                    type="button"
-                    role="tab"
-                    aria-selected={documentFilter === filter.value}
-                    className={filter.value === 'FAILED' && count ? `is-danger ${SEG_BUTTON}` : SEG_BUTTON}
-                    onClick={() => market.showDocuments(filter.value)}
-                  >
-                    {filter.label}
-                    {count != null && <span className={SEG_COUNT}>{count}</span>}
-                  </button>
-                );
-              })}
-            </div>
-          )}
-        </div>
+          <ToggleGroupField
+            label="Hạng tín dụng"
+            values={splitList(draft.grade)}
+            options={GRADE_OPTIONS.map((value) => ({ value, label: value }))}
+            onChange={(values) => filters.setDraft({ grade: values.join(',') })}
+          />
+          <RangeField
+            label="Lãi suất (%/năm)"
+            kind="percent"
+            decimal
+            min={draft.rateMin}
+            max={draft.rateMax}
+            error={rateRangeError}
+            onChange={(min, max) => filters.setDraft({ rateMin: min, rateMax: max })}
+          />
+          <SelectField
+            label="Sắp xếp"
+            value={isSort(draft.sort) ? draft.sort : ''}
+            allLabel="Khớp gần nhất trước"
+            options={[...BOOK_SORT_OPTIONS]}
+            onChange={(value) => filters.setDraft({ sort: value })}
+          />
+        </FilterBar>
 
-        {active.error ? (
-          <ErrorNotice error={active.error} onRetry={active.refetch} />
-        ) : active.isLoading || !active.data ? (
-          <div className="ui-empty" aria-busy="true">Đang tải danh sách...</div>
-        ) : rowCount === 0 ? (
-          <div className="ui-empty">{emptyText}</div>
+        {list.error ? (
+          <ErrorNotice error={list.error} onRetry={list.refetch} />
+        ) : list.isLoading ? (
+          <div className="ui-empty" aria-busy="true">Đang tải sổ lệnh...</div>
+        ) : books.length === 0 ? (
+          <div className="ui-empty">
+            {filtered
+              ? 'Không có khoản vay nào khớp. Thử nới điều kiện hoặc xóa lọc.'
+              : 'Chưa có khoản vay nào có phần vốn đang lưu hành.'}
+          </div>
         ) : (
-          <div className={active.isFetching ? 'ui-busy' : undefined}>
-            {view === 'BOOKS' && books.data ? (
-              <OrderBookTable books={books.data.content} openListingId={market.openListingId} onOpen={market.openBook} />
-            ) : view === 'TRADES' && trades.data ? (
-              <TradeTable trades={trades.data.content} onOpenBook={market.openBook} />
-            ) : view === 'DOCUMENTS' && documents.data ? (
-              <TransferDocumentTable documents={documents.data.content} onOpenBook={market.openBook} />
-            ) : null}
+          <div className={list.isFetching ? 'ui-busy' : undefined}>
+            <BookListTable books={books} />
             <Pager
               page={page}
               size={MARKET_PAGE_SIZE}
-              total={total}
-              unit={view === 'BOOKS' ? 'khoản vay' : view === 'TRADES' ? 'lần khớp' : 'giấy xác nhận'}
-              disabled={active.isFetching}
-              onPage={market.setPage}
+              total={list.data?.totalElements ?? 0}
+              unit="khoản vay"
+              disabled={list.isFetching}
+              onPage={(next) => updateParam('page', next > 0 ? String(next + 1) : '')}
             />
           </div>
         )}
       </section>
-
-      {market.openListingId != null && (
-        <OrderBookDrawer listingId={market.openListingId} onClose={market.closeBook} />
-      )}
     </section>
   );
 }

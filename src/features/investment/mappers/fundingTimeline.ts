@@ -30,13 +30,14 @@ export interface FundingTimeline {
 /**
  * Vốn góp lũy kế theo thời điểm đặt lệnh thật (`createdAt` của từng phần vốn).
  *
- * Phần vốn đã hủy đã nhả tiền nên không tính. Backend không trả thời điểm mở gọi vốn, nên
- * trục thời gian bắt đầu từ nửa đêm của ngày có lần góp đầu tiên thay vì đoán ngày mở.
+ * Phần vốn đã hủy đã nhả tiền nên không tính. Investment không trả thời điểm mở gọi vốn; trang lấy mốc này từ lịch sử
+ * hồ sơ vay bên Loan khi có quyền, không có thì trục bắt đầu từ nửa đêm của ngày có lần góp đầu tiên.
  */
 export function buildFundingTimeline(
   listing: MarketListing,
   investors: ListingInvestor[],
   progress: FundingProgress | undefined,
+  openedAt?: string | null,
   now: Date = new Date(),
 ): FundingTimeline {
   const target = parseDecimal(listing.targetAmount) ?? 0;
@@ -53,8 +54,11 @@ export function buildFundingTimeline(
     return { ...row, total: running };
   });
 
+  // Trục bắt đầu từ lúc đưa lên sàn nếu biết (lịch sử Loan), không thì nửa đêm ngày có lần góp đầu tiên.
+  const opened = openedAt ? new Date(openedAt).getTime() : NaN;
   const first = new Date(points[0]?.at ?? now.getTime());
   first.setHours(0, 0, 0, 0);
+  if (Number.isFinite(opened) && opened <= (points[0]?.at ?? now.getTime())) first.setTime(opened);
   const lastAt = points[points.length - 1]?.at ?? first.getTime();
   const fundedAt = progress?.fullyFundedAt ? new Date(progress.fullyFundedAt).getTime() : null;
 

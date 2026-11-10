@@ -1,22 +1,24 @@
 import { useEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import { EChart } from '@/components/EChart';
+import { ReviewCard } from '@/features/loan';
 import { buildFundingTimeOption, buildFundingTimeline, timelineShare } from '../../mappers/fundingTimeline';
 import type { FundingProgress, ListingInvestor, MarketListing } from '../../types';
 import { formatDate, formatDateTime, formatMoney, formatPercent } from '../../formatters';
-import { CARD, CARD_TITLE } from '../../styles';
 
 interface Props {
   listing: MarketListing;
   investors: ListingInvestor[];
   progress: FundingProgress | undefined;
   nameOf: (investorId: string) => string;
+  /** Lúc đưa lên sàn (lịch sử Loan); có thì trục thời gian bắt đầu từ đây thay vì ngày của lần góp đầu. */
+  openedAt?: string | null;
 }
 
 /** Dưới bề rộng này thì thưa nhãn ngày để không dính nhau. */
 const NARROW_WIDTH = 520;
 
 /** Theo dõi bề rộng thẻ để chọn mật độ nhãn trục; dọn ResizeObserver khi rời trang. */
-function useNarrow(ref: RefObject<HTMLElement>) {
+function useNarrow(ref: RefObject<HTMLDivElement>) {
   const [narrow, setNarrow] = useState(false);
   useEffect(() => {
     const element = ref.current;
@@ -32,12 +34,15 @@ function useNarrow(ref: RefObject<HTMLElement>) {
  * Vốn góp lũy kế theo thời gian, vẽ từ thời điểm đặt lệnh thật của từng phần vốn.
  * Có câu dẫn với số chính và bảng "Xem số liệu" thay cho biểu đồ.
  */
-export function FundingTimelineCard({ listing, investors, progress, nameOf }: Props) {
-  const cardRef = useRef<HTMLElement>(null);
+export function FundingTimelineCard({ listing, investors, progress, nameOf, openedAt }: Props) {
+  const cardRef = useRef<HTMLDivElement>(null);
   const narrow = useNarrow(cardRef);
   // Giữ tham chiếu option ổn định: EChart vẽ lại (kèm hoạt ảnh) mỗi khi option đổi tham chiếu,
   // nên không dựng lại khi trang cha render vì lý do khác (thông báo, nút đang chạy).
-  const timeline = useMemo(() => buildFundingTimeline(listing, investors, progress), [listing, investors, progress]);
+  const timeline = useMemo(
+    () => buildFundingTimeline(listing, investors, progress, openedAt),
+    [listing, investors, progress, openedAt],
+  );
   const option = useMemo(() => buildFundingTimeOption(timeline, nameOf, narrow), [timeline, nameOf, narrow]);
   const { points, target } = timeline;
 
@@ -99,9 +104,8 @@ export function FundingTimelineCard({ listing, investors, progress, nameOf }: Pr
   }
 
   return (
-    <section ref={cardRef} className={`ui-card fd-card ${CARD}`} aria-labelledby="fdTimelineTitle">
-      <h2 id="fdTimelineTitle" className={`fd-card-title ${CARD_TITLE}`}>Vốn góp theo thời gian</h2>
-      {body}
-    </section>
+    <ReviewCard title="Vốn góp theo thời gian">
+      <div ref={cardRef}>{body}</div>
+    </ReviewCard>
   );
 }

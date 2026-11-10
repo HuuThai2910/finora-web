@@ -6,3 +6,6 @@ export { fundingDetailPath } from './components/FundingListTable';
 export { useGetInvestorNotesQuery } from './api/investmentApi';
 export type { AdminInvestorNote } from './api/investmentApi';
 export { NOTE_STATUS_LABEL, NOTE_STATUS_TONE } from './constants';
+// Chợ chuyển nhượng hiện tình hình trả nợ của khoản vay theo cùng API kỳ trả của Loan.
+export { useGetLoanInstallmentsQuery } from './api/contractApi';
+export type { LoanInstallments } from './types';

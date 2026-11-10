@@ -14,8 +14,6 @@ interface Props {
   onClose: () => void;
   /** Báo kết quả lên trang để thông báo còn thấy được sau khi đóng hộp thoại. */
   onNotice: (text: string) => void;
-  /** Mở hộp xác nhận đóng khoản quá hạn (trang đóng hộp này trước); không có thì ẩn khối Bảo trì. */
-  onCloseExpired?: () => void;
 }
 
 interface FormValues {
@@ -68,13 +66,13 @@ function validate(form: FormValues): FormErrors {
  * mệnh giá cũ. Khi tham số đã tải, phần biên tập dựng riêng với state khởi tạo từ bản
  * backend trả về, nên không cần effect đồng bộ.
  */
-export function FundingSettingsModal({ onClose, onNotice, onCloseExpired }: Props) {
+export function FundingSettingsModal({ onClose, onNotice }: Props) {
   // Form chỉ lấy giá trị một lần lúc dựng: phải chờ bản mới nhất, không dùng bản cache cũ (mở lại ngay sau khi lưu
   // sẽ hiện số cũ, bấm Lưu tiếp là ghi đè).
   const settings = useGetFundingSettingsQuery(undefined, { refetchOnMountOrArgChange: true });
 
   if (settings.data && !settings.isFetching) {
-    return <SettingsEditor current={settings.data} onClose={onClose} onNotice={onNotice} onCloseExpired={onCloseExpired} />;
+    return <SettingsEditor current={settings.data} onClose={onClose} onNotice={onNotice} />;
   }
 
   return (
@@ -88,7 +86,7 @@ export function FundingSettingsModal({ onClose, onNotice, onCloseExpired }: Prop
   );
 }
 
-function SettingsEditor({ current, onClose, onNotice, onCloseExpired }: Props & { current: FundingSettings }) {
+function SettingsEditor({ current, onClose, onNotice }: Props & { current: FundingSettings }) {
   const [form, setForm] = useState<FormValues>(() => toForm(current));
   const [touched, setTouched] = useState(false);
   const [update, updateState] = useUpdateFundingSettingsMutation();
@@ -225,16 +223,6 @@ function SettingsEditor({ current, onClose, onNotice, onCloseExpired }: Props & 
 
         {updateState.error ? <ErrorToast error={updateState.error} /> : null}
 
-        {onCloseExpired && (
-          <section
-            className="fu-maintenance grid justify-items-start gap-2 pt-3.5 border-t border-t-divider [&_.ui-alert]:justify-self-stretch"
-            aria-labelledby="fuMaintenanceTitle"
-          >
-            <h3 id="fuMaintenanceTitle" className="text-[14px] font-semibold">Bảo trì</h3>
-            <p className="text-secondary text-[13px]">Khoản quá hạn gọi vốn được đóng tự động theo chu kỳ. Bấm để đóng ngay khi cần.</p>
-            <button type="button" className="ui-btn ghost" disabled={busy} onClick={onCloseExpired}>Đóng khoản quá hạn</button>
-          </section>
-        )}
       </form>
     </Modal>
   );

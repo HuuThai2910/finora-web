@@ -1,15 +1,7 @@
+import { ReviewCard } from '@/features/loan';
 import type { FundingProgress, ListingInvestor, MarketListing } from '../../types';
 import { formatMoney, formatPercent, parseDecimal } from '../../formatters';
-import { CARD, CARD_TITLE } from '../../styles';
-
-/**
- * Một phần góp trên thanh: giữ chỗ xanh nhạt, đã khóa (`locked`) xanh đậm.
- * Rê chuột lên một phần góp thì các phần còn lại mờ đi.
- */
-const SEGMENT =
-  'fd-seg flex-none h-full rounded-[999px] bg-[#a3bde3] [&.locked]:bg-brand transition-opacity duration-150 ease-soft ' +
-  'in-[.fd-meter:hover]:not-hover:opacity-35';
-const LEGEND_MARK = 'inline-block size-2.5 mr-1.25 rounded-[3px] align-[-1px]';
+import { MeterLegend, SegmentMeter } from './SegmentMeter';
 
 interface Props {
   listing: MarketListing;
@@ -20,57 +12,59 @@ interface Props {
 }
 
 /**
- * Thanh tiến độ ghép từ phần góp của từng nhà đầu tư: giữ chỗ nhạt, đã khóa đậm.
+ * Tiến độ góp vốn: phần trăm lớn, số đã góp trên mục tiêu, thanh chia đoạn theo nhà đầu tư.
  *
- * Con số phần trăm lấy thẳng `fundedPercent` của backend. Bề rộng từng đoạn là tỷ lệ phần
- * góp trên mục tiêu, chỉ để vẽ; chưa tải xong phần vốn thì vẽ một đoạn theo phần trăm tổng.
+ * Con số phần trăm lấy thẳng `fundedPercent` của backend. Bề rộng từng đoạn là tỷ lệ phần góp trên mục tiêu, chỉ để
+ * vẽ; chưa tải xong phần vốn thì vẽ một đoạn theo phần trăm tổng.
  */
 export function ProgressMeter({ listing, investors, investorsLoaded, progress, nameOf }: Props) {
   const target = parseDecimal(listing.targetAmount) ?? 0;
   const live = investors.filter((item) => item.status !== 'CANCELLED');
-  const hasHeld = live.some((item) => item.status === 'ACTIVE');
-  const hasLocked = live.some((item) => item.status === 'FINALIZED');
   const investorCount = progress?.investorCount ?? new Set(live.map((item) => item.investorId)).size;
-  const width = (amount: number) => `${target > 0 ? Math.min((amount / target) * 100, 100) : 0}%`;
+  // Đóng hoặc hủy: backend nhả mọi phần vốn và trừ khỏi số đã góp; `raisedAmount` giữ số đã gọi được trước khi hoàn
+  // tiền nên tiến độ vẫn vẽ được. Backend cũ không có trường này thì chỉ còn nói tiền đã hoàn cho bao nhiêu người.
+  const ended = listing.status === 'CLOSED' || listing.status === 'CANCELLED';
+  const raised = ended ? parseDecimal(listing.raisedAmount) : null;
+  const refunded = listing.investorCount ?? new Set(investors.map((item) => item.investorId)).size;
+  const share = (amount: number) => (target > 0 ? (amount / target) * 100 : 0);
+  const percent = raised != null ? Math.round(share(raised) * 100) / 100 : listing.fundedPercent;
+  const amount = raised ?? listing.committedAmount;
+  const segments = raised != null
+    // Phần vốn đã hoàn không cho biết cái nào bị hủy lúc đóng, cái nào nhà đầu tư tự rút trước đó: vẽ một đoạn tổng.
+    ? [{ key: 'raised', width: percent, tone: 'soft' as const, title: `Đã gọi ${formatMoney(raised)} đ trước khi hoàn tiền` }]
+    : investorsLoaded
+    ? live.map((item) => ({
+        key: item.commitmentId,
+        width: share(parseDecimal(item.amount) ?? 0),
+        tone: 'soft' as const,
+        title: `${nameOf(item.investorId)}: ${formatMoney(item.amount)} đ`,
+      }))
+    : [{ key: 'total', width: listing.fundedPercent, tone: 'soft' as const, title: formatPercent(listing.fundedPercent) }];
+  // "Còn thiếu" chỉ có nghĩa khi khoản còn nhận lệnh; khoản đã đóng hay hủy thì con số đó vô nghĩa.
+  const open = listing.status === 'OPEN' && (parseDecimal(listing.remainingAmount) ?? 0) > 0;
 
   return (
-    <section className={`ui-card fd-card ${CARD}`} aria-labelledby="fdMeterTitle">
-      <h2 id="fdMeterTitle" className={`fd-card-title ${CARD_TITLE}`}>Tiến độ góp vốn</h2>
-      <div className="fd-meter-top flex items-baseline justify-between gap-3 flex-wrap">
-        <span className="fd-meter-pct text-[28px] font-semibold leading-[1.1] tabular-nums max-[760px]:text-[24px]">
-          {formatPercent(listing.fundedPercent)}
-        </span>
-        <span className="fd-meter-amt text-secondary text-[13px] tabular-nums">
-          {formatMoney(listing.committedAmount)} / {formatMoney(listing.targetAmount)} đ
+    <ReviewCard title="Tiến độ góp vốn">
+      <div className="flex flex-wrap items-baseline justify-between gap-3">
+        <span className="text-[26px] font-bold leading-[1.2] tabular-nums">{formatPercent(percent)}</span>
+        <span className="text-muted text-[13px] tabular-nums">
+          {formatMoney(amount)} đ / {formatMoney(listing.targetAmount)} đ
         </span>
       </div>
-      <div
-        className="fd-meter flex gap-0.5 h-3.5 mt-2.5 mb-2 p-0.5 overflow-hidden rounded-[999px] bg-[#eef0f3]"
-        role="img"
-        aria-label={`Đã góp ${formatPercent(listing.fundedPercent)} mục tiêu, ${investorCount} nhà đầu tư`}
-      >
-        {investorsLoaded ? (
-          live.map((item) => (
-            <span
-              key={item.commitmentId}
-              className={`${SEGMENT}${item.status === 'FINALIZED' ? ' locked' : ''}`}
-              style={{ width: width(parseDecimal(item.amount) ?? 0) }}
-              title={`${nameOf(item.investorId)}: ${formatMoney(item.amount)} đ`}
-            />
-          ))
-        ) : (
-          <span className={SEGMENT} style={{ width: `${Math.min(Math.max(listing.fundedPercent, 0), 100)}%` }} />
-        )}
-      </div>
-      <div className="fd-legend flex gap-3.5 flex-wrap text-muted text-[12px]">
-        {hasHeld && <span><i className={`${LEGEND_MARK} bg-[#a3bde3]`} />Giữ chỗ</span>}
-        {hasLocked && <span><i className={`locked ${LEGEND_MARK} bg-brand`} />Đã khóa</span>}
-        <span className="fd-legend-n ml-auto tabular-nums">
-          {investorCount} nhà đầu tư
-          {/* Chỉ khoản còn nhận lệnh mới "còn thiếu"; khoản đã kết thúc (đủ vốn, đóng, hủy) thì con số đó vô nghĩa. */}
-          {listing.status === 'OPEN' ? `, còn thiếu ${formatMoney(listing.remainingAmount)} đ` : ''}
-        </span>
-      </div>
-    </section>
+      {ended && raised == null ? <div className="h-2" /> : (
+        <SegmentMeter
+          segments={segments}
+          label={ended
+            ? `Đã gọi ${formatPercent(percent)} mục tiêu trước khi ${listing.status === 'CLOSED' ? 'đóng' : 'hủy'}`
+            : `Đã góp ${formatPercent(listing.fundedPercent)} mục tiêu, ${investorCount} nhà đầu tư`}
+        />
+      )}
+      <MeterLegend
+        note={ended ? undefined : 'Mỗi đoạn là một nhà đầu tư'}
+        aside={ended
+          ? `đã hoàn tiền về ví ${refunded} nhà đầu tư`
+          : `${investorCount} nhà đầu tư${open ? `, còn thiếu ${formatMoney(listing.remainingAmount)} đ` : ''}`}
+      />
+    </ReviewCard>
   );
 }
