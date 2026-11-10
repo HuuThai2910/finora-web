@@ -89,37 +89,13 @@ export const investmentEndpoints = investmentApi.injectEndpoints({
       providesTags: (_result, _error, listingId) => [{ type: 'FundingProgress', id: listingId }],
     }),
 
-    /** Ai đã góp vốn vào khoản vay này. Chỉ quản trị gọi được. */
+    /**
+     * Ai đã góp vốn vào khoản vay này. Chỉ quản trị gọi được. Quản trị không có thao tác nào trên khoản gọi vốn (khóa
+     * vốn, phát hành phần vốn, đóng khoản quá hạn đều do hệ thống tự chạy), nên web chỉ đọc.
+     */
     getListingInvestors: builder.query<ListingInvestor[], number>({
       query: (listingId) => `/investments/admin/listings/${listingId}/investors`,
       providesTags: (_result, _error, listingId) => [{ type: 'FundingProgress', id: listingId }],
-    }),
-
-    /** Khóa toàn bộ phần vốn trước khi giải ngân (F05 bước 2). */
-    finalizeCommitments: builder.mutation<{ finalizedCount: number }, number>({
-      query: (listingId) => ({
-        url: `/investments/admin/listings/${listingId}/finalize`,
-        method: 'POST',
-      }),
-      invalidatesTags: (_result, _error, listingId) => [
-        { type: 'FundingProgress', id: listingId },
-        { type: 'MarketListingList', id: 'ALL' },
-      ],
-    }),
-
-    /** Xé nhỏ phần vốn đã khóa thành Notes (F05 bước 7). */
-    activateNotes: builder.mutation<{ issuedNoteCount: number }, number>({
-      query: (listingId) => ({
-        url: `/investments/admin/listings/${listingId}/activate-notes`,
-        method: 'POST',
-      }),
-      // Sau khi phát hành, mọi danh sách Note theo phần vốn đều có thể đổi — không biết
-      // trước phần vốn nào thuộc khoản này nên làm mới cả nhóm.
-      invalidatesTags: (_result, _error, listingId) => [
-        { type: 'FundingProgress', id: listingId },
-        { type: 'MarketListing', id: listingId },
-        { type: 'CommitmentNotes', id: 'ALL' },
-      ],
     }),
 
     getCommitmentNotes: builder.query<InvestmentNote[], number>({
@@ -140,15 +116,6 @@ export const investmentEndpoints = investmentApi.injectEndpoints({
       query: (body) => ({ url: '/investments/admin/settings', method: 'PUT', body }),
       invalidatesTags: [{ type: 'FundingSettings', id: 'CURRENT' }],
     }),
-
-    /**
-     * Đóng các khoản đã hết hạn gọi vốn mà chưa đủ; worker cũng gọi định kỳ.
-     * Không biết trước khoản nào bị đóng nên làm mới cả nhóm chi tiết lẫn tiến độ.
-     */
-    closeExpiredListings: builder.mutation<{ closedCount: number }, void>({
-      query: () => ({ url: '/investments/admin/listings/close-expired', method: 'POST' }),
-      invalidatesTags: [{ type: 'MarketListingList', id: 'ALL' }, 'MarketListing', 'FundingProgress'],
-    }),
   }),
 });
 
@@ -158,12 +125,9 @@ export const {
   useGetMarketListingQuery,
   useGetFundingProgressQuery,
   useGetListingInvestorsQuery,
-  useFinalizeCommitmentsMutation,
-  useActivateNotesMutation,
   useGetCommitmentNotesQuery,
   useGetFundingSettingsQuery,
   useUpdateFundingSettingsMutation,
-  useCloseExpiredListingsMutation,
 } = investmentEndpoints;
 
 export type { ListingStatus };

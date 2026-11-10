@@ -1,30 +1,87 @@
 /**
- * Contract chợ Notes — sổ lệnh Ask/Bid của Investment Service (INV-E2).
+ * Contract Chợ chuyển nhượng (sổ lệnh Ask/Bid của Investment Service) cho web quản trị.
  *
- * Tiền, giá và lãi suất trả về dạng **chuỗi** decimal để không mất chính xác khi qua JSON; chỉ đổi
- * sang number ở lớp hiển thị. Giá là % dư nợ gốc còn lại, một chữ số thập phân (`"97.5"`). Lãi suất
- * năm đã ở dạng phần trăm (`"15.0000"` = 15%/năm, theo hợp đồng sự kiện Loan → Investment).
+ * Tiền, giá và lãi suất trả về dạng **chuỗi** decimal để không mất chính xác khi qua JSON; chỉ đổi sang number ở lớp
+ * hiển thị. Giá là % dư nợ gốc còn lại, một chữ số thập phân (`"97.5"`). Lãi suất năm đã ở dạng phần trăm
+ * (`"15.0000"` = 15%/năm).
  */
 
 export type OrderSide = 'BID' | 'ASK';
 export type SettlementStatus = 'PENDING' | 'SETTLED' | 'FAILED';
 
-/** `OrderBookSummaryResponse` — một dòng trong danh sách sổ. */
-export interface OrderBookSummary {
+/** Trạng thái sổ trên danh sách: nợ xấu đứng trên hết, còn lại là có hay chưa có lệnh chờ. */
+export type BookState = 'HAS_ORDERS' | 'NO_ORDERS' | 'DEFAULTED';
+export type BookSort = 'RECENT' | 'DEPTH' | 'RATE';
+
+/**
+ * Chặng gộp của một lần khớp: chờ thanh toán, đang lập giấy xác nhận, hoàn tất. Backend tính cả trường hợp lỗi vào
+ * chặng đang chờ tương ứng, nên giao diện không có nhãn lỗi.
+ */
+export type TradeProgress = 'SETTLING' | 'DOC_PENDING' | 'DONE';
+
+/** `AdminOrderBookResponse`: một dòng danh sách sổ lệnh. */
+export interface AdminOrderBook {
   listingId: number;
-  loanId: number;
-  creditGrade: string | null;
+  applicationCode: string | null;
+  contractCode: string | null;
+  purpose: string;
+  purposeCode: string | null;
+  creditGrade: string;
+  annualInterestRate: string;
+  termMonths: number;
+  outstandingNotes: number;
+  outstandingPrincipal: string;
+  bestBidPercent: string | null;
+  bestAskPercent: string | null;
+  restingBidNotes: number;
+  restingAskNotes: number;
+  lastTradePercent: string | null;
+  lastTradeAt: string | null;
+  state: BookState;
+}
+
+/** `AdminOrderBookDetailResponse`: khoản vay, trả nợ (bản chiếu ở Investment), số liệu chuyển nhượng của một sổ. */
+export interface AdminOrderBookDetail {
+  listingId: number;
+  applicationCode: string | null;
+  contractCode: string | null;
+  purpose: string;
+  purposeCode: string | null;
+  /** Chỉ để mở hồ sơ khách hàng, không hiển thị. */
+  borrowerId: string | null;
+  borrowerFullName: string | null;
+  creditGrade: string;
   annualInterestRate: string;
   termMonths: number;
   noteDenomination: string;
+  notesIssuedAt: string | null;
   defaulted: boolean;
-  bestBidPercent: string | null;
-  bestAskPercent: string | null;
-  lastTradePercent: string | null;
-  lastTradeAt: string | null;
-  /** Mã hiển thị HS-…/HĐ- của khoản vay; null với khoản niêm yết trước khi Loan có mã. */
-  applicationCode?: string | null;
-  contractCode?: string | null;
+  issuedNotes: number;
+  outstandingNotes: number;
+  outstandingPerNote: string | null;
+  /** Mã khoản vay ở Loan để đọc kỳ trả; không hiển thị. */
+  loanNumber: string | null;
+  daysPastDue: number | null;
+  maturityDate: string | null;
+  transferredNotes: number;
+  holderCount: number;
+  feeCollected: string;
+  settlingTrades: number;
+  documentPendingTrades: number;
+  completedTrades: number;
+}
+
+/** `AdminListingNoteResponse`: một phần vốn của khoản vay (tab Phần vốn). */
+export interface ListingNote {
+  noteId: number;
+  noteNumber: string;
+  status: string;
+  holderId: string;
+  holderName: string | null;
+  originalInvestorId: string | null;
+  originalInvestorName: string | null;
+  transferCount: number;
+  askPricePercent: string | null;
 }
 
 export interface PriceLevel {
@@ -33,81 +90,57 @@ export interface PriceLevel {
   orderCount: number;
 }
 
-export interface TradeTick {
-  pricePercent: string;
-  quantity: number;
-  aggressorSide: OrderSide;
-  executedAt: string;
-}
-
-/** `OrderBookSnapshotResponse` — ảnh chụp công khai của một sổ, không có ai đặt lệnh nào. */
-export interface OrderBookSnapshot extends Omit<OrderBookSummary, 'bestBidPercent' | 'bestAskPercent'> {
+/** `OrderBookSnapshotResponse`: ảnh chụp công khai của một sổ (độ sâu gộp theo mức giá, không có ai đặt lệnh). */
+export interface OrderBookSnapshot {
+  listingId: number;
   sequence: number;
-  referenceOutstanding: string | null;
-  defaultWarning: string | null;
-  bestBidPercent: string | null;
-  bestAskPercent: string | null;
   bids: PriceLevel[];
   asks: PriceLevel[];
-  recentTrades: TradeTick[];
 }
 
-/** `AdminTradeResponse` — một lần khớp kèm hai bên và trạng thái thanh toán. */
+/** `AdminTradeResponse`: một lần khớp kèm khoản vay, họ tên hai bên và giấy xác nhận. */
 export interface AdminTrade {
   tradeReference: string;
   listingId: number;
-  loanId: number | null;
   buyerId: string;
   sellerId: string;
-  aggressorSide: OrderSide;
   pricePercent: string;
   quantity: number;
   amount: string;
   platformFee: string;
   sellerProceeds: string;
-  defaulted: boolean;
   settlementStatus: SettlementStatus;
-  settlementAttempts: number;
-  lastSettlementError: string | null;
   executedAt: string;
   settledAt: string | null;
-  /** Số lần nhân viên đã gửi thanh toán lại và thời điểm gần nhất (đợt 2). */
-  settlementRequeueCount?: number;
-  settlementRequeuedAt?: string | null;
+  applicationCode: string | null;
+  purpose: string | null;
+  purposeCode: string | null;
+  buyerName: string | null;
+  sellerName: string | null;
+  outstandingPerNote: string | null;
+  documentStatus: 'PENDING' | 'ISSUED' | 'FAILED' | null;
+  documentNumber: string | null;
+  documentIssuedAt: string | null;
+  progress: TradeProgress;
 }
 
-/** `AdminNoteOwnershipResponse` — một Note trong lần khớp, người đang giữ và lịch sử chuyển nhượng. */
+/** `AdminNoteOwnershipResponse`: một phần vốn của lần khớp, người đang giữ, giá đang rao bán, lịch sử chuyển nhượng. */
 export interface TradeNoteOwnership {
   noteId: number;
   noteNumber: string;
-  listingId: number;
   status: string;
   currentHolderId: string;
-  principalAmount: string;
-  outstandingPrincipal: string;
-  issuedAt: string;
+  currentHolderName: string | null;
+  askPricePercent: string | null;
+  /** Mới nhất trước. */
   transfers: {
     tradeReference: string | null;
     sellerId: string;
     buyerId: string;
-    price: string;
-    outstandingAtTransfer: string;
+    sellerName: string | null;
+    buyerName: string | null;
     transferredAt: string;
   }[];
-}
-
-/** `OrderBookAdminSummaryResponse` — số liệu trên toàn bộ dữ liệu, không phải trang đang xem. */
-export interface OrderBookAdminSummary {
-  settledCount: number;
-  settledAmount: string;
-  feeCollected: string;
-  pendingCount: number;
-  pendingAmount: string;
-  failedCount: number;
-  openBidOrders: number;
-  openBidNotes: number;
-  openAskOrders: number;
-  openAskNotes: number;
 }
 
 /** Phân trang chuẩn của backend FINORA. */
@@ -121,34 +154,17 @@ export interface PageResponse<T> {
 }
 
 /**
- * Giấy xác nhận chuyển nhượng Note: mỗi lần khớp đã thanh toán (`SETTLED`) có đúng một văn bản PDF do FINORA ký số.
- * `PENDING` là đang lập, `FAILED` là lập lỗi và chờ quản trị bấm thử lại. Chưa thanh toán thì chưa có văn bản.
+ * Giấy xác nhận chuyển nhượng phần vốn (PDF FINORA đóng dấu số) của một lần khớp đã thanh toán. Trang Xác minh dữ liệu
+ * (blockchain) đọc chi tiết và tải PDF để tính lại mã băm.
  */
 export type TransferDocumentStatus = 'PENDING' | 'ISSUED' | 'FAILED';
 
-/** Một dòng của `GET /investments/admin/transfer-documents`. Tiền là chuỗi decimal như các API Investment khác. */
-export interface TransferDocument {
+export interface TransferDocumentDetail {
   documentNumber: string;
   tradeReference: string;
-  loanApplicationId: number;
-  listingId: number;
-  sellerId: string;
-  buyerId: string;
-  quantity: number;
-  amount: string;
   status: TransferDocumentStatus;
-  /** Hash của tệp PDF đã ký; null khi chưa phát hành. */
   documentHash: string | null;
-  attempts: number;
-  lastError: string | null;
-  executedAt: string;
   issuedAt: string | null;
-}
-
-/**
- * Chi tiết một văn bản. `proofArtifact` là đúng phần `data` của sự kiện `NoteTransferDocumentIssued` mà Blockchain đã
- * neo hash (có `documentHash`, `hashAlgorithm`...); gửi nguyên đối tượng này vào `POST /verify` để tính lại hash.
- */
-export interface TransferDocumentDetail extends TransferDocument {
+  /** Đúng phần `data` của sự kiện mà Blockchain đã neo; gửi nguyên vào `POST /verify` để tính lại hash. */
   proofArtifact: Record<string, unknown> | null;
 }

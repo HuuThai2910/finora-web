@@ -7,7 +7,6 @@ import {
   type CountMap,
 } from '@/features/statistics';
 import { useGetUserStatsQuery } from '@/features/user';
-import { useGetDashboardMarketSummaryQuery } from '../api/dashboardApi';
 import type { CountResult, DashboardTodo } from '../types';
 
 /**
@@ -23,9 +22,8 @@ function countIn(map: CountMap | undefined, key: string, isError: boolean): Coun
 /**
  * Việc cần xử lý trên trang Tổng quan.
  *
- * Số đếm lấy từ summary thống kê của Loan và Investment (một lời gọi mỗi service), lỗi thanh toán từ tóm tắt sổ lệnh,
- * xác minh danh tính chờ duyệt tay từ thống kê người dùng, bằng chứng dừng gửi từ `totalElements` của lời gọi
- * `size=1`. Quá hạn, cơ cấu và sự cố dẫn tới danh sách hồ sơ đã lọc ở Quản lý khoản vay, số lấy từ chính bộ lọc đó để
+ * Số đếm lấy từ summary thống kê của Loan và Investment (một lời gọi mỗi service), xác minh danh tính chờ duyệt tay
+ * từ thống kê người dùng, bằng chứng dừng gửi từ `totalElements` của lời gọi `size=1`. Quá hạn, cơ cấu và sự cố dẫn tới danh sách hồ sơ đã lọc ở Quản lý khoản vay, số lấy từ chính bộ lọc đó để
  * khớp trang đích.
  */
 export function useDashboardData() {
@@ -33,7 +31,6 @@ export function useDashboardData() {
   const loan = useGetLoanStatisticsSummaryQuery();
   const investment = useGetInvestmentStatisticsSummaryQuery();
   // Các số không thuộc API thống kê: nhân viên thiếu quyền Xem màn tương ứng thì không gọi (tránh 403).
-  const market = useGetDashboardMarketSummaryQuery(undefined, { skip: !canView('secondary-market') });
   // Khoản vay có sự cố (sai lệch, số liệu cũ, giải ngân chờ vận hành): cùng bộ lọc "Có sự cố" của Quản lý khoản vay.
   const incidentLoans = useGetAdminApplicationsQuery(
     { page: 0, size: 1, servicing: 'INCIDENT' },
@@ -50,7 +47,6 @@ export function useDashboardData() {
     { key: 'review', function: 'loan-application', icon: 'file', title: 'Hồ sơ chờ thẩm định', hint: 'Đã chấm điểm, cần quyết định duyệt', to: '/loans?status=PENDING_REVIEW', count: countIn(applications, 'PENDING_REVIEW', loan.isError) },
     { key: 'retry', function: 'loan-application', icon: 'refresh', title: 'Hồ sơ chờ chấm lại điểm', hint: 'Dịch vụ chấm điểm chưa phản hồi', to: '/loans?status=SCORING_RETRY_PENDING', count: countIn(applications, 'SCORING_RETRY_PENDING', loan.isError) },
     { key: 'draft', function: 'funding', icon: 'bars', title: 'Khoản vay chờ duyệt lên sàn', hint: 'Đã ký hợp đồng, chưa mở gọi vốn', to: '/investments/funding?tab=DRAFT', count: countIn(investment.data?.listings.byStatus, 'DRAFT', investment.isError) },
-    { key: 'failed', function: 'secondary-market', icon: 'alert', title: 'Giao dịch chuyển nhượng thanh toán lỗi', hint: 'Cần đối soát với ví', to: '/investments/secondary?view=trades&settlement=FAILED', count: market.isError ? null : market.data?.failedCount, alarming: true },
     { key: 'collection', function: 'collection', icon: 'clock', title: 'Hồ sơ thu hồi đang mở', hint: 'Mọi nhóm nợ quá hạn', to: '/loans?servicing=OVERDUE', count: loan.isError ? null : collections?.openCases },
     { key: 'reschedule', function: 'reschedule', icon: 'calendar', title: 'Yêu cầu cơ cấu chờ duyệt', hint: 'Người vay xin giãn kỳ hạn', to: '/loans?servicing=RESCHEDULE_PENDING', count: countIn(loan.data?.reschedules.byStatus, 'PENDING_REVIEW', loan.isError) },
     { key: 'reconcile', function: 'reconciliation', icon: 'list', title: 'Khoản vay có sự cố', hint: 'Sai lệch số liệu, giải ngân chờ xử lý', to: '/loans?servicing=INCIDENT', count: incidentLoans.isError ? null : incidentLoans.data?.totalElements },
@@ -64,11 +60,10 @@ export function useDashboardData() {
     refetch: () => {
       void loan.refetch();
       void investment.refetch();
-      if (canView('secondary-market')) void market.refetch();
       if (canView('customer')) void userStats.refetch();
       if (canView('blockchain')) void deadProofs.refetch();
       if (canView('reconciliation')) void incidentLoans.refetch();
     },
-    isFetching: loan.isFetching || investment.isFetching || market.isFetching || userStats.isFetching || deadProofs.isFetching,
+    isFetching: loan.isFetching || investment.isFetching || userStats.isFetching || deadProofs.isFetching,
   };
 }

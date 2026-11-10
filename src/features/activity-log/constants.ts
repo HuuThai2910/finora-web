@@ -22,10 +22,13 @@ export const SERVICE_LABELS: Record<string, string> = {
 
 export const serviceLabel = (service: string) => SERVICE_LABELS[service] ?? service;
 
-/** GET là xem; các phương thức còn lại là thao tác thêm/sửa/xóa. Giao diện ghi nhãn tiếng Việt thay cho tên phương thức. */
+/**
+ * Nhãn tiếng Việt thay cho tên phương thức, hiện thành nhãn nhỏ cạnh tên thao tác. POST không ghi "Thêm": nhiều lượt POST
+ * là đăng nhập, đánh dấu đã đọc, duyệt, lập lại giấy tờ... chứ không tạo mới gì; việc cụ thể nằm ở tên thao tác (`actions.ts`).
+ */
 const METHOD_INFO: Record<string, { label: string; tone: PillTone }> = {
   GET: { label: 'Xem', tone: 'neutral' },
-  POST: { label: 'Thêm', tone: 'info' },
+  POST: { label: 'Gửi', tone: 'info' },
   PUT: { label: 'Sửa', tone: 'warning' },
   PATCH: { label: 'Sửa', tone: 'warning' },
   DELETE: { label: 'Xóa', tone: 'danger' },
@@ -33,11 +36,12 @@ const METHOD_INFO: Record<string, { label: string; tone: PillTone }> = {
 
 export const methodInfo = (method: string) => METHOD_INFO[method] ?? { label: method, tone: 'neutral' as PillTone };
 
+/** Giá trị gửi lên API giữ nguyên (`WRITE`, tên phương thức); chỉ nhãn đổi cho khỏi hiểu POST là "thêm mới". */
 export const METHOD_OPTIONS: Array<{ value: string; label: string }> = [
   { value: '', label: 'Mọi thao tác' },
-  { value: 'WRITE', label: 'Chỉ thêm/sửa/xóa' },
+  { value: 'WRITE', label: 'Mọi thao tác trừ xem' },
   { value: 'GET', label: 'Xem' },
-  { value: 'POST', label: 'Thêm' },
+  { value: 'POST', label: 'Gửi yêu cầu' },
   { value: 'PUT', label: 'Sửa' },
   { value: 'PATCH', label: 'Sửa một phần' },
   { value: 'DELETE', label: 'Xóa' },

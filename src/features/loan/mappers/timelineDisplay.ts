@@ -217,6 +217,9 @@ export function describeTimelineItem(item: LoanTimelineItem, displayName: (id: s
       return { title: 'Giải ngân cần xử lý', notes: ['Tiền đã chuyển nhưng ghi sổ khoản vay chưa xong.'], tone: 'warning' };
     case 'DISBURSEMENT_REPAIRED':
       return { title: 'Đã xử lý sự cố giải ngân', notes: compact(item.reasonDetail), tone: 'neutral' };
+    case 'NOTES_ISSUED':
+      // Mốc không đến từ Loan: trang Gọi vốn ghép thêm từ Investment (thời điểm phát hành phần vốn).
+      return { title: 'Khóa vốn và phát hành phần vốn', notes: compact(item.reasonDetail), tone: 'success' };
     case 'LOAN_ACTIVATED':
       return { title: 'Khoản vay bắt đầu trả nợ', notes: compact(money(item.amount) && `Dư nợ gốc ${money(item.amount)}.`), tone: 'success' };
     case 'COLLECTION_OPENED':

@@ -1,4 +1,5 @@
 import { StatusPill } from '@/components/StatusPill';
+import { describeAction } from '../actions';
 import {
   CLIENT_LABELS, ROLE_LABELS, methodInfo, serviceLabel, statusTone,
 } from '../constants';
@@ -13,13 +14,16 @@ interface Props {
 
 function Row({ entry, open, onOpen }: { entry: ActivityLogEntry; open: boolean; onOpen: (entry: ActivityLogEntry) => void }) {
   const method = methodInfo(entry.method);
+  // Lượt gọi ghi có trong bảng tra thì hiện tên việc đã làm; GET và đường dẫn lạ giữ cách cũ (nhãn + đường dẫn).
+  const action = describeAction(entry.method, entry.path, entry.requestBody);
+  const target = action?.targets.map((item) => `${item.label} ${item.value}`).join(', ');
   const caller = [entry.role ? ROLE_LABELS[entry.role] ?? entry.role : null, entry.client ? CLIENT_LABELS[entry.client] : null];
   // Dòng đang mở ngăn chi tiết tô nền xanh nhạt; khi dòng có focus bàn phím thì nhường nền focus của .ui-table.
   return (
     <tr
       className={`${open ? 'clickable is-open' : 'clickable'} [&.is-open:not(:focus-visible)_td]:bg-brand-50`}
       tabIndex={0}
-      aria-label={`Xem chi tiết ${method.label} ${entry.path}`}
+      aria-label={`Xem chi tiết ${action?.name ?? method.label} ${entry.path}`}
       onClick={() => onOpen(entry)}
       onKeyDown={(event) => {
         if (event.key === 'Enter' || event.key === ' ') {
@@ -39,9 +43,18 @@ function Row({ entry, open, onOpen }: { entry: ActivityLogEntry; open: boolean; 
       <td>
         <div className="act-call flex min-w-0 items-center gap-2">
           <StatusPill tone={method.tone} small>{method.label}</StatusPill>
-          <span className="ui-mono act-path max-w-105 truncate text-primary">{entry.path}{entry.query ? `?${entry.query}` : ''}</span>
+          {action ? (
+            <span className="act-action max-w-105 truncate font-semibold text-primary max-[900px]:whitespace-normal" title={entry.path}>{action.name}</span>
+          ) : (
+            <span className="ui-mono act-path max-w-105 truncate text-primary">{entry.path}{entry.query ? `?${entry.query}` : ''}</span>
+          )}
         </div>
-        <span className="ui-sub">{serviceLabel(entry.service)}</span>
+        {/* Mã đối tượng (hồ sơ, hợp đồng, lần khớp...) lấy từ đường dẫn: thông tin điều tra nên vẫn hiện. Màn rộng cắt bớt
+            cho dòng gọn; màn hẹp cho xuống dòng để đọc đủ tên thao tác và mã. */}
+        <span className="ui-sub max-w-105 truncate max-[900px]:whitespace-normal max-[900px]:wrap-anywhere">
+          {target && <span className="act-target">{target} · </span>}
+          {serviceLabel(entry.service)}
+        </span>
       </td>
       <td>
         <span className="strong">{entry.user ?? 'Chưa đăng nhập'}</span>
@@ -65,7 +78,7 @@ function Row({ entry, open, onOpen }: { entry: ActivityLogEntry; open: boolean; 
   );
 }
 
-/** Mỗi dòng là một lượt gọi API; bấm dòng để xem body gửi lên và nội dung lỗi. */
+/** Mỗi dòng là một lượt gọi API; bấm dòng để xem đối tượng, body gửi lên và nội dung lỗi. */
 export function ActivityLogTable({ entries, openKey, onOpen }: Props) {
   return (
     <div className="ui-table-wrap">
@@ -73,7 +86,7 @@ export function ActivityLogTable({ entries, openKey, onOpen }: Props) {
         <thead>
           <tr>
             <th>Thời gian</th>
-            <th>API</th>
+            <th>Thao tác</th>
             <th>Người gọi</th>
             <th className="max-[900px]:hidden">Kết quả</th>
             <th className="max-[900px]:hidden">Lỗi trả về</th>

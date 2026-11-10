@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { Drawer } from '@/components/Drawer';
 import { Icon } from '@/components/Icon';
 import { StatusPill } from '@/components/StatusPill';
+import { describeAction, isWriteMethod } from '../actions';
 import {
   CLIENT_LABELS, ROLE_LABELS, methodInfo, serviceLabel, statusTone,
 } from '../constants';
@@ -31,12 +32,14 @@ interface Props {
 }
 
 /**
- * Chi tiết một lượt gọi: ai gọi, nhóm chức năng nào trả lời, body gửi lên (đã che) và lỗi trả về. Hai lối tắt cho việc
- * điều tra: xem mọi lượt gọi của cùng người này, sao chép mã tra cứu để đối chiếu với người báo lỗi.
+ * Chi tiết một lượt gọi: việc đã làm và đối tượng (với lượt gọi ghi có trong bảng tra `actions.ts`), ai gọi, nhóm chức
+ * năng nào trả lời, body gửi lên (đã che) và lỗi trả về. Đường dẫn gốc luôn ở dòng phụ dưới tiêu đề. Hai lối tắt cho
+ * việc điều tra: xem mọi lượt gọi của cùng người này, sao chép mã tra cứu để đối chiếu với người báo lỗi.
  */
 export function ActivityLogDrawer({ entry, onClose, onFilterUser, onCopied }: Props) {
   const error = entry.status >= 400;
   const method = methodInfo(entry.method);
+  const action = describeAction(entry.method, entry.path, entry.requestBody);
   const { user, traceId } = entry;
 
   const copyTraceId = async (value: string) => {
@@ -51,7 +54,7 @@ export function ActivityLogDrawer({ entry, onClose, onFilterUser, onCopied }: Pr
 
   return (
     <Drawer
-      title={<>{method.label} <StatusPill tone={statusTone(entry.status)} small>{entry.status}</StatusPill></>}
+      title={<>{action?.name ?? method.label} <StatusPill tone={statusTone(entry.status)} small>{entry.status}</StatusPill></>}
       subtitle={<span className={`ui-mono act-break ${BREAK}`}>{entry.path}</span>}
       onClose={onClose}
     >
@@ -81,7 +84,16 @@ export function ActivityLogDrawer({ entry, onClose, onFilterUser, onCopied }: Pr
 
       <dl className="ui-rows act-rows">
         <Fact label="Thời gian">{formatClock(entry.at)} {formatDay(entry.at)}</Fact>
-        <Fact label="Thao tác">{method.label}</Fact>
+        <Fact label="Thao tác">{action ? <>{action.name} <StatusPill tone={method.tone} small>{method.label}</StatusPill></> : method.label}</Fact>
+        {action && action.targets.length > 0 && (
+          <Fact label="Đối tượng">
+            {action.targets.map((target) => (
+              <span key={target.label} className="block">
+                {target.label} <span className={`ui-mono ${BREAK}`}>{target.value}</span>
+              </span>
+            ))}
+          </Fact>
+        )}
         <Fact label="Nhóm chức năng">{serviceLabel(entry.service)}</Fact>
         <Fact label="Thời gian xử lý">{entry.durationMs} ms</Fact>
         <Fact label="Người gọi">{user ?? 'Chưa đăng nhập'}</Fact>
@@ -100,7 +112,14 @@ export function ActivityLogDrawer({ entry, onClose, onFilterUser, onCopied }: Pr
               {prettyBody(entry.requestBody)}
             </pre>
           )
-          : <p className="ui-sub">Không có dữ liệu gửi lên.</p>}
+          : (
+            <p className="ui-sub">
+              {/* Nhiều thao tác ghi (đánh dấu đã đọc, lập lại giấy xác nhận, làm mới phiên...) vốn không gửi body. */}
+              {isWriteMethod(entry.method)
+                ? 'Thao tác này không gửi kèm dữ liệu; nội dung nằm ở đường dẫn.'
+                : 'Không có dữ liệu gửi lên.'}
+            </p>
+          )}
       </section>
       <p className="ui-sub act-privacy mt-3.5">
         Mật khẩu, mã PIN, OTP, token và ảnh giấy tờ, khuôn mặt đã được che bằng *** trước khi ghi.

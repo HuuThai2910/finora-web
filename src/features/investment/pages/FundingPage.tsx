@@ -26,30 +26,22 @@ import { LOAN_PURPOSE_CODES } from '@/features/loan/constant';
 import { formatBusinessLabel } from '@/features/loan/formatters';
 import { OrderIncidentsSection } from '@/features/servicing';
 import { useGetMarketListingsQuery, type ListingSort } from '../api/investmentApi';
-import { CloseExpiredDialog } from '../components/CloseExpiredDialog';
-import { CommitmentTrendCard } from '../components/CommitmentTrendCard';
 import { FundingListTable } from '../components/FundingListTable';
 import { FundingSettingsModal } from '../components/FundingSettingsModal';
-import { FundingSummary } from '../components/FundingSummary';
-import { FUNDING_PAGE_SIZE, GRADE_OPTIONS, LISTING_TABS, isListingTab, type ListingTab } from '../constants';
-import { useFundingSummary } from '../hooks/useFundingSummary';
-import { HEAD_ACTIONS } from '../styles';
+import {
+  FUNDING_PAGE_SIZE,
+  GRADE_OPTIONS,
+  STATUS_FILTER_CHIP,
+  STATUS_FILTER_OPTIONS,
+  isListingStatus,
+} from '../constants';
 
-const EMPTY_TEXT: Record<ListingTab, string> = {
-  ALL: 'Chưa có khoản vay nào trên sàn gọi vốn.',
-  DRAFT: 'Không còn bản nháp nào từ luồng cũ. Khoản vay mới tự lên sàn và mở gọi vốn.',
-  OPEN: 'Không có khoản nào đang gọi vốn.',
-  FULLY_FUNDED: 'Không có khoản nào đã đủ vốn.',
-  CLOSED: 'Chưa có khoản nào đóng vì hết hạn.',
-  CANCELLED: 'Chưa có khoản nào bị rút khỏi sàn.',
-};
-
-const SORT_LABELS: Record<ListingSort, string> = {
-  rate: 'Lãi cao trước',
-  newest: 'Mới lên sàn trước',
-  closing: 'Sắp hết hạn gọi vốn',
-  amount: 'Số tiền gọi lớn trước',
-};
+/** Mặc định mới lên sàn trước, khớp cột Ngày gọi vốn; giá trị rỗng trên URL nghĩa là mặc định. */
+const SORT_OPTIONS: ReadonlyArray<{ value: Exclude<ListingSort, 'newest'>; label: string }> = [
+  { value: 'closing', label: 'Sắp hết hạn gọi vốn trước' },
+  { value: 'rate', label: 'Lãi cao trước' },
+  { value: 'amount', label: 'Số tiền gọi lớn trước' },
+];
 
 /**
  * Tham số bộ lọc trên URL. `tab` (trạng thái) và `grade` giữ tên cũ để link sẵn có (Tổng quan dẫn `?tab=DRAFT`) mở
@@ -57,7 +49,7 @@ const SORT_LABELS: Record<ListingSort, string> = {
  */
 const FILTER_KEYS = [
   'tab', 'amountMin', 'amountMax', 'fundedMin', 'fundedMax', 'rateMin', 'rateMax', 'termMin', 'termMax', 'grade',
-  'scoreMin', 'scoreMax', 'purposeCode', 'closesFrom', 'closesTo', 'openedFrom', 'openedTo',
+  'scoreMin', 'scoreMax', 'purposeCode', 'closesFrom', 'closesTo', 'openedFrom', 'openedTo', 'sort',
 ] as const;
 
 /** Khóa URL cũ → khóa mới. */
@@ -65,6 +57,7 @@ const LEGACY_KEYS: Record<string, (typeof FILTER_KEYS)[number]> = { status: 'tab
 
 const orUndefined = (value: string) => value || undefined;
 const percent = (value: string) => `${value.replace('.', ',')}%`;
+const isSort = (value: string): value is ListingSort => SORT_OPTIONS.some((option) => option.value === value);
 
 /** Đọc số trang từ URL (tính từ 1 cho dễ đọc), trả về chỉ số từ 0 như backend. */
 function readPage(raw: string | null): number {
@@ -73,20 +66,17 @@ function readPage(raw: string | null): number {
 }
 
 /**
- * Gọi vốn: tìm khoản vay trên sàn và mở trang chi tiết để thao tác.
+ * Quản lý gọi vốn: tìm khoản vay trên sàn và mở trang chi tiết để theo dõi.
  *
- * Khoản vay lên sàn tự động; trang này không đưa lên sàn, không sửa hay gỡ niêm yết. Duyệt, khóa vốn và phát hành Note
- * nằm ở trang chi tiết từng khoản. Thanh lọc dùng chung (ô tìm, bảng lọc, chip) và mọi bộ lọc nằm trên URL.
+ * Khoản vay lên sàn, đóng khi hết hạn, khóa vốn và phát hành phần vốn đều do hệ thống tự chạy; trang này chỉ để xem.
+ * Thao tác duy nhất là chỉnh tham số sàn (quyền "Cấu hình gọi vốn"). Ô tìm, bảng lọc (gồm trạng thái) và trang nằm trên
+ * URL để quay lại đúng chỗ.
  */
 export function FundingPage() {
   const dispatch = useDispatch<AppDispatch>();
   const [searchParams, setSearchParams] = useSearchParams();
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [closeOpen, setCloseOpen] = useState(false);
-  const { canView, canAct } = usePermission();
-  // Đóng khoản quá hạn là thao tác của "Gọi vốn" (khác quyền "Cấu hình gọi vốn" của hộp Tham số sàn).
-  const canCloseExpired = canAct('funding');
-  const notify = (message: string) => toast.success(message);
+  const { canView } = usePermission();
   const filters = useUrlFilters(FILTER_KEYS);
   const { applied, draft } = filters;
 
@@ -103,18 +93,16 @@ export function FundingPage() {
     setSearchParams(params, { replace: true });
   }, [searchParams, setSearchParams]);
 
-  const tab: ListingTab = isListingTab(applied.tab) ? applied.tab : 'ALL';
+  const status = isListingStatus(applied.tab) ? applied.tab : null;
   const page = readPage(searchParams.get('page'));
   const search = (searchParams.get('q') ?? '').trim();
-  const sortParam = searchParams.get('sort');
-  const sort: ListingSort = sortParam && sortParam in SORT_LABELS ? (sortParam as ListingSort) : 'rate';
+  const sort: ListingSort = isSort(applied.sort) ? applied.sort : 'newest';
   const grades = splitList(applied.grade);
 
-  const summary = useFundingSummary();
   const list = useGetMarketListingsQuery({
-    status: tab,
+    status: status ?? 'ALL',
     q: search || undefined,
-    sort: sort === 'rate' ? undefined : sort,
+    sort,
     amountMin: orUndefined(applied.amountMin),
     amountMax: orUndefined(applied.amountMax),
     fundedPercentMin: orUndefined(applied.fundedMin),
@@ -135,7 +123,6 @@ export function FundingPage() {
     size: FUNDING_PAGE_SIZE,
   });
   const listings = list.data?.content ?? [];
-  const counts = summary.summary?.counts;
 
   const errors = {
     amount: rangeError(draft.amountMin, draft.amountMax),
@@ -153,10 +140,7 @@ export function FundingPage() {
     ...removed: Array<(typeof FILTER_KEYS)[number]>) => {
     if (min || max) chips.push({ key, label: rangeChipLabel(label, min, max, format), onRemove: () => filters.remove(...removed) });
   };
-  if (tab !== 'ALL') {
-    const label = LISTING_TABS.find((item) => item.value === tab)?.label ?? tab;
-    chips.push({ key: 'tab', label: `Trạng thái: ${label}`, onRemove: () => filters.remove('tab') });
-  }
+  if (status) chips.push({ key: 'tab', label: `Trạng thái: ${STATUS_FILTER_CHIP[status]}`, onRemove: () => filters.remove('tab') });
   rangeChip('amount', 'Số tiền gọi', applied.amountMin, applied.amountMax, compactMoney, 'amountMin', 'amountMax');
   rangeChip('funded', 'Tiến độ', applied.fundedMin, applied.fundedMax, percent, 'fundedMin', 'fundedMax');
   rangeChip('rate', 'Lãi suất', applied.rateMin, applied.rateMax, percent, 'rateMin', 'rateMax');
@@ -165,7 +149,9 @@ export function FundingPage() {
   rangeChip('score', 'Điểm', applied.scoreMin, applied.scoreMax, (value) => value, 'scoreMin', 'scoreMax');
   if (applied.purposeCode) chips.push({ key: 'purpose', label: `Mục đích: ${formatBusinessLabel(applied.purposeCode)}`, onRemove: () => filters.remove('purposeCode') });
   rangeChip('closes', 'Hạn gọi vốn', applied.closesFrom, applied.closesTo, shortDate, 'closesFrom', 'closesTo');
-  rangeChip('opened', 'Ngày mở', applied.openedFrom, applied.openedTo, shortDate, 'openedFrom', 'openedTo');
+  rangeChip('opened', 'Ngày gọi vốn', applied.openedFrom, applied.openedTo, shortDate, 'openedFrom', 'openedTo');
+  const sortLabel = SORT_OPTIONS.find((option) => option.value === applied.sort)?.label;
+  if (sortLabel) chips.push({ key: 'sort', label: `Sắp xếp: ${sortLabel.toLocaleLowerCase('vi-VN')}`, onRemove: () => filters.remove('sort') });
 
   const updateParam = (key: string, value: string, replace = false) => {
     const params = new URLSearchParams(searchParams);
@@ -175,46 +161,26 @@ export function FundingPage() {
     setSearchParams(params, { replace });
   };
 
-  // Làm mới bảng lẫn số đếm trong một lần: mọi query danh sách cùng tag `MarketListingList`.
+  // Làm mới bảng lẫn chi tiết từng dòng (tên người vay, tiến độ): mọi khoản cùng tag `MarketListingList`/`MarketListing`.
   const refreshAll = () => {
-    dispatch(investmentApi.util.invalidateTags([{ type: 'MarketListingList', id: 'ALL' }]));
+    dispatch(investmentApi.util.invalidateTags([{ type: 'MarketListingList', id: 'ALL' }, 'MarketListing', 'FundingProgress']));
   };
 
-  // "Chờ duyệt" chỉ còn ý nghĩa với bản nháp của luồng cũ: ẩn khi không có, trừ khi đang lọc đúng trạng thái đó.
-  const statusOptions = LISTING_TABS.filter((item) => item.value !== 'ALL'
-    && (item.value !== 'DRAFT' || tab === 'DRAFT' || (counts?.DRAFT ?? 0) > 0));
+  // Bản nháp chỉ còn ở dữ liệu cũ: chỉ hiện lựa chọn này khi đang lọc đúng nó (link cũ của Tổng quan).
+  const statusOptions = STATUS_FILTER_OPTIONS.filter((option) => option.value !== 'DRAFT' || status === 'DRAFT' || draft.tab === 'DRAFT');
+  const filtered = chips.some((chip) => chip.key !== 'sort');
 
   return (
     <section className="ui-page">
       <header className="ui-page-head">
         <div className="ui-title">
-          <h1>Gọi vốn</h1>
-        </div>
-        <div className={`fu-head-actions ${HEAD_ACTIONS}`}>
-          <button type="button" className="ui-btn ghost" onClick={refreshAll} disabled={list.isFetching}>
-            <Icon name="refresh" />
-            {list.isFetching ? 'Đang tải...' : 'Làm mới'}
-          </button>
-          {/* Tham số sàn thuộc chức năng "Cấu hình gọi vốn", phân quyền riêng với Gọi vốn. */}
-          {canView('funding-settings') && (
-            <button type="button" className="ui-btn ghost" onClick={() => setSettingsOpen(true)}>Tham số sàn</button>
-          )}
+          <h1>Quản lý gọi vốn</h1>
+          <p>Theo dõi khoản vay từ lúc lên sàn đến khi phát hành phần vốn.</p>
         </div>
       </header>
 
-      <FundingSummary
-        summary={summary.summary}
-        isLoading={summary.isLoading}
-        error={summary.error}
-        onRetry={summary.refetch}
-        onCloseExpired={canCloseExpired ? () => setCloseOpen(true) : undefined}
-      />
-
       {/* Lệnh góp vốn chưa khớp với ví (quyền Xem "Đối soát & sự cố"); không có lệnh nào thì không chiếm chỗ. */}
       {canView('reconciliation') && <OrderIncidentsSection hideWhenEmpty />}
-
-      {/* Biểu đồ đọc series thống kê, cần quyền Xem "Tổng quan & thống kê". */}
-      {canView('dashboard') && <CommitmentTrendCard />}
 
       <section
         className="ui-card fu-list pt-3.5 px-3.5 pb-3 max-[760px]:px-2.5 max-[760px]:pb-2.5"
@@ -226,7 +192,7 @@ export function FundingPage() {
             value: search,
             onSearch: (next) => updateParam('q', next, true),
             label: 'Tìm khoản gọi vốn',
-            placeholder: 'Tìm theo mã hồ sơ hoặc mã hợp đồng',
+            placeholder: 'Tìm mã hồ sơ hoặc mã hợp đồng',
           }}
           activeCount={chips.length}
           chips={chips}
@@ -237,28 +203,32 @@ export function FundingPage() {
             return true;
           }}
           onClearAll={filters.clearAll}
-          total={list.data?.totalElements}
-          unit="khoản vay"
           title="Lọc khoản gọi vốn"
           actions={(
-            <select
-              className="ui-select fu-sort"
-              aria-label="Sắp xếp"
-              value={sort}
-              onChange={(event) => updateParam('sort', event.target.value === 'rate' ? '' : event.target.value)}
-            >
-              {(Object.keys(SORT_LABELS) as ListingSort[]).map((key) => (
-                <option key={key} value={key}>{SORT_LABELS[key]}</option>
-              ))}
-            </select>
+            <>
+              {/* Tham số sàn thuộc chức năng "Cấu hình gọi vốn", phân quyền riêng với Gọi vốn. */}
+              {canView('funding-settings') && (
+                <button type="button" className="ui-btn ghost" onClick={() => setSettingsOpen(true)}>Tham số sàn</button>
+              )}
+              <button type="button" className="ui-btn ghost" onClick={refreshAll} disabled={list.isFetching}>
+                <Icon name="refresh" />
+                {list.isFetching ? 'Đang tải...' : 'Làm mới'}
+              </button>
+            </>
           )}
         >
           <SelectField
-            label="Trạng thái đợt gọi vốn"
-            value={isListingTab(draft.tab) && draft.tab !== 'ALL' ? draft.tab : ''}
-            allLabel={counts ? `Tất cả trạng thái (${counts.ALL})` : 'Tất cả trạng thái'}
-            options={statusOptions.map((item) => ({ value: item.value, label: item.label, count: counts?.[item.value] }))}
+            label="Trạng thái"
+            value={isListingStatus(draft.tab) ? draft.tab : ''}
+            allLabel="Tất cả trạng thái"
+            options={statusOptions}
             onChange={(value) => filters.setDraft({ tab: value })}
+          />
+          <ToggleGroupField
+            label="Hạng tín dụng"
+            values={splitList(draft.grade)}
+            options={GRADE_OPTIONS.map((value) => ({ value, label: value }))}
+            onChange={(values) => filters.setDraft({ grade: values.join(',') })}
           />
           <RangeField
             label="Số tiền gọi vốn"
@@ -267,6 +237,13 @@ export function FundingPage() {
             max={draft.amountMax}
             error={errors.amount}
             onChange={(min, max) => filters.setDraft({ amountMin: min, amountMax: max })}
+          />
+          <DateRangeField
+            label="Ngày gọi vốn"
+            from={draft.openedFrom}
+            to={draft.openedTo}
+            error={errors.opened}
+            onChange={(from, to) => filters.setDraft({ openedFrom: from, openedTo: to })}
           />
           <RangeField
             label="Tiến độ đã gọi (%)"
@@ -293,12 +270,6 @@ export function FundingPage() {
             error={errors.term}
             onChange={(min, max) => filters.setDraft({ termMin: min, termMax: max })}
           />
-          <ToggleGroupField
-            label="Hạng tín dụng"
-            values={splitList(draft.grade)}
-            options={GRADE_OPTIONS.map((value) => ({ value, label: value }))}
-            onChange={(values) => filters.setDraft({ grade: values.join(',') })}
-          />
           <RangeField
             label="Điểm tín dụng"
             min={draft.scoreMin}
@@ -320,12 +291,12 @@ export function FundingPage() {
             error={errors.closes}
             onChange={(from, to) => filters.setDraft({ closesFrom: from, closesTo: to })}
           />
-          <DateRangeField
-            label="Ngày mở gọi vốn"
-            from={draft.openedFrom}
-            to={draft.openedTo}
-            error={errors.opened}
-            onChange={(from, to) => filters.setDraft({ openedFrom: from, openedTo: to })}
+          <SelectField
+            label="Sắp xếp"
+            value={isSort(draft.sort) ? draft.sort : ''}
+            allLabel="Mới lên sàn trước"
+            options={[...SORT_OPTIONS]}
+            onChange={(value) => filters.setDraft({ sort: value })}
           />
         </FilterBar>
 
@@ -337,13 +308,13 @@ export function FundingPage() {
           <div className="ui-empty">
             {search
               ? `Không có khoản vay nào có mã khớp "${search}".`
-              : chips.length > (tab !== 'ALL' ? 1 : 0)
+              : filtered
                 ? 'Không có khoản vay nào khớp bộ lọc. Thử nới điều kiện hoặc xóa lọc.'
-                : EMPTY_TEXT[tab]}
+                : 'Chưa có khoản vay nào trên sàn gọi vốn.'}
           </div>
         ) : (
           <div className={list.isFetching ? 'ui-busy' : undefined}>
-            <FundingListTable listings={listings} tab={tab} />
+            <FundingListTable listings={listings} />
             <Pager
               page={page}
               size={FUNDING_PAGE_SIZE}
@@ -357,14 +328,8 @@ export function FundingPage() {
       </section>
 
       {settingsOpen && (
-        <FundingSettingsModal
-          onClose={() => setSettingsOpen(false)}
-          onNotice={notify}
-          // Hai hộp thoại không chồng lên nhau (Esc sẽ đóng cả hai): đóng Tham số sàn rồi mới mở hộp xác nhận.
-          onCloseExpired={canCloseExpired ? () => { setSettingsOpen(false); setCloseOpen(true); } : undefined}
-        />
+        <FundingSettingsModal onClose={() => setSettingsOpen(false)} onNotice={(message) => toast.success(message)} />
       )}
-      {closeOpen && <CloseExpiredDialog onClose={() => setCloseOpen(false)} onDone={notify} />}
     </section>
   );
 }

@@ -1,77 +1,103 @@
 import { apiFetchBlob } from '@/lib/api/httpClient';
 import { investmentApi } from '@/lib/api/investmentApi';
 import type {
+  AdminOrderBook,
+  AdminOrderBookDetail,
   AdminTrade,
-  OrderBookAdminSummary,
+  BookSort,
+  BookState,
+  ListingNote,
   OrderBookSnapshot,
-  OrderBookSummary,
   PageResponse,
-  SettlementStatus,
-  TransferDocument,
-  TransferDocumentDetail,
-  TransferDocumentStatus,
   TradeNoteOwnership,
+  TradeProgress,
+  TransferDocumentDetail,
 } from '../types';
 
 /** Cùng base URL với slice Investment; luồng SSE không đi qua `fetchBaseQuery` nên cần tự ghép. */
 const BASE_URL = import.meta.env.VITE_INVESTMENT_API_URL ?? '/api/v1';
 
+const ADMIN = '/investments/admin/order-books';
+const tradePath = (tradeReference: string) => `${ADMIN}/trades/${encodeURIComponent(tradeReference)}`;
 const documentPath = (tradeReference: string) =>
   `/investments/admin/transfer-documents/${encodeURIComponent(tradeReference)}`;
 
-export interface PageParams {
-  page?: number;
-  size?: number;
-  /** Ô tìm: mã hồ sơ/hợp đồng của khoản vay (thêm mã lần khớp, số giấy ở bảng tương ứng); khớp một phần ở server. */
+/** Bộ lọc danh sách sổ lệnh; bỏ trống là không lọc. Lọc và sắp xếp ở server. */
+export interface BookListParams {
+  /** Một phần mã hồ sơ/hợp đồng hoặc họ tên người vay. */
   q?: string;
+  state?: BookState;
+  /** Nhiều hạng, dạng `A,B`. */
+  grades?: string;
+  rateMin?: string;
+  rateMax?: string;
+  sort?: BookSort;
+  page: number;
+  size: number;
 }
 
-export interface TradeParams extends PageParams {
-  /** Bỏ trống là mọi trạng thái thanh toán. */
-  settlement?: SettlementStatus;
+/** Bộ lọc lần khớp của một sổ (tab Giao dịch). Ngày theo giờ Việt Nam gồm hai đầu; số tiền tính bằng đồng. */
+export interface TradeListParams {
+  listingId: number;
+  /** Một phần họ tên người bán hoặc người mua (từ 2 ký tự). */
+  party?: string;
+  progress?: TradeProgress;
+  executedFrom?: string;
+  executedTo?: string;
+  amountMin?: string;
+  amountMax?: string;
+  page: number;
+  size: number;
 }
 
-export interface TransferDocumentParams extends PageParams {
-  /** Bỏ trống là mọi trạng thái. */
-  status?: TransferDocumentStatus;
+export interface ListingNoteParams {
+  listingId: number;
+  /** Một phần mã phần vốn hoặc họ tên người đang nắm giữ. */
+  q?: string;
+  page: number;
+  size: number;
 }
 
 /**
- * Chợ Notes nhìn từ màn quản trị. Trang này **chỉ đọc**: đặt và huỷ lệnh là việc của nhà đầu tư
- * trên app, vì backend lấy danh tính từ token — quản trị đặt lệnh sẽ thành lệnh của chính quản trị.
+ * Chợ chuyển nhượng nhìn từ màn quản trị. Trang **chỉ đọc**: đặt và hủy lệnh là việc của nhà đầu tư trên app (backend
+ * lấy danh tính từ token, quản trị đặt lệnh sẽ thành lệnh của chính quản trị). Quyền: Xem "Chợ chuyển nhượng".
  */
 const endpoints = investmentApi.injectEndpoints({
   endpoints: (builder) => ({
-    getOrderBookAdminSummary: builder.query<OrderBookAdminSummary, void>({
-      query: () => '/investments/admin/order-books/summary',
-      providesTags: [{ type: 'OrderBooks', id: 'SUMMARY' }],
+    getAdminOrderBooks: builder.query<PageResponse<AdminOrderBook>, BookListParams>({
+      query: (params) => ({ url: ADMIN, params }),
+      providesTags: [{ type: 'OrderBooks', id: 'LIST' }],
     }),
 
-    getAdminTrades: builder.query<PageResponse<AdminTrade>, TradeParams>({
-      query: (params) => ({ url: '/investments/admin/order-books/trades', params }),
-      providesTags: [{ type: 'OrderBooks', id: 'TRADES' }],
+    getAdminOrderBook: builder.query<AdminOrderBookDetail, number>({
+      query: (listingId) => `${ADMIN}/${listingId}`,
+      providesTags: (_result, _error, listingId) => [{ type: 'OrderBooks', id: listingId }],
     }),
 
-    /** Note đã chuyển trong một lần khớp: người đang giữ và lịch sử chuyển nhượng của từng Note. */
+    getListingNotes: builder.query<PageResponse<ListingNote>, ListingNoteParams>({
+      query: ({ listingId, ...params }) => ({ url: `${ADMIN}/${listingId}/notes`, params }),
+      providesTags: (_result, _error, { listingId }) => [{ type: 'OrderBooks', id: listingId }],
+    }),
+
+    getAdminTrades: builder.query<PageResponse<AdminTrade>, TradeListParams>({
+      query: (params) => ({ url: `${ADMIN}/trades`, params }),
+      providesTags: (_result, _error, { listingId }) => [{ type: 'OrderBooks', id: listingId }],
+    }),
+
+    getAdminTrade: builder.query<AdminTrade, string>({
+      query: tradePath,
+      providesTags: (_result, _error, tradeReference) => [{ type: 'OrderBooks', id: tradeReference }],
+    }),
+
+    /** Phần vốn đã chuyển trong một lần khớp: người đang giữ, giá đang rao bán và lịch sử chuyển nhượng. */
     getTradeNotes: builder.query<TradeNoteOwnership[], string>({
-      query: (tradeReference) => `/investments/admin/order-books/trades/${encodeURIComponent(tradeReference)}/notes`,
+      query: (tradeReference) => `${tradePath(tradeReference)}/notes`,
+      providesTags: (_result, _error, tradeReference) => [{ type: 'OrderBooks', id: tradeReference }],
     }),
 
     /**
-     * Gửi thanh toán lại lần khớp "Cần đối soát": Investment đưa về hàng chờ, worker gọi Payment lần nữa với cùng mã
-     * (Payment idempotent nên không chuyển tiền hai lần). 409 khi lần khớp không còn lỗi.
-     */
-    retryTradeSettlement: builder.mutation<AdminTrade, string>({
-      query: (tradeReference) => ({
-        url: `/investments/admin/order-books/trades/${encodeURIComponent(tradeReference)}/retry-settlement`,
-        method: 'POST',
-      }),
-      invalidatesTags: [{ type: 'OrderBooks', id: 'TRADES' }, { type: 'OrderBooks', id: 'SUMMARY' }],
-    }),
-
-    /**
-     * Giấy xác nhận chuyển nhượng của một lần khớp. 404 nghĩa là lần khớp chưa có văn bản (chưa thanh toán xong hoặc
-     * khớp trước khi có tính năng), nơi gọi hiểu là "chưa có" chứ không phải lỗi.
+     * Giấy xác nhận chuyển nhượng của một lần khớp (trang Xác minh dữ liệu đọc `proofArtifact` để tính lại mã băm).
+     * 404 nghĩa là lần khớp chưa có văn bản.
      */
     getTransferDocument: builder.query<TransferDocumentDetail, string>({
       query: documentPath,
@@ -79,35 +105,11 @@ const endpoints = investmentApi.injectEndpoints({
     }),
 
     /**
-     * Danh sách giấy xác nhận theo trạng thái (`TransferDocumentAdminController.list`), mới nhất trước. Dùng để đếm và
-     * lọc văn bản lỗi hoặc đang lập; tiền là chuỗi decimal, không có `proofArtifact` (chỉ API chi tiết có).
-     */
-    getTransferDocuments: builder.query<PageResponse<TransferDocument>, TransferDocumentParams>({
-      query: (params) => ({ url: '/investments/admin/transfer-documents', params }),
-      providesTags: [{ type: 'TransferDocuments', id: 'LIST' }],
-    }),
-
-    // Chỉ văn bản FAILED mới lập lại được (backend chặn trạng thái khác); 204 rồi worker lập lại, nên làm mới đúng dòng
-    // đó và các danh sách lọc theo trạng thái (văn bản rời nhóm "lỗi" sang "đang lập").
-    retryTransferDocument: builder.mutation<void, string>({
-      query: (tradeReference) => ({ url: `${documentPath(tradeReference)}/retry`, method: 'POST' }),
-      invalidatesTags: (_result, _error, tradeReference) => [
-        { type: 'TransferDocuments', id: tradeReference },
-        { type: 'TransferDocuments', id: 'LIST' },
-      ],
-    }),
-
-    getOrderBooks: builder.query<PageResponse<OrderBookSummary>, PageParams>({
-      query: (params) => ({ url: '/investments/order-books', params }),
-      providesTags: [{ type: 'OrderBooks', id: 'LIST' }],
-    }),
-
-    /**
      * Ảnh chụp một sổ, tự cập nhật bằng Server-Sent Events khi đang mở.
      *
-     * Tải ảnh qua REST trước, rồi mở `EventSource` (kèm cookie đăng nhập) và thay ảnh trong cache
-     * mỗi khi backend đẩy ảnh mới. Ảnh đến muộn có `sequence` nhỏ hơn ảnh đang giữ thì bỏ. Đóng hộp
-     * thoại là cache bị gỡ, luồng đóng theo. `EventSource` tự kết nối lại khi mạng chập chờn.
+     * Tải ảnh qua REST trước, rồi mở `EventSource` (kèm cookie đăng nhập) và thay ảnh trong cache mỗi khi backend đẩy
+     * ảnh mới. Ảnh đến muộn có `sequence` nhỏ hơn ảnh đang giữ thì bỏ. Rời trang là cache bị gỡ, luồng đóng theo.
+     * `EventSource` tự kết nối lại khi mạng chập chờn.
      */
     getOrderBook: builder.query<OrderBookSnapshot, number>({
       query: (listingId) => `/investments/order-books/${listingId}`,
@@ -123,7 +125,7 @@ const endpoints = investmentApi.injectEndpoints({
             updateCachedData((current) => (next.sequence >= current.sequence ? next : current));
           });
         } catch {
-          // Cache bị gỡ trước khi tải xong (đóng hộp thoại sớm): không mở luồng nữa.
+          // Cache bị gỡ trước khi tải xong (rời trang sớm): không mở luồng nữa.
         }
         await cacheEntryRemoved;
         source?.close();
@@ -133,22 +135,20 @@ const endpoints = investmentApi.injectEndpoints({
 });
 
 /**
- * Tải tệp PDF đã ký của giấy xác nhận. Không đi qua RTK Query vì `Blob` không lưu được vào store; dùng `apiFetchBlob`
- * để kèm cookie phiên và tự làm mới phiên khi gặp 401 (không đưa token lên URL, nên không mở bằng link thường).
+ * Tải tệp PDF đã đóng dấu của giấy xác nhận (trang Xác minh dữ liệu). Không đi qua RTK Query vì `Blob` không lưu được
+ * vào store; `apiFetchBlob` kèm cookie phiên và tự làm mới phiên khi gặp 401.
  */
 export function fetchTransferDocumentPdf(tradeReference: string, signal?: AbortSignal): Promise<Blob> {
   return apiFetchBlob(`${BASE_URL}${documentPath(tradeReference)}/pdf`, { signal });
 }
 
 export const {
-  useGetTradeNotesQuery,
-  useRetryTradeSettlementMutation,
-  useGetOrderBookAdminSummaryQuery,
+  useGetAdminOrderBooksQuery,
+  useGetAdminOrderBookQuery,
+  useGetListingNotesQuery,
   useGetAdminTradesQuery,
-  useGetOrderBooksQuery,
+  useGetAdminTradeQuery,
+  useGetTradeNotesQuery,
   useGetOrderBookQuery,
-  useGetTransferDocumentQuery,
-  useGetTransferDocumentsQuery,
   useLazyGetTransferDocumentQuery,
-  useRetryTransferDocumentMutation,
 } = endpoints;

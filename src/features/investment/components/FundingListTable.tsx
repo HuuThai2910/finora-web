@@ -1,119 +1,177 @@
+import { useId } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Avatar } from '@/components/Avatar';
+import { Icon } from '@/components/Icon';
 import { StatusPill } from '@/components/StatusPill';
+import { PurposeIcon } from '@/features/loan';
 import { fromListState } from '@/lib/navigation';
-import type { ListingTab } from '../constants';
-import { useListingStage } from '../hooks/useListingStage';
-import { stepStatus } from '../mappers/listingDisplay';
-import { describeFundingWindow } from '../stage';
+import { useGetListingInvestorsQuery } from '../api/investmentApi';
+import { SIGNING_STATUSES, STAGE_META, resolveFundingStage } from '../stage';
 import type { MarketListing } from '../types';
-import { formatDate, formatMoney, formatMonths, formatPercent, formatRate } from '../formatters';
-
-interface Props {
-  listings: MarketListing[];
-  tab: ListingTab;
-}
+import { formatDateTime, formatMoney, formatMonths, formatPercent, formatRate, parseDecimal } from '../formatters';
 
 export const fundingDetailPath = (listingId: number) => `/investments/funding/${listingId}`;
 
-/**
- * Nhãn bước của khoản đã đủ vốn.
- *
- * Chỉ dòng `FULLY_FUNDED` mới cần tải phần vốn (và dò Note) để biết đang chờ khóa vốn hay
- * phát hành Note; tối đa 10 dòng một trang, cache dùng chung với trang chi tiết.
- */
-function FundedStepPill({ listing }: { listing: MarketListing }) {
-  const { stage } = useListingStage(listing);
-  const status = stepStatus(listing, stage);
-  return <StatusPill tone={status.tone}>{status.label}</StatusPill>;
-}
-
-function LastCell({ listing, tab, now }: { listing: MarketListing; tab: ListingTab; now: Date }) {
-  if (tab === 'OPEN') {
-    const fundingWindow = describeFundingWindow(listing.fundingClosesAt, now);
-    return (
-      <>
-        {formatDate(listing.fundingClosesAt)}
-        <span className={`ui-sub fu-window ${fundingWindow.tone} [&.warning]:text-warning [&.expired]:text-danger`}>
-          {fundingWindow.label}
-        </span>
-      </>
-    );
-  }
-  if (listing.status === 'FULLY_FUNDED') return <FundedStepPill listing={listing} />;
-  const status = stepStatus(listing, null, now);
-  return <StatusPill tone={status.tone}>{status.label}</StatusPill>;
-}
+/** Cột Người vay ẩn dưới 1380px để bảng không tràn ngang; Đã góp và Ngày gọi vốn ẩn ở màn hẹp. */
+const HIDE_MD = 'max-[1380px]:hidden';
+const HIDE_SM = 'hide-sm max-[760px]:hidden';
 
 /**
- * Bảng khoản vay trên sàn. Màn danh sách chỉ để tìm khoản cần xem; mọi thao tác (duyệt,
- * khóa vốn, phát hành Note) nằm ở trang chi tiết, nên cả dòng bấm được để mở chi tiết và
- * tên khoản vay là liên kết cho người dùng bàn phím.
+ * Tooltip của ô Đã góp: hiện khi rê chuột hoặc focus bàn phím (nhóm `tip`), mũi tên chỉ xuống ô.
+ * Số nhà đầu tư và tiền còn thiếu chỉ hiện ở đây để bảng ít chữ.
  */
-export function FundingListTable({ listings, tab }: Props) {
-  const navigate = useNavigate();
-  const location = useLocation();
-  // Trang chi tiết nhớ URL danh sách (tab, bộ lọc, trang) để nút "Về danh sách" quay lại đúng chỗ.
-  const listState = fromListState(location);
-  const now = new Date();
+const TIP =
+  'pointer-events-none absolute bottom-[calc(100%+8px)] left-1/2 z-20 -translate-x-1/2 translate-y-1 whitespace-nowrap ' +
+  'rounded-md bg-primary px-2.5 py-1.5 text-[12px] font-medium text-white opacity-0 shadow-pop transition duration-120 ' +
+  'group-hover/tip:translate-y-0 group-hover/tip:opacity-100 group-focus-visible/tip:translate-y-0 group-focus-visible/tip:opacity-100 ' +
+  "after:absolute after:top-full after:left-1/2 after:-ml-1.25 after:border-5 after:border-transparent after:border-t-primary after:content-['']";
+
+/**
+ * Phần trăm đã gọi để vẽ: `fundedPercent` của backend; khoản đã đóng/hủy thì tính từ `raisedAmount` (số đã gọi được
+ * trước khi hoàn tiền), vì lúc đó `committedAmount` và `fundedPercent` đã về 0.
+ */
+export function displayedPercent(listing: MarketListing): number {
+  const raised = listing.status === 'CLOSED' || listing.status === 'CANCELLED' ? parseDecimal(listing.raisedAmount) : null;
+  const target = parseDecimal(listing.targetAmount) ?? 0;
+  if (raised == null || target <= 0) return listing.fundedPercent;
+  return Math.round((raised / target) * 10_000) / 100;
+}
+
+function FundedCell({ listing }: { listing: MarketListing }) {
+  const tipId = useId();
+  const value = displayedPercent(listing);
+  const percent = Math.min(Math.max(value, 0), 100);
+  const remaining = parseDecimal(listing.remainingAmount) ?? 0;
+  const ended = listing.status === 'CLOSED' || listing.status === 'CANCELLED';
+  // Số nhà đầu tư có sẵn trong dòng danh sách (backend đếm theo lô); backend cũ không có thì bỏ phần này của tooltip.
+  const count = listing.investorCount;
+  const parts = [
+    count != null ? `${count} nhà đầu tư${ended && count > 0 ? ', đã hoàn tiền' : ''}` : null,
+    // "Thiếu" chỉ có nghĩa khi khoản còn nhận lệnh; khoản đã đủ, đóng hay hủy thì bỏ.
+    listing.status === 'OPEN' && remaining > 0 ? `thiếu ${formatMoney(remaining)} đ` : null,
+  ].filter(Boolean);
 
   return (
-    <div className="ui-table-wrap">
-      {/* Ô bảng đệm ngang 10px thay cho 12px của bảng chung; dưới 760px ẩn hai cột số tiền. */}
-      <table className="ui-table list fu-table [&_td]:px-2.5 [&_th]:px-2.5">
+    <div
+      className="fu-progress group/tip relative grid w-max grid-cols-[110px_44px] items-center gap-2 text-[13px] tabular-nums"
+      tabIndex={0}
+      aria-describedby={parts.length > 0 ? tipId : undefined}
+    >
+      <span className="block h-1.5 overflow-hidden rounded-full bg-[#eef0f3]" aria-hidden="true">
+        <i className="block h-full rounded-full bg-brand" style={{ width: `${percent}%` }} />
+      </span>
+      <span>{formatPercent(value)}</span>
+      {parts.length > 0 && <span id={tipId} role="tooltip" className={TIP}>{parts.join(', ')}</span>}
+    </div>
+  );
+}
+
+/**
+ * Một dòng khoản gọi vốn. Họ tên người vay, ngày lên sàn và số nhà đầu tư có sẵn trong dòng danh sách của Investment
+ * (đọc theo lô ở backend), nên dòng không gọi thêm API nào, trừ dữ liệu cũ dưới đây.
+ */
+function FundingRow({ listing, onOpen, listState }: {
+  listing: MarketListing;
+  onOpen: () => void;
+  listState: ReturnType<typeof fromListState>;
+}) {
+  // Dữ liệu cũ: khoản đã khóa toàn bộ phần vốn mà thiếu mốc giải ngân vẫn là đã phát hành (xem `resolveFundingStage`).
+  // Chỉ khoản đủ vốn đã qua bước ký mà chưa có mốc giải ngân mới cần đọc phần vốn; khoản đang chờ ký thì không.
+  const needInvestors = listing.status === 'FULLY_FUNDED' && !listing.disbursedAt
+    && !(listing.contractStatus && SIGNING_STATUSES.has(listing.contractStatus));
+  const investors = useGetListingInvestorsQuery(listing.listingId, { skip: !needInvestors });
+  const stage = STAGE_META[resolveFundingStage(listing, investors.data)];
+  const borrower = listing.borrowerFullName;
+  const openedAt = listing.fundingOpenedAt;
+  const code = listing.applicationCode;
+
+  return (
+    <tr
+      className="clickable"
+      tabIndex={0}
+      onClick={(event) => {
+        if ((event.target as HTMLElement).closest('a')) return;
+        onOpen();
+      }}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter' && event.target === event.currentTarget) onOpen();
+      }}
+    >
+      <td>
+        <div className="ui-row-main">
+          <span className="ui-dot"><PurposeIcon purpose={listing.purposeCode ?? null} /></span>
+          <div className="min-w-0">
+            {/* Không hiện mã kỹ thuật (loanId, LA-…); khoản lên sàn trước khi Loan có mã HS- thì chỉ còn mục đích. */}
+            {code ? <span className="ui-code">{code}</span> : null}
+            <span className={code ? 'ui-sub max-w-60 truncate' : 'ui-code block max-w-60 truncate'} title={listing.purpose}>
+              {listing.purpose}
+            </span>
+          </div>
+        </div>
+      </td>
+      <td className={HIDE_MD}>
+        {borrower ? (
+          <span className="ui-person">
+            <Avatar name={borrower} />
+            <span className="inline-block max-w-40 truncate align-middle" title={borrower}>{borrower}</span>
+          </span>
+        ) : null}
+        <span className="ui-sub">
+          hạng {listing.creditGrade}{listing.creditScore != null ? `, điểm ${listing.creditScore}` : ''}
+        </span>
+      </td>
+      <td className="num">
+        <span className="strong">{formatMoney(listing.targetAmount)} đ</span>
+        <span className="ui-sub">{formatMonths(listing.termMonths)}, lãi {formatRate(listing.annualInterestRate)}</span>
+      </td>
+      <td className={HIDE_SM}>
+        {listing.status === 'DRAFT' ? <span className="text-muted">Chưa lên sàn</span> : <FundedCell listing={listing} />}
+      </td>
+      <td className={HIDE_SM}>{openedAt ? formatDateTime(openedAt) : '-'}</td>
+      <td><StatusPill tone={stage.tone} dot>{stage.label}</StatusPill></td>
+      <td className="num">
+        <Link className="ui-btn soft" to={fundingDetailPath(listing.listingId)} state={listState}>
+          Chi tiết
+          <Icon name="arrowRight" />
+        </Link>
+      </td>
+    </tr>
+  );
+}
+
+/**
+ * Bảng khoản vay trên sàn. Danh sách chỉ để tìm khoản cần xem (quản trị không có thao tác nào trên khoản gọi vốn), nên
+ * cả dòng bấm được để mở chi tiết; nút cuối dòng giữ cho người dùng bàn phím và trình đọc màn hình. Ít màu: chỉ nhãn
+ * trạng thái có màu, thanh tiến độ một màu.
+ */
+export function FundingListTable({ listings }: { listings: MarketListing[] }) {
+  const navigate = useNavigate();
+  // Trang chi tiết nhớ URL danh sách (bộ lọc, trang) để quay lại đúng chỗ.
+  const listState = fromListState(useLocation());
+
+  return (
+    // Màn rộng đủ chỗ cho bảng: bỏ khung cuộn để tooltip ô Đã góp không bị cắt.
+    <div className="ui-table-wrap min-[1180px]:overflow-visible">
+      <table className="ui-table list fu-table [&_td]:px-2 [&_th]:px-2">
         <thead>
           <tr>
-            <th className="w-[46%] max-[760px]:w-auto">Khoản vay</th>
-            <th className="num hide-sm w-[16%] max-[760px]:hidden">Mục tiêu</th>
-            <th className="hide-sm w-[20%] max-[760px]:hidden">Đã góp</th>
-            <th className="fu-last text-right">{tab === 'OPEN' ? 'Hạn gọi vốn' : 'Trạng thái'}</th>
+            <th>Khoản vay</th>
+            <th className={HIDE_MD}>Người vay</th>
+            <th className="num">Số tiền</th>
+            <th className={HIDE_SM}>Đã góp</th>
+            <th className={HIDE_SM}>Ngày gọi vốn</th>
+            <th>Trạng thái</th>
+            <th><span className="ui-sr-only">Thao tác</span></th>
           </tr>
         </thead>
         <tbody>
           {listings.map((listing) => (
-            <tr
+            <FundingRow
               key={listing.listingId}
-              className="clickable"
-              onClick={(event) => {
-                if ((event.target as HTMLElement).closest('a')) return;
-                navigate(fundingDetailPath(listing.listingId), { state: listState });
-              }}
-            >
-              {/* max-width 0: tên dài bị cắt bằng dấu ba chấm thay vì đẩy rộng bảng. */}
-              <td className="fu-name max-w-0 max-[760px]:whitespace-normal">
-                <Link
-                  className="fu-title block overflow-hidden text-ellipsis font-medium text-primary in-[tr.clickable:hover]:text-brand focus-visible:text-brand max-[760px]:whitespace-normal"
-                  to={fundingDetailPath(listing.listingId)}
-                  state={listState}
-                >
-                  {listing.purpose}
-                </Link>
-                <span className="ui-sub">
-                  {/* Mã khoản vay dưới tên (chữ đơn cách nhỏ như mockup .gv-code), kèm điều khoản chính để so các khoản. */}
-                  <span className="ui-mono fu-code text-[12px]">#{listing.loanId}</span>, hạng {listing.creditGrade},
-                  {' '}{formatRate(listing.annualInterestRate)}, {formatMonths(listing.termMonths)}
-                </span>
-              </td>
-              <td className="num hide-sm max-[760px]:hidden">{formatMoney(listing.targetAmount)} đ</td>
-              <td className="hide-sm max-[760px]:hidden">
-                {listing.status === 'DRAFT' ? (
-                  <span className="fu-muted text-muted">Chưa lên sàn</span>
-                ) : (
-                  <div className="fu-progress grid grid-cols-[minmax(0,1fr)_56px] items-center gap-2.5 text-[13px] tabular-nums text-right">
-                    <span className="fu-thin block h-1.5 overflow-hidden rounded-[999px] bg-[#eef0f3]" aria-hidden="true">
-                      {/* Bề rộng lấy thẳng `fundedPercent` của backend, không tính lại từ số tiền. */}
-                      <i
-                        className="block h-full rounded-[999px] bg-brand"
-                        style={{ width: `${Math.min(Math.max(listing.fundedPercent, 0), 100)}%` }}
-                      />
-                    </span>
-                    <span>{formatPercent(listing.fundedPercent)}</span>
-                  </div>
-                )}
-              </td>
-              <td className="fu-last text-right">
-                <LastCell listing={listing} tab={tab} now={now} />
-              </td>
-            </tr>
+              listing={listing}
+              listState={listState}
+              onOpen={() => navigate(fundingDetailPath(listing.listingId), { state: listState })}
+            />
           ))}
         </tbody>
       </table>
