@@ -80,7 +80,7 @@ function LadderSide({ side, title, levels, max }: { side: Side; title: string; l
 
 /**
  * Thẻ "Sổ lệnh": lệnh đang chờ hai phía gộp theo mức giá, giá tốt nhất ở dòng đầu. Ảnh chụp công khai của sổ tự cập
- * nhật qua luồng SSE khi có lệnh đặt, khớp hoặc hủy (không hiện chữ báo); sổ không cho biết ai đặt lệnh nào.
+ * nhật qua WebSocket khi có lệnh đặt, khớp hoặc hủy (không hiện chữ báo); sổ không cho biết ai đặt lệnh nào.
  */
 export function OrderBookCard({ listingId }: { listingId: number }) {
   const { data, error, isLoading, refetch } = useGetOrderBookQuery(listingId);

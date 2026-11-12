@@ -13,8 +13,9 @@ import type {
   TradeProgress,
   TransferDocumentDetail,
 } from '../types';
+import { openOrderBookSocket } from './orderBookSocket';
 
-/** Cùng base URL với slice Investment; luồng SSE không đi qua `fetchBaseQuery` nên cần tự ghép. */
+/** Cùng base URL với slice Investment; tải PDF không đi qua `fetchBaseQuery` nên cần tự ghép. */
 const BASE_URL = import.meta.env.VITE_INVESTMENT_API_URL ?? '/api/v1';
 
 const ADMIN = '/investments/admin/order-books';
@@ -105,30 +106,26 @@ const endpoints = investmentApi.injectEndpoints({
     }),
 
     /**
-     * Ảnh chụp một sổ, tự cập nhật bằng Server-Sent Events khi đang mở.
+     * Ảnh chụp một sổ, tự cập nhật qua WebSocket khi đang mở.
      *
-     * Tải ảnh qua REST trước, rồi mở `EventSource` (kèm cookie đăng nhập) và thay ảnh trong cache mỗi khi backend đẩy
-     * ảnh mới. Ảnh đến muộn có `sequence` nhỏ hơn ảnh đang giữ thì bỏ. Rời trang là cache bị gỡ, luồng đóng theo.
-     * `EventSource` tự kết nối lại khi mạng chập chờn.
+     * Tải ảnh qua REST trước, rồi mở kênh WebSocket (`openOrderBookSocket`: xin vé bằng cookie phiên rồi nối thẳng
+     * Investment, tự nối lại khi rớt) và thay ảnh trong cache mỗi khi backend đẩy ảnh mới. Ảnh đến muộn có `sequence`
+     * nhỏ hơn ảnh đang giữ thì bỏ. Rời trang là cache bị gỡ, kênh đóng theo.
      */
     getOrderBook: builder.query<OrderBookSnapshot, number>({
       query: (listingId) => `/investments/order-books/${listingId}`,
       async onCacheEntryAdded(listingId, { updateCachedData, cacheDataLoaded, cacheEntryRemoved }) {
-        let source: EventSource | null = null;
+        let close: (() => void) | null = null;
         try {
           await cacheDataLoaded;
-          source = new EventSource(`${BASE_URL}/investments/order-books/${listingId}/stream`, {
-            withCredentials: true,
-          });
-          source.addEventListener('snapshot', (event) => {
-            const next = JSON.parse((event as MessageEvent<string>).data) as OrderBookSnapshot;
+          close = openOrderBookSocket(listingId, (next) => {
             updateCachedData((current) => (next.sequence >= current.sequence ? next : current));
           });
         } catch {
-          // Cache bị gỡ trước khi tải xong (rời trang sớm): không mở luồng nữa.
+          // Cache bị gỡ trước khi tải xong (rời trang sớm): không mở kênh nữa.
         }
         await cacheEntryRemoved;
-        source?.close();
+        close?.();
       },
     }),
   }),
