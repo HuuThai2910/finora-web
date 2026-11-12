@@ -10,13 +10,14 @@ export const RESTART_REQUEST_GAP_MS = 30_000;
 /** Lưu mã bật hệ thống để lần sau vào web là tự bật, không phải nhập lại. */
 export const WAKE_CODE_STORAGE_KEY = 'finora.systemWakeCode';
 
-/** Tên hiển thị của các container trong file trạng thái của VM. */
+/**
+ * Tên hiển thị của các container trong file trạng thái của VM, cùng danh sách SERVICES trong
+ * deploy/host/finora-status.sh của finora-platform. Container không có ở đây thì hiện đúng tên.
+ */
 export const SERVICE_LABELS: Record<string, string> = {
   caddy: 'Cổng HTTPS',
   kafka: 'Kafka',
   keycloak: 'Keycloak (đăng nhập)',
-  redis: 'Redis',
-  'fineract-db': 'Database Fineract',
   fineract: 'Fineract (core cho vay)',
   ai: 'AI chấm điểm',
   user: 'User',
@@ -24,5 +25,12 @@ export const SERVICE_LABELS: Record<string, string> = {
   payment: 'Payment',
   investment: 'Investment',
   loan: 'Loan',
+  'blockchain-db': 'Database Blockchain',
+  blockchain: 'Blockchain',
   gateway: 'Gateway',
+  'fabric-orderer': 'Fabric orderer',
+  'fabric-peer0-org1': 'Fabric peer Org1',
+  'fabric-peer0-org2': 'Fabric peer Org2',
+  'fabric-ccaas-org1': 'Chaincode Org1',
+  'fabric-ccaas-org2': 'Chaincode Org2',
 };
