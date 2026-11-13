@@ -2,13 +2,7 @@ import { useState } from 'react';
 import { Icon } from '@/components/Icon';
 import { toUiApiError } from '@/lib/api/errors';
 import { useEvidenceFile, type EvidenceFileState } from '../hooks/useEvidenceFile';
-import {
-  evidenceCaption,
-  evidenceMediaKind,
-  formatBytes,
-  formatEvidenceText,
-  type EvidenceMediaKind,
-} from '../mappers/evidenceDisplay';
+import { evidenceCaption, evidenceMediaKind, evidenceShortCaption, formatEvidenceText, type EvidenceMediaKind } from '../mappers/evidenceDisplay';
 import type { EkycEvidenceItem } from '../types';
 
 export interface ZoomImage {
@@ -24,27 +18,22 @@ interface EvidenceTileProps {
   onZoom: (image: ZoomImage) => void;
 }
 
+/** Ảnh thẻ theo tỉ lệ thẻ 85,6 × 54 mm; video và khung hình khuôn mặt cùng một cỡ 4:3 để xếp thành một hàng. */
+const MEDIA_RATIO: Record<'card' | 'face', string> = {
+  card: 'aspect-[85.6/54]',
+  face: 'aspect-[4/3]',
+};
+
 /** Khung trạng thái trong ô (chờ bấm tải, đang tải, lỗi, đã xoá); lớp `error` tô đỏ cả tiêu đề. */
 const TILE_STATE =
   'grid justify-items-center content-center gap-1 p-3 text-muted text-[12px] text-center [&_svg]:size-4.5 [&_strong]:text-secondary [&_strong]:text-[13px] [&_strong]:font-semibold [&.error]:text-danger [&.error_strong]:text-danger [&_.ui-btn]:mt-1';
 
-/** Video chiếm hai cột (màn hẹp cả hàng); tệp văn bản và tệp khác luôn chiếm cả hàng. */
-const TILE_SPAN: Record<EvidenceMediaKind, string> = {
-  image: '',
-  video: 'col-[span_2] max-[760px]:col-span-full',
-  text: 'col-span-full',
-  other: 'col-span-full',
-};
-
-/** Ảnh thẻ theo tỉ lệ thẻ 85,6 × 54 mm; ảnh khác tỉ lệ vẫn hiện đủ nhờ object-fit. */
-const MEDIA_BASE = 'grid overflow-hidden border border-line rounded-md in-[.ekr-gallery.card]:aspect-[85.6/54]';
-
-/** Khung theo loại tệp: video cao hơn ảnh, nền tối khi đang phát; văn bản/tệp khác cao theo nội dung, nền trắng. */
+/** Khung theo loại tệp; video nền tối khi đang phát, văn bản và tệp khác nền trắng. */
 const MEDIA_BOX: Record<EvidenceMediaKind, string> = {
-  image: 'h-55 place-items-center bg-surface-muted in-[.ekr-gallery.card]:h-auto',
-  video: 'h-75 place-items-center bg-surface-muted [&.dark]:bg-[#0b1730]',
-  text: 'min-h-18 place-items-stretch bg-white',
-  other: 'min-h-18 place-items-stretch bg-white',
+  image: 'place-items-center bg-surface-muted',
+  video: 'place-items-center bg-surface-muted [&.dark]:bg-[#0b1730]',
+  text: 'place-items-stretch bg-white',
+  other: 'place-items-stretch bg-white',
 };
 
 const MEDIA_FILL = 'block w-full h-full object-contain';
@@ -152,8 +141,8 @@ function TileBody({ state, media, item, caption, onRequest, onReload, onZoom }: 
 }
 
 /**
- * Một tệp bằng chứng. Ảnh và video tải ngay khi mở trang (người duyệt cần xem để quyết định);
- * tệp văn bản/khác chỉ tải khi bấm, vì mỗi lần tải đều được ghi nhật ký truy cập.
+ * Một tệp bằng chứng, tên ngắn bên dưới. Ảnh và video tải ngay khi mở trang (người duyệt cần xem để quyết định); tệp văn
+ * bản/khác chỉ tải khi bấm, vì mỗi lần tải đều được ghi nhật ký truy cập.
  */
 export function EvidenceTile({ attemptId, item, onZoom }: EvidenceTileProps) {
   const media = evidenceMediaKind(item.contentType);
@@ -161,10 +150,11 @@ export function EvidenceTile({ attemptId, item, onZoom }: EvidenceTileProps) {
   const { state, reload } = useEvidenceFile(attemptId, item, { enabled: requested, asText: media === 'text' });
   const caption = evidenceCaption(item);
   const playing = media === 'video' && state.status === 'ready';
+  const ratio = MEDIA_RATIO[item.kind === 'CCCD_FRONT' || item.kind === 'CCCD_BACK' ? 'card' : 'face'];
 
   return (
-    <figure className={[`ekr-tile ${media}`, 'grid gap-1.5 min-w-0', TILE_SPAN[media]].filter(Boolean).join(' ')}>
-      <div className={`${playing ? 'ekr-media dark' : 'ekr-media'} ${MEDIA_BASE} ${MEDIA_BOX[media]}`}>
+    <figure className={`ekr-tile ${media} grid gap-1.5 min-w-0`}>
+      <div className={`${playing ? 'ekr-media dark' : 'ekr-media'} grid overflow-hidden rounded-md border border-line ${ratio} ${MEDIA_BOX[media]}`}>
         <TileBody
           state={state}
           media={media}
@@ -175,10 +165,7 @@ export function EvidenceTile({ attemptId, item, onZoom }: EvidenceTileProps) {
           onZoom={onZoom}
         />
       </div>
-      <figcaption className="flex justify-between gap-2 text-secondary text-[12px]">
-        <span>{caption}</span>
-        <span className="ekr-muted text-muted">{formatBytes(item.sizeBytes)}</span>
-      </figcaption>
+      <figcaption className="text-[13px] font-medium text-primary">{evidenceShortCaption(item)}</figcaption>
     </figure>
   );
 }

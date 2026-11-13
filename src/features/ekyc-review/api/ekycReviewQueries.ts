@@ -54,5 +54,6 @@ const ekycReviewQueries = userServiceApi.injectEndpoints({
 });
 
 export const {
-  useGetEkycAttemptsQuery, useGetUserEkycAttemptsQuery, useGetEkycAttemptQuery, useDecideEkycAttemptMutation,
+  useGetEkycAttemptsQuery, useGetUserEkycAttemptsQuery, useLazyGetUserEkycAttemptsQuery, useGetEkycAttemptQuery,
+  useDecideEkycAttemptMutation,
 } = ekycReviewQueries;

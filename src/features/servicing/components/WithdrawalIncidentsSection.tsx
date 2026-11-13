@@ -17,6 +17,13 @@ import { ServicingCard } from './ServicingCard';
 interface Props {
   /** Mã khách hàng (chủ ví): trang chi tiết khách hàng chỉ đọc lệnh của khách đó. Không truyền là cả hàng đợi. */
   ownerId?: string;
+  /** Không bọc thẻ: bảng nằm trong một tab của hộp chi tiết khách hàng, tiêu đề đã là tên tab. */
+  bare?: boolean;
+}
+
+/** Số lệnh rút đang chờ kết quả của một khách (số trên tab); cùng tham số trang đầu nên dùng chung cache với bảng. */
+export function useWithdrawalIncidentCount(ownerId: string, skip = false): number | undefined {
+  return useWithdrawalIncidentsQuery({ page: 0, size: SERVICING_PAGE_SIZE, ownerId }, { skip }).data?.totalElements;
 }
 
 /**
@@ -67,7 +74,7 @@ function OwnerCell({ item }: { item: WithdrawalIncident }) {
  * "Tra cứu lại" chỉ hẹn worker hỏi provider ngay theo mã lệnh, không bao giờ gửi lệnh chi thứ hai (D42); provider báo thất
  * bại thì Payment tự hoàn tiền về ví. Xem cần quyền Xem "Rút tiền", tra cứu lại cần quyền Thao tác; một lệnh một lúc.
  */
-export function WithdrawalIncidentsSection({ ownerId }: Props) {
+export function WithdrawalIncidentsSection({ ownerId, bare = false }: Props) {
   const canRecheck = usePermission().canAct('withdrawal');
   const [page, setPage] = useState(0);
   const withdrawals = useWithdrawalIncidentsQuery({ page, size: SERVICING_PAGE_SIZE, ...(ownerId ? { ownerId } : {}) });
@@ -90,8 +97,8 @@ export function WithdrawalIncidentsSection({ ownerId }: Props) {
     }
   };
 
-  return (
-    <ServicingCard title="Lệnh rút tiền chờ đối soát" aside={total > 0 ? 'Tiền đã trừ ví, chỉ tra cứu theo mã lệnh' : undefined}>
+  const body = (
+    <>
       {failed && <div className="mb-2"><ErrorNotice error={failed.error} onRetry={() => run(failed.item)} /></div>}
       <QueueBody
         error={withdrawals.error}
@@ -161,6 +168,13 @@ export function WithdrawalIncidentsSection({ ownerId }: Props) {
           </table>
         </div>
       </QueueBody>
+    </>
+  );
+
+  if (bare) return body;
+  return (
+    <ServicingCard title="Lệnh rút tiền chờ đối soát" aside={total > 0 ? 'Tiền đã trừ ví, chỉ tra cứu theo mã lệnh' : undefined}>
+      {body}
     </ServicingCard>
   );
 }

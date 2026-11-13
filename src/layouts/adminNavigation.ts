@@ -121,8 +121,7 @@ export interface AdminBreadcrumb {
 
 const DETAIL_TITLES: Array<[RegExp, string]> = [
   [/^\/loans\/[^/]+\/review$/, 'Chi tiết hồ sơ vay'],
-  [/^\/customers\/kyc\/review\/[^/]+$/, 'Chi tiết lượt xác minh'],
-  [/^\/customers\/kyc\/[^/]+$/, 'Chi tiết khách hàng'],
+  [/^\/customers\/kyc\/review\/[^/]+$/, 'Xác minh danh tính'],
   [/^\/investments\/funding\/[^/]+$/, 'Chi tiết khoản gọi vốn'],
   [/^\/investments\/secondary\/[^/]+$/, 'Sổ lệnh'],
   [/^\/investments\/secondary\/[^/]+\/trades\/[^/]+$/, 'Chi tiết giao dịch'],

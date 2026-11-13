@@ -11,7 +11,8 @@ export {
   useLazyGetReviewDetailQuery,
   useLazyLookupApplicationQuery,
 } from './api/loanReviewApi';
-export { BorrowerApplicationsCard } from './components/BorrowerApplicationsCard';
+// Tab Hồ sơ vay trong hộp chi tiết khách hàng.
+export { BorrowerApplicationsTable, useBorrowerApplicationCount } from './components/BorrowerApplicationsTable';
 export { ApplicationRef } from './components/ApplicationRef';
 export { useApplicationNumbers } from './hooks/useApplicationNumbers';
 // Trang chi tiết Gọi vốn dựng theo bố cục hồ sơ vay: dùng chung thẻ, lịch sử xử lý (timeline của Loan), icon mục đích.

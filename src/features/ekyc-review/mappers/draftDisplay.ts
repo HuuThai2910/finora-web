@@ -22,9 +22,9 @@ const FIELD_ORDER: ReadonlyArray<readonly [EkycDraftFieldKey, string]> = [
   ['fullName', 'Họ và tên'],
   ['dateOfBirth', 'Ngày sinh'],
   ['gender', 'Giới tính'],
-  ['address', 'Nơi thường trú'],
   ['placeOfOrigin', 'Quê quán'],
   ['birthRegistrationPlace', 'Nơi đăng ký khai sinh'],
+  ['address', 'Nơi thường trú'],
   ['issueDate', 'Ngày cấp'],
   ['expiryDate', 'Có giá trị đến'],
 ];

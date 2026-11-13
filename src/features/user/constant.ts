@@ -74,3 +74,10 @@ export function maskIdNumber(idNumber: string | null): string | null {
   if (!value) return null;
   return value.length <= 4 ? value : `•••• ${value.slice(-4)}`;
 }
+
+/** Số điện thoại ở danh sách cũng chỉ hiện 4 số cuối như số định danh; số đầy đủ ở hộp chi tiết khách hàng. */
+export function maskPhone(phone: string | null): string | null {
+  const digits = phone?.replace(/\s/g, '');
+  if (!digits) return null;
+  return digits.length <= 4 ? digits : `•••• ${digits.slice(-4)}`;
+}

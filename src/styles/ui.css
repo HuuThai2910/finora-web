@@ -89,6 +89,15 @@
     @apply border-line-strong bg-white text-primary;
   }
 
+  /* Thao tác nguy hiểm không phải nút chính (khóa tài khoản, từ chối): viền và chữ đỏ trên nền trắng. */
+  .ui-btn.outline-danger {
+    @apply border-danger bg-white text-danger;
+  }
+
+  .ui-btn.outline-danger:hover:not(:disabled) {
+    @apply bg-danger-bg;
+  }
+
   .ui-btn.ghost:hover:not(:disabled),
   .ui-btn.soft:hover:not(:disabled) {
     @apply border-[#b9cbef] text-brand;
@@ -448,8 +457,26 @@
     @apply w-full max-w-120 animate-[ui-pop_0.16s_ease-out_both] overflow-hidden rounded-[16px] bg-white shadow-pop;
   }
 
+  /* Khung hộp chỉ nhận focus để giữ Tab trong hộp, không phải ô thao tác: không vẽ viền focus quanh cả hộp. */
+  .ui-modal:focus-visible {
+    @apply outline-none;
+  }
+
   .ui-modal.wide {
     @apply max-w-150;
+  }
+
+  /* Hộp xem hồ sơ: thân cuộn riêng, đầu và chân luôn thấy. */
+  .ui-modal.large {
+    @apply flex max-h-[calc(100vh-48px)] max-w-220 flex-col;
+  }
+
+  .ui-modal.large .ui-modal-body {
+    @apply max-h-none min-h-0 flex-1 text-primary;
+  }
+
+  .ui-modal.large .ui-modal-head h2 {
+    @apply text-[17px];
   }
 
   .ui-modal-head {

@@ -35,13 +35,3 @@ export function formatDay(value: string | null | undefined): string {
 export function formatDayTime(value: string | null | undefined): string {
   return formatDateTime(value);
 }
-
-/**
- * Trạng thái khóa đọc từ hệ thống đăng nhập; `null` nghĩa là backend không tra cứu được,
- * hiển thị đúng như vậy thay vì đoán "đang hoạt động".
- */
-export function accountState(locked: boolean | null): { label: string; tone: PillTone } {
-  if (locked === true) return { label: 'Đã khóa', tone: 'danger' };
-  if (locked === false) return { label: 'Đang hoạt động', tone: 'success' };
-  return { label: 'Chưa tra cứu được', tone: 'neutral' };
-}

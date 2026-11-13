@@ -1,5 +1,5 @@
-import { useRef } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useState } from 'react';
+import { useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { ErrorNotice } from '@/components/ErrorNotice';
 import {
   DateRangeField,
@@ -15,12 +15,12 @@ import {
 import { Icon } from '@/components/Icon';
 import { Pager } from '@/components/Pager';
 import { usePermission } from '@/features/auth';
-import { PendingAttemptTable, useGetEkycAttemptsQuery } from '@/features/ekyc-review';
-import { useGetUserStatsQuery, useGetUsersQuery, type EkycStatusType } from '@/features/user';
-import { CustomerTable } from '../components/CustomerTable';
-import { EkycOutcomeCard } from '../components/EkycOutcomeCard';
-import { KycOverview } from '../components/KycOverview';
-import { SignupWeeklyCard } from '../components/SignupWeeklyCard';
+import { ekycReviewDetailPath, useLazyGetUserEkycAttemptsQuery } from '@/features/ekyc-review';
+import { LockUserModal, useGetUserStatsQuery, useGetUsersQuery, type EkycStatusType, type UserItem } from '@/features/user';
+import { fromListState } from '@/lib/navigation';
+import { toast } from '@/lib/toast';
+import { CustomerDetailModal } from '../components/CustomerDetailModal';
+import { CustomerTable, type CustomerRowActions } from '../components/CustomerTable';
 import { KYC_FILTERS, KYC_LIST_PAGE_SIZE, isKycFilter, type KycFilter } from '../constants';
 import { usePendingAttemptLookup } from '../hooks/usePendingAttemptLookup';
 import { ekycDisplay } from '../mappers/customerDisplay';
@@ -53,12 +53,25 @@ const LOCK_LABELS: Record<string, string> = { false: 'Đang hoạt động', tru
 const EKYC_OPTIONS = KYC_FILTERS.filter((item): item is EkycStatusType => item !== 'ALL');
 const orUndefined = (value: string) => value || undefined;
 
+/** `state` của đường dẫn hộp chi tiết mở từ danh sách: đóng hộp thì lùi lịch sử về đúng danh sách đó. */
+interface CustomerModalState {
+  customerModal?: boolean;
+}
+
+const LIST_PATH = '/customers/kyc';
+
 /**
- * Khách hàng (người vay, nhà đầu tư): hai thẻ biểu đồ đầu trang, dưới là danh sách với thanh lọc dùng chung (ô tìm,
- * bảng lọc, chip). Bộ lọc chỉ dùng dữ liệu của finora-user — không lọc theo ví hay khoản vay để không gọi chéo service.
+ * Khách hàng (người vay, nhà đầu tư): danh sách với thanh lọc dùng chung (ô tìm, bảng lọc, chip). Bộ lọc chỉ dùng dữ
+ * liệu của finora-user — không lọc theo ví hay khoản vay để không gọi chéo service.
+ *
+ * Chi tiết khách là hộp thoại mở trên danh sách tại `/customers/kyc/:id` (giữ query của danh sách), nên đường dẫn cũ
+ * tới hồ sơ khách từ trang khác vẫn mở đúng khách; đóng hộp thì về danh sách.
  */
 export default function CustomerKycPage() {
   const [searchParams, setSearchParams] = useSearchParams();
+  const { id: openId } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const location = useLocation();
   const filters = useUrlFilters(FILTER_KEYS);
   const { applied, draft } = filters;
   const filter: KycFilter = isKycFilter(applied.ekyc) ? applied.ekyc : 'ALL';
@@ -67,47 +80,65 @@ export default function CustomerKycPage() {
   const gender = applied.gender in GENDER_LABELS ? (applied.gender as 'MALE' | 'FEMALE' | 'OTHER') : undefined;
   const page = readPage(searchParams.get('page'));
   const search = (searchParams.get('q') ?? '').trim();
-  const listRef = useRef<HTMLElement>(null);
   const permission = usePermission();
-  // Biểu đồ đăng ký theo tuần đọc series thống kê, cần quyền Xem "Tổng quan & thống kê".
-  const canStats = permission.canView('dashboard');
-  // Hàng chờ theo lượt và mục "Duyệt xác minh" ở menu dòng chỉ có khi được Xem "Duyệt xác minh danh tính".
+  // Mục "Duyệt xác minh"/"Xem xác minh" ở menu dòng chỉ có khi được Xem "Duyệt xác minh danh tính".
   const canReview = permission.canView('ekyc');
   const otherFilters = FILTER_KEYS.some((key) => key !== 'ekyc' && applied[key]);
-  // "Chờ duyệt tay" là hàng chờ theo LƯỢT (việc cần làm), không phải danh sách khách; thiếu quyền duyệt, đang tìm hoặc
-  // đang lọc thêm tiêu chí khác thì là danh sách khách có trạng thái đó.
-  const showQueue = filter === 'MANUAL_REVIEW' && canReview && !search && !otherFilters;
+  const [lockTarget, setLockTarget] = useState<UserItem | null>(null);
+  const [findAttempts] = useLazyGetUserEkycAttemptsQuery();
 
   // Chỉ người vay và nhà đầu tư (scope=CUSTOMER); lọc ở backend để kết quả trải trên toàn bộ khách hàng.
-  const users = useGetUsersQuery(
-    {
-      page,
-      size: KYC_LIST_PAGE_SIZE,
-      role: role?.value ?? 'ALL',
-      ekycStatus: filter,
-      q: search || undefined,
-      scope: 'CUSTOMER',
-      advanced: {
-        locked,
-        gender,
-        createdFrom: orUndefined(applied.createdFrom),
-        createdTo: orUndefined(applied.createdTo),
-        ageMin: applied.ageMin ? Number(applied.ageMin) : undefined,
-        ageMax: applied.ageMax ? Number(applied.ageMax) : undefined,
-        lastLoginFrom: orUndefined(applied.lastLoginFrom),
-        lastLoginTo: orUndefined(applied.lastLoginTo),
-      },
+  const users = useGetUsersQuery({
+    page,
+    size: KYC_LIST_PAGE_SIZE,
+    role: role?.value ?? 'ALL',
+    ekycStatus: filter,
+    q: search || undefined,
+    scope: 'CUSTOMER',
+    advanced: {
+      locked,
+      gender,
+      createdFrom: orUndefined(applied.createdFrom),
+      createdTo: orUndefined(applied.createdTo),
+      ageMin: applied.ageMin ? Number(applied.ageMin) : undefined,
+      ageMax: applied.ageMax ? Number(applied.ageMax) : undefined,
+      lastLoginFrom: orUndefined(applied.lastLoginFrom),
+      lastLoginTo: orUndefined(applied.lastLoginTo),
     },
-    { skip: showQueue },
-  );
-  const queue = useGetEkycAttemptsQuery(
-    { status: 'MANUAL_REVIEW', page, size: KYC_LIST_PAGE_SIZE },
-    { skip: !showQueue },
-  );
+  });
   const stats = useGetUserStatsQuery();
-  // Tổng số lượt chờ và lượt của từng khách cho menu dòng.
+  // Tổng số lượt chờ (số trong ô chọn "Chờ duyệt tay") và lượt chờ của từng khách cho menu dòng.
   const pending = usePendingAttemptLookup(canReview);
   const customers = users.data?.content ?? [];
+  const customerId = openId && /^\d+$/.test(openId) ? Number(openId) : null;
+
+  const openDetail = (customer: UserItem) =>
+    navigate({ pathname: `${LIST_PATH}/${customer.id}`, search: location.search }, { state: { customerModal: true } satisfies CustomerModalState });
+  const closeDetail = () => {
+    if ((location.state as CustomerModalState | null)?.customerModal) navigate(-1);
+    else navigate({ pathname: LIST_PATH, search: location.search }, { replace: true });
+  };
+  // Màn xác minh nhớ danh sách (bộ lọc, trang) để breadcrumb đưa về đúng chỗ.
+  const openAttempt = (attemptId: string) =>
+    navigate(ekycReviewDetailPath(attemptId), { state: fromListState({ pathname: LIST_PATH, search: location.search }) });
+
+  const actions: CustomerRowActions = {
+    openDetail,
+    review: canReview ? { attempts: pending.byCustomer, isLoading: pending.isFetching } : null,
+    openAttempt,
+    viewLatestAttempt: async (customer) => {
+      try {
+        // Backend trả lượt mới nhất trước; lượt bỏ dở (chưa gửi) không có gì để xem.
+        const attempts = await findAttempts(customer.id, true).unwrap();
+        const latest = attempts.content.find((item) => item.submittedAt);
+        if (latest) openAttempt(latest.attemptId);
+        else toast.info('Khách chưa gửi lượt xác minh nào để xem.');
+      } catch (error) {
+        toast.error(error);
+      }
+    },
+    toggleLock: permission.canAct('customer') ? setLockTarget : null,
+  };
 
   const setParam = (key: string, value: string, replace = false) => {
     const params = new URLSearchParams(searchParams);
@@ -157,15 +188,9 @@ export default function CustomerKycPage() {
     });
   }
 
-  const selectFromChart = (status: EkycStatusType) => {
-    setParam('ekyc', status);
-    listRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  };
-
-  const list = showQueue ? queue : users;
-  const isRefreshing = list.isFetching || stats.isFetching || pending.isFetching;
+  const isRefreshing = users.isFetching || stats.isFetching || pending.isFetching;
   const refresh = () => {
-    void list.refetch();
+    void users.refetch();
     void stats.refetch();
     if (canReview) void pending.refetch();
   };
@@ -175,27 +200,11 @@ export default function CustomerKycPage() {
       <header className="ui-page-head">
         <div className="ui-title">
           <h1>Khách hàng</h1>
+          <p>Người vay và nhà đầu tư đăng ký trên ứng dụng di động.</p>
         </div>
-        <button type="button" className="ui-btn ghost" onClick={refresh} disabled={isRefreshing}>
-          <Icon name="refresh" />
-          {isRefreshing ? 'Đang tải...' : 'Làm mới'}
-        </button>
       </header>
 
-      {/* Không có quyền Xem thống kê: chỉ còn thẻ kết quả xác minh, chiếm cả hàng. */}
-      <KycOverview twoColumns={canStats}>
-        {canStats && <SignupWeeklyCard />}
-        <EkycOutcomeCard
-          stats={stats.data}
-          isLoading={stats.isLoading}
-          error={stats.error}
-          onRetry={stats.refetch}
-          onSelect={selectFromChart}
-        />
-      </KycOverview>
-
       <section
-        ref={listRef}
         className="ui-card kyc-list pt-3.5 px-3.5 pb-3 max-[760px]:px-2.5 max-[760px]:pb-2.5"
         aria-label="Danh sách khách hàng"
       >
@@ -216,9 +225,15 @@ export default function CustomerKycPage() {
             return true;
           }}
           onClearAll={filters.clearAll}
-          total={list.data?.totalElements}
-          unit={showQueue ? 'lượt chờ duyệt' : 'khách hàng'}
+          total={users.data?.totalElements}
+          unit="khách hàng"
           title="Lọc khách hàng"
+          actions={(
+            <button type="button" className="ui-btn ghost" onClick={refresh} disabled={isRefreshing}>
+              <Icon name="refresh" />
+              {isRefreshing ? 'Đang tải...' : 'Làm mới'}
+            </button>
+          )}
         >
           <SelectField
             label="Vai trò"
@@ -273,42 +288,33 @@ export default function CustomerKycPage() {
           />
         </FilterBar>
 
-        {list.error ? (
-          <ErrorNotice error={list.error} onRetry={list.refetch} />
-        ) : list.isLoading ? (
-          <div className="ui-empty" aria-busy="true">
-            {showQueue ? 'Đang tải hàng chờ duyệt...' : 'Đang tải danh sách khách hàng...'}
-          </div>
-        ) : (showQueue ? (queue.data?.content.length ?? 0) : customers.length) === 0 ? (
+        {users.error ? (
+          <ErrorNotice error={users.error} onRetry={users.refetch} />
+        ) : users.isLoading ? (
+          <div className="ui-empty" aria-busy="true">Đang tải danh sách khách hàng...</div>
+        ) : customers.length === 0 ? (
           <div className="ui-empty">
-            {showQueue
-              ? 'Không còn lượt nào chờ duyệt tay.'
-              : search
-                ? `Không tìm thấy khách hàng khớp "${search}". Số điện thoại và CCCD phải gõ đủ số.`
-                : otherFilters ? 'Không có khách hàng phù hợp với bộ lọc.' : EMPTY_TEXT[filter]}
+            {search
+              ? `Không tìm thấy khách hàng khớp "${search}". Số điện thoại và CCCD phải gõ đủ số.`
+              : otherFilters ? 'Không có khách hàng phù hợp với bộ lọc.' : EMPTY_TEXT[filter]}
           </div>
         ) : (
-          <div className={list.isFetching ? 'ui-busy' : undefined}>
-            {showQueue ? (
-              <PendingAttemptTable attempts={queue.data?.content ?? []} />
-            ) : (
-              <CustomerTable
-                customers={customers}
-                filter={filter}
-                review={canReview ? { attempts: pending.byCustomer, isLoading: pending.isFetching } : null}
-              />
-            )}
+          <div className={users.isFetching ? 'ui-busy' : undefined}>
+            <CustomerTable customers={customers} actions={actions} />
             <Pager
               page={page}
               size={KYC_LIST_PAGE_SIZE}
-              total={list.data?.totalElements ?? 0}
-              unit={showQueue ? 'lượt chờ duyệt' : 'khách hàng'}
-              disabled={list.isFetching}
+              total={users.data?.totalElements ?? 0}
+              unit="khách hàng"
+              disabled={users.isFetching}
               onPage={(next) => setParam('page', next > 0 ? String(next + 1) : '')}
             />
           </div>
         )}
       </section>
+
+      {customerId != null && <CustomerDetailModal customerId={customerId} onClose={closeDetail} onOpenAttempt={openAttempt} />}
+      {lockTarget && <LockUserModal user={lockTarget} onClose={() => setLockTarget(null)} onDone={() => setLockTarget(null)} />}
     </section>
   );
 }

@@ -1,6 +1,6 @@
 import type { PillTone } from '@/components/StatusPill';
 import { EMPTY, formatDateTime } from '@/utils';
-import type { EkycAttemptStatus, EkycCardType, EkycDocumentDecision, EkycLivenessResult } from '../types';
+import type { EkycAttemptStatus, EkycCardType } from '../types';
 
 export interface PillDisplay {
   label: string;
@@ -35,27 +35,6 @@ export function cardTypeLabel(cardType: string | null): string {
   return CARD_TYPE_LABELS[cardType as EkycCardType] ?? cardType;
 }
 
-const DOCUMENT_DECISION_DISPLAY: Record<EkycDocumentDecision, PillDisplay> = {
-  AUTO_OK: { label: 'Đạt tự động', tone: 'success' },
-  NEEDS_REVIEW: { label: 'Cần duyệt tay', tone: 'warning' },
-};
-
-export function documentDecisionDisplay(decision: string): PillDisplay {
-  return DOCUMENT_DECISION_DISPLAY[decision as EkycDocumentDecision] ?? { label: decision, tone: 'neutral' };
-}
-
-const LIVENESS_DISPLAY: Record<EkycLivenessResult, PillDisplay> = {
-  PASS: { label: 'Đạt', tone: 'success' },
-  REVIEW: { label: 'Cần xem thêm', tone: 'warning' },
-  FAIL: { label: 'Không đạt', tone: 'danger' },
-};
-
-/** `null` nghĩa là lượt chưa tới bước quay video. */
-export function livenessDisplay(result: string | null): PillDisplay {
-  if (!result) return { label: 'Chưa kiểm tra', tone: 'neutral' };
-  return LIVENESS_DISPLAY[result as EkycLivenessResult] ?? { label: result, tone: 'neutral' };
-}
-
 const SCORE = new Intl.NumberFormat('vi-VN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 /** Điểm so khớp khuôn mặt (độ tương đồng cosine của AI), hiện hai chữ số thập phân, ví dụ 0,52. */
@@ -66,36 +45,4 @@ export function formatFaceScore(score: number | null): string {
 /** Thời điểm (`Instant`) theo giờ Việt Nam như mọi màn quản trị, ví dụ 09:30 16/10/2026. */
 export function formatDayTime(value: string | null | undefined): string {
   return formatDateTime(value);
-}
-
-const MINUTE = 60_000;
-
-/**
- * Lượt đã chờ duyệt bao lâu tính từ lúc gửi, làm tròn xuống theo phút, giờ rồi ngày ("Đã chờ 3 giờ"). `null` khi lượt
- * chưa có thời điểm gửi. Thời điểm gửi ở tương lai (lệch đồng hồ máy) coi như vừa gửi.
- */
-export function waitingLabel(submittedAt: string | null, now: number = Date.now()): string | null {
-  if (!submittedAt) return null;
-  const sent = new Date(submittedAt).getTime();
-  if (Number.isNaN(sent)) return null;
-  const minutes = Math.max(0, Math.floor((now - sent) / MINUTE));
-  if (minutes < 60) return `Đã chờ ${Math.max(1, minutes)} phút`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `Đã chờ ${hours} giờ`;
-  return `Đã chờ ${Math.floor(hours / 24)} ngày`;
-}
-
-/**
- * Phiên bản điều khoản khách đã đồng ý. Mã dạng `EKYC-2026-10` đọc thành "Bản 10/2026"; mã khác dạng hiện nguyên văn
- * để vẫn đối chiếu được với bảng điều khoản.
- */
-export function consentLabel(version: string | null): string {
-  if (!version) return EMPTY;
-  const match = /^[A-Z]+-(\d{4})-(\d{2})$/.exec(version.trim());
-  return match ? `Bản ${match[2]}/${match[1]}` : version;
-}
-
-/** Mã lượt (UUID) rút gọn để hiện trong dòng; mã đầy đủ đặt ở `title` và chỗ cần sao chép. */
-export function shortId(id: string): string {
-  return id.length > 8 ? id.slice(0, 8) : id;
 }

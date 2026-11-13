@@ -1,4 +1,3 @@
-import { EMPTY } from '@/utils';
 import type { EkycEvidenceItem, EkycEvidenceKind } from '../types';
 
 /** Cách hiển thị một tệp, quyết định theo `contentType` backend ghi lúc lưu. */
@@ -29,7 +28,13 @@ const FRAME_LABELS: Record<string, string> = {
   LOOK_DOWN: 'cúi xuống',
 };
 
+/** Thứ tự khung hình theo chuỗi động tác; nhãn lạ xếp cuối. */
 const FRAME_ORDER = ['FRONTAL', 'TURN_LEFT', 'TURN_RIGHT', 'LOOK_UP', 'LOOK_DOWN'];
+
+export function frameRank(label: string | null): number {
+  const index = FRAME_ORDER.indexOf(label ?? '');
+  return index < 0 ? FRAME_ORDER.length : index;
+}
 
 export function evidenceCaption(item: EkycEvidenceItem): string {
   const kind = KIND_LABELS[item.kind] ?? item.kind;
@@ -37,50 +42,19 @@ export function evidenceCaption(item: EkycEvidenceItem): string {
   return `${kind} ${FRAME_LABELS[item.label] ?? item.label}`;
 }
 
-export interface EvidenceGroup {
-  key: 'card' | 'liveness' | 'other';
-  title: string;
-  items: EkycEvidenceItem[];
-}
-
-const kindRank = (kinds: readonly string[], kind: string) => {
-  const index = kinds.indexOf(kind);
-  return index < 0 ? kinds.length : index;
+const SHORT_LABELS: Partial<Record<EkycEvidenceKind, string>> = {
+  CCCD_FRONT: 'Mặt trước',
+  CCCD_BACK: 'Mặt sau',
+  LIVENESS_VIDEO: 'Video',
 };
 
-const frameRank = (label: string | null) => kindRank(FRAME_ORDER, label ?? '');
-
-/**
- * Chia tệp thành ảnh thẻ, kiểm tra khuôn mặt (video trước, khung theo thứ tự động tác) và tệp khác.
- * Nhóm rỗng bị bỏ; thứ tự trong nhóm giữ ổn định theo thứ tự backend trả khi cùng hạng.
- */
-export function groupEvidence(items: readonly EkycEvidenceItem[]): EvidenceGroup[] {
-  const cardKinds = ['CCCD_FRONT', 'CCCD_BACK'];
-  const livenessKinds = ['LIVENESS_VIDEO', 'LIVENESS_FRAME'];
-  const card = items
-    .filter((item) => cardKinds.includes(item.kind))
-    .sort((a, b) => kindRank(cardKinds, a.kind) - kindRank(cardKinds, b.kind));
-  const liveness = items
-    .filter((item) => livenessKinds.includes(item.kind))
-    .sort((a, b) => kindRank(livenessKinds, a.kind) - kindRank(livenessKinds, b.kind) || frameRank(a.label) - frameRank(b.label));
-  const other = items.filter((item) => !cardKinds.includes(item.kind) && !livenessKinds.includes(item.kind));
-
-  const groups: EvidenceGroup[] = [
-    { key: 'card', title: 'Ảnh căn cước', items: card },
-    { key: 'liveness', title: 'Kiểm tra khuôn mặt', items: liveness },
-    { key: 'other', title: 'Tệp khác', items: other },
-  ];
-  return groups.filter((group) => group.items.length > 0);
-}
-
-const SIZE_KB = new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 0 });
-const SIZE_MB = new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 1 });
-
-export function formatBytes(bytes: number): string {
-  if (!Number.isFinite(bytes) || bytes < 0) return EMPTY;
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${SIZE_KB.format(bytes / 1024)} KB`;
-  return `${SIZE_MB.format(bytes / (1024 * 1024))} MB`;
+/** Tên ngắn dưới ô ảnh, vì thẻ chứa ô đã nói đó là giấy tờ hay khuôn mặt: "Mặt trước", "Video", "Quay trái". */
+export function evidenceShortCaption(item: EkycEvidenceItem): string {
+  if (item.kind === 'LIVENESS_FRAME') {
+    const frame = item.label ? FRAME_LABELS[item.label] ?? item.label : 'khung hình';
+    return frame.charAt(0).toUpperCase() + frame.slice(1);
+  }
+  return SHORT_LABELS[item.kind] ?? evidenceCaption(item);
 }
 
 /** Nội dung văn bản của tệp; JSON được thụt lề cho dễ đọc, nội dung khác giữ nguyên. */

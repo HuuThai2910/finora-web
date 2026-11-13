@@ -24,7 +24,6 @@ const ProductListPage = page(() => import('@/features/product'), 'ProductListPag
 const UserListPage = page(() => import('@/features/user'), 'UserListPage');
 const StaffRolesPage = page(() => import('@/features/user'), 'StaffRolesPage');
 const CustomerKycPage = page(() => import('@/features/kyc'), 'CustomerKycPage');
-const CustomerDetailPage = page(() => import('@/features/kyc'), 'CustomerDetailPage');
 const EkycReviewDetailPage = page(() => import('@/features/ekyc-review'), 'EkycReviewDetailPage');
 const FundingPage = page(() => import('@/features/investment'), 'FundingPage');
 const FundingDetailPage = page(() => import('@/features/investment'), 'FundingDetailPage');
@@ -87,7 +86,8 @@ export default function App() {
           <Route path="users" element={<RequirePageAccess access={PAGE_ACCESS.users}><UserListPage /></RequirePageAccess>} />
           <Route path="users/roles" element={<RequirePageAccess access={PAGE_ACCESS.staffRoles}><StaffRolesPage /></RequirePageAccess>} />
           <Route path="customers/kyc" element={<RequirePageAccess access={PAGE_ACCESS.customers}><CustomerKycPage /></RequirePageAccess>} />
-          <Route path="customers/kyc/:id" element={<RequirePageAccess access={PAGE_ACCESS.customers}><CustomerDetailPage /></RequirePageAccess>} />
+          {/* Chi tiết khách là hộp thoại trên danh sách: cùng trang, mở hộp theo mã trên đường dẫn. */}
+          <Route path="customers/kyc/:id" element={<RequirePageAccess access={PAGE_ACCESS.customers}><CustomerKycPage /></RequirePageAccess>} />
           <Route path="customers/kyc/review/:attemptId" element={<RequirePageAccess access={PAGE_ACCESS.ekycReview}><EkycReviewDetailPage /></RequirePageAccess>} />
           {/* Đường dẫn cũ của trang duyệt riêng; nay duyệt từ menu dòng của trang Khách hàng. */}
           <Route path="customers/ekyc-review" element={<Navigate to="/customers/kyc?ekyc=MANUAL_REVIEW" replace />} />

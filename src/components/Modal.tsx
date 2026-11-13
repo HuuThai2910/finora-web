@@ -13,12 +13,22 @@ interface ModalProps {
   children: ReactNode;
   /** Hộp rộng (600px) cho form nhiều cột; mặc định 480px. */
   wide?: boolean;
+  /** Hộp xem hồ sơ (880px, thân cuộn riêng), ví dụ chi tiết khách hàng; đè `wide`. */
+  large?: boolean;
+  /** Nội dung đứng ngay sau tiêu đề trên cùng hàng, ví dụ nhãn trạng thái. */
+  titleAside?: ReactNode;
   /**
    * Bấm ra nền thì đóng (mặc định). Hộp có form nhập liệu đặt `false`: bấm trượt ra nền không được làm mất phần đã
    * nhập, người dùng vẫn đóng bằng nút Đóng, Hủy hoặc Esc.
    */
   dismissOnBackdrop?: boolean;
 }
+
+/**
+ * Các hộp đang mở, theo thứ tự mở. Hộp mở chồng lên hộp khác (xác nhận khóa trên hộp chi tiết khách hàng) thì chỉ hộp
+ * trên cùng nhận Esc và giữ Tab, để một lần Esc không đóng cả hai.
+ */
+const openStack: symbol[] = [];
 
 const FOCUSABLE = 'button:not(:disabled), [href], input:not(:disabled), select:not(:disabled), textarea:not(:disabled), summary, [tabindex]:not([tabindex="-1"])';
 
@@ -27,7 +37,7 @@ const FOCUSABLE = 'button:not(:disabled), [href], input:not(:disabled), select:n
  * đóng thì trả focus về chỗ cũ. Cùng cách giữ focus với `Drawer`.
  */
 export function Modal({
-  title, subtitle, onClose, busy = false, footer, children, wide = false, dismissOnBackdrop = true,
+  title, subtitle, onClose, busy = false, footer, children, wide = false, large = false, titleAside, dismissOnBackdrop = true,
 }: ModalProps) {
   const titleId = useId();
   const dialogRef = useRef<HTMLDivElement>(null);
@@ -38,12 +48,15 @@ export function Modal({
 
   // Ghi nhớ phần tử đang có focus và khóa cuộn trang khi mở; trả lại cả hai khi hộp rời khỏi cây (accessibility).
   useEffect(() => {
+    const self = Symbol('modal');
+    openStack.push(self);
     const previous = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     const overflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     dialogRef.current?.focus();
 
     const onKeyDown = (event: KeyboardEvent) => {
+      if (openStack[openStack.length - 1] !== self) return;
       if (event.key === 'Escape') {
         if (!busyRef.current) closeRef.current();
         return;
@@ -68,6 +81,7 @@ export function Modal({
     document.addEventListener('keydown', onKeyDown);
     return () => {
       document.removeEventListener('keydown', onKeyDown);
+      openStack.splice(openStack.indexOf(self), 1);
       document.body.style.overflow = overflow;
       if (previous?.isConnected) previous.focus();
     };
@@ -80,10 +94,24 @@ export function Modal({
         if (dismissOnBackdrop && event.target === event.currentTarget && !busy) onClose();
       }}
     >
-      <div ref={dialogRef} className={wide ? 'ui-modal wide' : 'ui-modal'} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1}>
+      <div
+        ref={dialogRef}
+        className={large ? 'ui-modal large' : wide ? 'ui-modal wide' : 'ui-modal'}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        tabIndex={-1}
+      >
         <div className="ui-modal-head">
-          <div>
-            <h2 id={titleId}>{title}</h2>
+          <div className="min-w-0">
+            {titleAside ? (
+              <div className="flex flex-wrap items-center gap-2">
+                <h2 id={titleId} className="wrap-anywhere">{title}</h2>
+                {titleAside}
+              </div>
+            ) : (
+              <h2 id={titleId}>{title}</h2>
+            )}
             {subtitle && <p>{subtitle}</p>}
           </div>
           <button type="button" className="ui-modal-close" aria-label="Đóng" onClick={onClose} disabled={busy}>
