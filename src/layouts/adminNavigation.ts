@@ -12,6 +12,7 @@ export type SidebarIconName =
 export const PAGE_ACCESS = {
   dashboard: { anyView: ['dashboard'] },
   loans: { anyView: ['loan-application', 'collection', 'reschedule', 'reconciliation'] },
+  reschedules: { anyView: ['reschedule'] },
   funding: { anyView: ['funding'] },
   secondary: { anyView: ['secondary-market'] },
   products: { anyView: ['loan-product'] },
@@ -63,6 +64,13 @@ export const ADMIN_NAV_SECTIONS: AdminNavigationSection[] = [
         icon: 'loan',
         access: PAGE_ACCESS.loans,
         matches: (pathname) => pathname === '/loans' || isLoanReview(pathname),
+      },
+      {
+        to: '/loans/reschedules',
+        label: 'Cơ cấu khoản vay',
+        icon: 'workflow',
+        access: PAGE_ACCESS.reschedules,
+        matches: (pathname) => pathname === '/loans/reschedules',
       },
       { to: '/products', label: 'Sản phẩm vay', icon: 'grid', access: PAGE_ACCESS.products, matches: (pathname) => pathname === '/products' },
       // Explorer proof của Blockchain Service (W3D, D54): đối chiếu bằng chứng giao dịch đã neo trên sổ cái.

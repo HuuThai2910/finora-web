@@ -63,7 +63,8 @@ export interface CreateCollectionActionRequest {
 }
 
 export interface RescheduleRequest {
-  requestId: string; loanNumber: string; requestType: RescheduleType; rescheduleFromDate: string;
+  requestId: string; loanNumber: string; loanApplicationId?: number | null; applicationNumber?: string | null;
+  borrowerId?: string | null; requestType: RescheduleType; rescheduleFromDate: string;
   adjustedDueDate: string | null; extraTerms: number | null; reasonComment: string;
   termsVersion: string; status: RescheduleStatus; originalMaturityDate: string; newMaturityDate: string | null;
   decisionComment: string | null; decidedAt: string | null; createdAt: string; updatedAt: string;

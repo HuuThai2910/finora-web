@@ -3,3 +3,4 @@ export { WithdrawalIncidentsSection, useWithdrawalIncidentCount } from './compon
 export { OrderIncidentsSection } from './components/OrderIncidentsSection';
 // Trang Gọi vốn đọc dư nợ, quá hạn của khoản vay đã phát hành (thẻ Trả nợ).
 export { useLoanServicingStatusQuery } from './api/servicingApi';
+export { default as RescheduleRequestsPage } from './pages/RescheduleRequestsPage';

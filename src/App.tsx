@@ -19,6 +19,7 @@ const page = <K extends string, T extends Record<K, ComponentType>>(load: () => 
 const DashboardPage = page(() => import('@/features/dashboard'), 'DashboardPage');
 const LoanListPage = page(() => import('@/features/loan'), 'LoanListPage');
 const LoanReviewPage = page(() => import('@/features/loan'), 'LoanReviewPage');
+const RescheduleRequestsPage = page(() => import('@/features/servicing'), 'RescheduleRequestsPage');
 const AiPolicyPage = page(() => import('@/features/rule-engine'), 'AiPolicyPage');
 const ProductListPage = page(() => import('@/features/product'), 'ProductListPage');
 const UserListPage = page(() => import('@/features/user'), 'UserListPage');
@@ -68,6 +69,7 @@ export default function App() {
           <Route index element={<AdminHomeRedirect />} />
           <Route path="dashboard" element={<RequirePageAccess access={PAGE_ACCESS.dashboard}><DashboardPage /></RequirePageAccess>} />
           <Route path="loans" element={<RequirePageAccess access={PAGE_ACCESS.loans}><LoanListPage /></RequirePageAccess>} />
+          <Route path="loans/reschedules" element={<RequirePageAccess access={PAGE_ACCESS.reschedules}><RescheduleRequestsPage /></RequirePageAccess>} />
           <Route path="loans/:applicationNumber/review" element={<RequirePageAccess access={PAGE_ACCESS.loans}><LoanReviewPage /></RequirePageAccess>} />
           <Route path="loans/approval" element={<Navigate to="/loans?status=PENDING_REVIEW" replace />} />
           {/* Trang Vận hành khoản vay đã bỏ: việc của từng khoản vay nằm ở tab "Sau giải ngân" của hồ sơ, danh sách lọc sẵn

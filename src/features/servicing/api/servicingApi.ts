@@ -7,6 +7,16 @@ import type {
 
 export interface PageArgs { page: number; size: number }
 
+export interface RescheduleListArgs extends PageArgs {
+  loanNumber?: string;
+  /** Contract cũ của card chi tiết khoản vay. */
+  status?: RescheduleStatus;
+  /** Hàng đợi quản trị có thể gộp nhiều trạng thái nghiệp vụ trong một tab. */
+  statuses?: RescheduleStatus[];
+  requestType?: RescheduleRequest['requestType'];
+  q?: string;
+}
+
 /**
  * Mỗi nhóm việc một id tag riêng để mutation chỉ làm mới đúng danh sách bị ảnh hưởng. Thao tác làm đổi nhãn việc vận
  * hành của hồ sơ (quá hạn, chờ duyệt cơ cấu, sự cố) làm mới cả danh sách và chi tiết hồ sơ (tag `AdminApplication*`).
@@ -35,7 +45,7 @@ export const servicingApi = loanApi.injectEndpoints({
       invalidatesTags: (_result, _error, { caseId }) => [tag(`ACTIONS-${caseId}`)],
     }),
     /** Yêu cầu cơ cấu của một khoản vay, mới nhất trước; không gửi `status` là mọi trạng thái. */
-    rescheduleRequests: builder.query<PageResponse<RescheduleRequest>, PageArgs & { loanNumber: string; status?: RescheduleStatus }>({
+    rescheduleRequests: builder.query<PageResponse<RescheduleRequest>, RescheduleListArgs>({
       query: (params) => ({ url: '/admin/loan-reschedule-requests', params }),
       providesTags: [tag('RESCHEDULE')],
     }),
@@ -54,7 +64,7 @@ export const servicingApi = loanApi.injectEndpoints({
         method: 'POST',
         ...(action === 'cancel' ? { body: { comment }, headers: { 'Idempotency-Key': key! } } : {}),
       }),
-      invalidatesTags: [tag('RESCHEDULE')],
+      invalidatesTags: [tag('RESCHEDULE'), ...APPLICATION_TAGS],
     }),
     /** Số liệu FINORA đang lưu của một khoản vay so với lịch đồng bộ hệ thống lõi; chỉ đọc, không gọi hệ thống lõi. */
     loanServicingStatus: builder.query<StaleLoan, string>({
