@@ -18,8 +18,9 @@ Web chỉ gọi Loan qua Gateway và không tự tính lịch, dư nợ, DPD hay
 - `/loans/reschedules`: hàng đợi cơ cấu toàn hệ thống dành cho nhân viên có quyền `ops:reschedule:view`.
 - Đường dẫn cũ `/loans/operations` không còn là màn tổng hợp; không khôi phục UI cũ.
 
-Hàng đợi cơ cấu chia theo giai đoạn nghiệp vụ: chờ thẩm định, chờ nhà đầu tư, đang áp dụng lịch mới,
-cần xử lý và đã kết thúc. API phân trang phía backend nhận nhiều trạng thái trong cùng một tab; web không ghép
+Hàng đợi cơ cấu mở mặc định ở tab **Tất cả** để quản trị viên nhìn được toàn bộ yêu cầu, sau đó có thể lọc theo
+giai đoạn nghiệp vụ: chờ thẩm định, chờ nhà đầu tư, đang áp dụng lịch mới, cần xử lý và đã kết thúc. API phân trang
+phía backend nhận nhiều trạng thái trong cùng một tab; tab Tất cả không gửi bộ lọc trạng thái và web không ghép
 nhiều trang kết quả ở client. Ô tìm dùng mã khoản vay, hồ sơ hoặc hợp đồng. Mỗi dòng có mã hồ sơ, khoản vay,
 người vay, nội dung đề nghị, ngày đáo hạn và trạng thái; có thể mở thẳng tab "Sau giải ngân" của hồ sơ.
 
@@ -43,7 +44,7 @@ người vay, nội dung đề nghị, ngày đáo hạn và trạng thái; có 
 ## Acceptance
 
 - Loading, empty, error và success có nội dung rõ ràng.
-- Danh sách phân trang; URL giữ tab, tìm kiếm, loại cơ cấu và trang hiện tại.
+- Danh sách phân trang; tab Tất cả là mặc định, URL giữ tab lọc, tìm kiếm, loại cơ cấu và trang hiện tại.
 - Không làm mất card "Sau giải ngân" và không thay đổi luồng Fineract/event.
 - Mutation làm mới cả hàng đợi và nhãn việc của hồ sơ vay.
 - TypeScript/Vite build xanh; backend compile và test API cơ cấu mục tiêu xanh.

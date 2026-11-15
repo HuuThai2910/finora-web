@@ -23,9 +23,10 @@ import type {
 import { RescheduleDecisionModal } from '../components/RescheduleDecisionModal';
 import { RescheduleRecoveryModal } from '../components/RescheduleRecoveryModal';
 
-type TabKey = 'review' | 'investors' | 'applying' | 'attention' | 'history';
+type TabKey = 'all' | 'review' | 'investors' | 'applying' | 'attention' | 'history';
 
-const TABS: ReadonlyArray<{ key: TabKey; label: string; statuses: RescheduleStatus[] }> = [
+const TABS: ReadonlyArray<{ key: TabKey; label: string; statuses?: RescheduleStatus[] }> = [
+  { key: 'all', label: 'Tất cả' },
   { key: 'review', label: 'Chờ thẩm định', statuses: ['PENDING_REVIEW'] },
   { key: 'investors', label: 'Chờ nhà đầu tư', statuses: ['PENDING_INVESTOR_CONSENT'] },
   { key: 'applying', label: 'Đang áp dụng', statuses: ['CREATE_PENDING', 'CREATING', 'APPROVAL_PENDING', 'APPROVING'] },
@@ -47,14 +48,14 @@ export default function RescheduleRequestsPage() {
   const [params, setParams] = useSearchParams();
   const { canAct } = usePermission();
   const requestedTab = params.get('tab');
-  const tabKey: TabKey = isTab(requestedTab) ? requestedTab : 'review';
+  const tabKey: TabKey = isTab(requestedTab) ? requestedTab : 'all';
   const tab = TABS.find((item) => item.key === tabKey)!;
   const page = readPage(params.get('page'));
   const q = (params.get('q') ?? '').trim();
   const requestedType = params.get('type');
   const requestType = isType(requestedType) ? requestedType : undefined;
   const query = useRescheduleRequestsQuery({
-    statuses: tab.statuses,
+    ...(tab.statuses ? { statuses: tab.statuses } : {}),
     requestType,
     q: q || undefined,
     page,
@@ -122,7 +123,7 @@ export default function RescheduleRequestsPage() {
                 type="button"
                 role="tab"
                 aria-selected={tabKey === item.key}
-                onClick={() => writeParams({ tab: item.key === 'review' ? null : item.key, page: null })}
+                onClick={() => writeParams({ tab: item.key === 'all' ? null : item.key, page: null })}
               >
                 {item.label}
               </button>
