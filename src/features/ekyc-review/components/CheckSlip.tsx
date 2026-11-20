@@ -72,10 +72,18 @@ export function CheckSlip({ attempt, refreshing, onDecide }: CheckSlipProps) {
   const isPending = attempt.status === 'MANUAL_REVIEW';
   const approved = attempt.status === 'APPROVED';
   const decided = approved || attempt.status === 'REJECTED';
+  const withdrawn = attempt.status === 'WITHDRAWN';
+  // Hồ sơ AI gặp sự cố: AI không đọc thẻ (lý do ở bước thẻ) và/hoặc không so mặt — ghi rõ để người duyệt tự kiểm.
+  const cardUnread = attempt.aiUnavailable && !attempt.cardType;
+  const faceUnchecked = attempt.aiUnavailable && !liveness;
 
   const rows: Array<[string, ReactNode]> = [
-    ['Giấy tờ', <Toned text={doc[0]} tone={doc[1]} />],
-    ['Người thật', liveness ? <Toned text={liveness[0]} tone={liveness[1]} /> : <span className="font-normal text-muted">Chưa quay</span>],
+    ['Giấy tờ', cardUnread ? <Toned text="AI chưa đọc được — cần đọc thẻ" tone="warning" /> : <Toned text={doc[0]} tone={doc[1]} />],
+    ['Người thật', liveness
+      ? <Toned text={liveness[0]} tone={liveness[1]} />
+      : faceUnchecked
+        ? <Toned text="AI chưa kiểm tra — cần so mặt" tone="warning" />
+        : <span className="font-normal text-muted">Chưa quay</span>],
   ];
   if (attempt.faceMatchScore != null) {
     const score = formatFaceScore(attempt.faceMatchScore);
@@ -111,6 +119,13 @@ export function CheckSlip({ attempt, refreshing, onDecide }: CheckSlipProps) {
         {isPending && !canDecide && (
           <p className="mt-4 border-t border-t-divider pt-3 text-[13px] text-muted">
             Cần quyền Sửa "Duyệt xác minh danh tính" để duyệt hoặc từ chối.
+          </p>
+        )}
+
+        {withdrawn && (
+          <p className="mt-3.5 border-t border-t-divider pt-3 text-[13px] text-muted">
+            Người dùng đã rút lại hồ sơ lúc {formatDayTime(attempt.reviewedAt)}. Hồ sơ không còn duyệt được; người dùng sẽ
+            gửi hồ sơ mới nếu muốn tiếp tục.
           </p>
         )}
 

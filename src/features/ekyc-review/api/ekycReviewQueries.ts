@@ -1,7 +1,7 @@
 import type { PageResponse } from '@/features/user';
 import { userServiceApi } from '@/lib/api/userServiceApi';
 import type { EkycAttemptDetail, EkycAttemptListArgs, EkycAttemptSummary, EkycDecisionArgs } from '../types';
-import { ekycReviewApi, isAttemptAlreadyDecided } from './ekycReviewApi';
+import { ekycReviewApi, isAttemptAlreadyDecided, isAttemptWithdrawn } from './ekycReviewApi';
 
 /**
  * Bọc lời gọi API thành kết quả RTK Query. Lỗi giữ nguyên dạng `ApiError` của `apiFetch`
@@ -33,14 +33,15 @@ const ekycReviewQueries = userServiceApi.injectEndpoints({
     }),
     /**
      * Không gửi `signal`: quyết định đã gửi thì để chạy xong dù người dùng rời trang.
-     * Làm mới cache khi thành công, và cả khi bị 409 `ATTEMPT_ALREADY_DECIDED` để trang hiện kết quả
-     * của người quyết định trước. Quyết định đổi trạng thái eKYC của hồ sơ nên làm mới cả danh sách,
+     * Làm mới cache khi thành công, và cả khi bị 409 `ATTEMPT_ALREADY_DECIDED`/`ATTEMPT_WITHDRAWN` để trang hiện kết
+     * quả của người quyết định trước (hoặc trạng thái "người dùng đã rút lại"). Quyết định đổi trạng thái eKYC của hồ sơ nên làm mới cả danh sách,
      * thống kê và hồ sơ người dùng; lỗi khác (mạng, trùng số…) không đổi gì nên không làm mới.
      */
     decideEkycAttempt: builder.mutation<EkycAttemptDetail, EkycDecisionArgs>({
-      queryFn: ({ attemptId, decision, note }) => run(() => ekycReviewApi.decide(attemptId, decision, note)),
+      queryFn: ({ attemptId, decision, note, identity }) =>
+        run(() => ekycReviewApi.decide(attemptId, decision, note, identity)),
       invalidatesTags: (_result, error, { attemptId, userProfileId }) =>
-        error && !isAttemptAlreadyDecided(error)
+        error && !isAttemptAlreadyDecided(error) && !isAttemptWithdrawn(error)
           ? []
           : [
               { type: 'EkycAttempt', id: attemptId },

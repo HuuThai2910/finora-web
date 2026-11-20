@@ -39,6 +39,7 @@ const SOURCE_DISPLAY: Record<EkycFieldSource, PillDisplay> = {
   OCR: { label: 'Từ chữ in trên thẻ', tone: 'info' },
   AI: { label: 'AI đọc', tone: 'warning' },
   USER: { label: 'Người dùng sửa', tone: 'warning' },
+  STAFF: { label: 'Nhân viên nhập', tone: 'info' },
 };
 
 const UNVERIFIED_SOURCES = new Set<string>(['AI', 'USER']);

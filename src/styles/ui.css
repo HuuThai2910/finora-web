@@ -471,6 +471,10 @@
     @apply flex max-h-[calc(100vh-48px)] max-w-220 flex-col;
   }
 
+  .ui-modal.large.medium {
+    @apply max-w-190;
+  }
+
   .ui-modal.large .ui-modal-body {
     @apply max-h-none min-h-0 flex-1 text-primary;
   }

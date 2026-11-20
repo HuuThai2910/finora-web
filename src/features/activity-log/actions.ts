@@ -1,13 +1,13 @@
 /**
- * Bảng tra thao tác ghi (POST/PUT/PATCH/DELETE) → tên việc người gọi đã làm, cho Nhật ký hoạt động.
+ * Bảng tra lượt gọi → tên việc người gọi đã làm, cho Nhật ký hoạt động: thao tác ghi (POST/PUT/PATCH/DELETE) ở `RULES`,
+ * lượt xem (GET) ở `VIEW_RULES`.
  *
  * Gateway không đổi đường dẫn khi chuyển tiếp (không RewritePath/StripPrefix), nên mẫu ở đây là đường dẫn thật của
  * controller trong finora-platform (cập nhật 10/11/2026, đủ mọi endpoint ghi đi qua Gateway). Nhiều thao tác không gửi
  * body (đánh dấu đã đọc, lập lại giấy xác nhận, làm mới phiên...): khi đó chỉ đường dẫn cho biết người dùng làm gì.
  *
  * Mẫu viết theo kiểu Spring, chỗ `{...}` là tham số trên đường dẫn và chữ trong ngoặc là tên dễ hiểu của tham số đó
- * (hiện ở dòng "Đối tượng"). Không khớp mẫu nào thì trả `null` để giao diện giữ cách hiển thị cũ, không đoán bừa.
- * GET không tra: xem dữ liệu thì đường dẫn đã đủ nói lên việc đang làm.
+ * (giá trị hiện ở cột "Đối tượng"). Không khớp mẫu nào thì trả `null` để giao diện hiện đường dẫn, không đoán bừa.
  */
 
 type WriteMethod = 'POST' | 'PUT' | 'PATCH' | 'DELETE';
@@ -24,8 +24,10 @@ export interface ActivityAction {
   targets: ActionTarget[];
 }
 
+type RuleMethod = WriteMethod | 'GET';
+
 interface ActionRule {
-  method: WriteMethod;
+  method: RuleMethod;
   pattern: string;
   /** Tên cố định, hoặc tính từ body khi cùng một đường dẫn làm nhiều việc (mua hay bán, loại ghi nhận thu hồi). */
   name: string | ((body: string | null) => string);
@@ -98,6 +100,8 @@ const RULES: ActionRule[] = [
   { method: 'POST', pattern: '/api/v1/users/profile/ekyc/liveness/challenge', name: 'Bắt đầu kiểm tra khuôn mặt' },
   { method: 'POST', pattern: '/api/v1/users/profile/ekyc/liveness', name: 'Gửi video/ảnh kiểm tra khuôn mặt' },
   { method: 'POST', pattern: '/api/v1/users/profile/ekyc-confirm', name: 'Xác nhận thông tin xác minh danh tính' },
+  { method: 'POST', pattern: '/api/v1/users/profile/ekyc-manual-review', name: 'Gửi hồ sơ xác minh danh tính cho nhân viên duyệt khi hệ thống gặp sự cố' },
+  { method: 'POST', pattern: '/api/v1/users/profile/ekyc-withdraw', name: 'Rút lại hồ sơ xác minh danh tính đang chờ duyệt' },
 
   // ── Quản trị người dùng, nhân viên (finora-user) ──
   { method: 'POST', pattern: '/api/v1/admin/users', name: 'Tạo tài khoản nhân viên' },
@@ -208,8 +212,149 @@ const RULES: ActionRule[] = [
   { method: 'POST', pattern: '/api/v1/ai/fraud/detect', name: 'Kiểm tra dấu hiệu gian lận' },
 ];
 
+/*
+ * Lượt xem (GET), theo đường dẫn controller thật trong finora-platform (17/11/2026). Đường dẫn chữ cố định đứng trước
+ * mẫu có tham số cùng chỗ (`/admin/users/stats` trước `/admin/users/{Người dùng}`) vì mẫu đầu tiên khớp được dùng.
+ */
+const ACCOUNT = '{Người dùng}';
+const ATTEMPT = '{Lượt xác minh danh tính}';
+const view = (pattern: string, name: string): ActionRule => ({ method: 'GET', pattern, name });
+
+const VIEW_RULES: ActionRule[] = [
+  // ── Người dùng (finora-user) ──
+  view('/api/v1/admin/activity-logs', 'Xem nhật ký hoạt động'),
+  view('/api/v1/admin/activity-logs/export', 'Xuất nhật ký hoạt động'),
+  view('/api/v1/admin/users', 'Xem danh sách người dùng'),
+  view('/api/v1/admin/users/stats', 'Xem thống kê người dùng'),
+  view('/api/v1/admin/users/stats/series', 'Xem thống kê người dùng'),
+  view('/api/v1/admin/users/ekyc-attempts', 'Xem danh sách lượt xác minh danh tính'),
+  view(`/api/v1/admin/users/ekyc-attempts/${ATTEMPT}`, 'Xem lượt xác minh danh tính'),
+  view(`/api/v1/admin/users/ekyc-attempts/${ATTEMPT}/evidence/{Ảnh, video xác minh}`, 'Xem ảnh, video xác minh danh tính'),
+  view(`/api/v1/admin/users/${ACCOUNT}`, 'Xem hồ sơ người dùng'),
+  view(`/api/v1/admin/users/${ACCOUNT}/devices`, 'Xem thiết bị đăng nhập của người dùng'),
+  view('/api/v1/admin/staff-roles', 'Xem vai trò nhân viên'),
+  view('/api/v1/admin/staff-roles/permissions', 'Xem danh mục quyền'),
+  view('/api/v1/users/me', 'Xem hồ sơ của mình'),
+  view('/api/v1/users/me/devices', 'Xem thiết bị đăng nhập của mình'),
+  view('/api/v1/users/me/ekyc-status', 'Xem trạng thái xác minh danh tính'),
+  view('/api/v1/users/me/kyc-summary', 'Xem trạng thái xác minh danh tính'),
+  view('/api/v1/users/me/pin', 'Xem trạng thái mã PIN giao dịch'),
+  view('/api/v1/users/profile/ekyc/consent', 'Xem đồng ý xử lý dữ liệu xác minh danh tính'),
+
+  // ── Khoản vay (finora-loan) ──
+  view('/api/v1/admin/loan-applications', 'Xem danh sách hồ sơ vay'),
+  view('/api/v1/admin/loan-applications/lookup', 'Tra cứu hồ sơ vay'),
+  view('/api/v1/admin/loan-applications/numbers', 'Tra cứu hồ sơ vay'),
+  view(`/api/v1/admin/loan-applications/${APP}/assessments`, 'Xem kết quả chấm điểm hồ sơ vay'),
+  view(`/api/v1/admin/loan-applications/${APP}/assessments/{Lần chấm điểm}`, 'Xem kết quả chấm điểm hồ sơ vay'),
+  view(`/api/v1/admin/loan-applications/${APP}/explanation`, 'Xem giải thích điểm tín dụng'),
+  view(`/api/v1/admin/loan-applications/${APP}/review`, 'Xem hồ sơ vay'),
+  view('/api/v1/admin/loan-contracts/signing-policy', 'Xem chính sách ký hợp đồng'),
+  view(`/api/v1/admin/loan-contracts/${CONTRACT}`, 'Xem hợp đồng vay'),
+  view(`/api/v1/admin/loan-contracts/${CONTRACT}/document`, 'Xem văn bản hợp đồng vay'),
+  view('/api/v1/admin/loan-products', 'Xem danh sách sản phẩm vay'),
+  view(`/api/v1/admin/loan-products/${PRODUCT}`, 'Xem sản phẩm vay'),
+  view('/api/v1/admin/loan-reschedule-requests', 'Xem yêu cầu cơ cấu nợ'),
+  view('/api/v1/admin/loan-servicing-reconciliation', 'Xem đối soát khoản vay'),
+  view('/api/v1/admin/loan-servicing-reconciliation/incidents', 'Xem đối soát khoản vay'),
+  view(`/api/v1/admin/loan-servicing-reconciliation/${LOAN}`, 'Xem đối soát khoản vay'),
+  view('/api/v1/admin/loan-statistics/series', 'Xem thống kê khoản vay'),
+  view('/api/v1/admin/loan-statistics/summary', 'Xem thống kê khoản vay'),
+  view(`/api/v1/admin/loans/${LOAN}/installments`, 'Xem kỳ trả nợ của khoản vay'),
+  view('/api/v1/admin/repayment-event-quarantine', 'Xem sự kiện trả nợ bị giữ lại'),
+  view('/api/v1/admin/collection-cases', 'Xem hồ sơ thu hồi nợ'),
+  view('/api/v1/admin/collection-cases/{Hồ sơ thu hồi nợ}/actions', 'Xem lịch sử xử lý thu hồi nợ'),
+  view('/api/v1/admin/disbursement-sagas', 'Xem lệnh giải ngân'),
+  view(`/api/v1/investor/loan-applications/${APP}/borrower-profile`, 'Xem hồ sơ người vay'),
+  view('/api/v1/investor/loan-contracts/me', 'Xem hợp đồng góp vốn của mình'),
+  view(`/api/v1/investor/loan-contracts/${CONTRACT}`, 'Xem hợp đồng vay'),
+  view(`/api/v1/investor/loan-contracts/${CONTRACT}/document`, 'Xem văn bản hợp đồng vay'),
+  view(`/api/v1/investor/loan-contracts/${CONTRACT}/signed-document`, 'Xem văn bản hợp đồng vay đã ký'),
+  view(`/api/v1/investor/loan-contracts/${CONTRACT}/receipt`, 'Xem biên nhận hợp đồng vay'),
+  view('/api/v1/loan-applications/me', 'Xem hồ sơ vay của mình'),
+  view(`/api/v1/loan-applications/${APP}`, 'Xem hồ sơ vay'),
+  view(`/api/v1/loan-applications/${APP}/history`, 'Xem lịch sử hồ sơ vay'),
+  view('/api/v1/loan-contracts/me', 'Xem hợp đồng vay của mình'),
+  view(`/api/v1/loan-contracts/${CONTRACT}`, 'Xem hợp đồng vay'),
+  view(`/api/v1/loan-contracts/${CONTRACT}/document`, 'Xem văn bản hợp đồng vay'),
+  view(`/api/v1/loan-contracts/${CONTRACT}/signed-document`, 'Xem văn bản hợp đồng vay đã ký'),
+  view(`/api/v1/loan-contracts/${CONTRACT}/receipt`, 'Xem biên nhận hợp đồng vay'),
+  view(`/api/v1/loan-contracts/${CONTRACT}/history`, 'Xem lịch sử hợp đồng vay'),
+  view('/api/v1/loan-products', 'Xem danh sách sản phẩm vay'),
+  view(`/api/v1/loan-products/${PRODUCT}`, 'Xem sản phẩm vay'),
+  view('/api/v1/loan-purposes', 'Xem danh sách mục đích vay'),
+  view('/api/v1/loans/me', 'Xem khoản vay của mình'),
+  view('/api/v1/loans/pending-activation', 'Xem khoản vay chờ kích hoạt'),
+  view('/api/v1/loans/reschedule-policy', 'Xem chính sách cơ cấu nợ'),
+  view(`/api/v1/loans/${LOAN}`, 'Xem khoản vay'),
+  view(`/api/v1/loans/${LOAN}/repayment-schedule`, 'Xem lịch trả nợ'),
+  view(`/api/v1/loans/${LOAN}/reschedule-policy`, 'Xem chính sách cơ cấu nợ'),
+  view(`/api/v1/loans/${LOAN}/reschedule-requests`, 'Xem yêu cầu cơ cấu nợ'),
+
+  // ── Thanh toán (finora-payment) ──
+  view('/api/v1/admin/disbursement-reconciliation', 'Xem đối soát giải ngân'),
+  view('/api/v1/admin/disbursement-reconciliation/{Lệnh giải ngân}', 'Xem đối soát giải ngân'),
+  view('/api/v1/admin/repayment-reconciliation', 'Xem đối soát trả nợ'),
+  view('/api/v1/admin/withdrawals', 'Xem danh sách lệnh rút tiền'),
+  view('/api/v1/admin/withdrawals/{Lệnh rút tiền}', 'Xem lệnh rút tiền'),
+  view('/api/v1/repayments/early-settlement-quotes/{Báo giá}', 'Xem số tiền tất toán trước hạn'),
+  view('/api/v1/repayments/partial-prepayment-quotes/{Báo giá}', 'Xem số tiền trả trước một phần'),
+  view('/api/v1/repayments/scheduled-due', 'Xem kỳ trả nợ sắp đến hạn'),
+  view('/api/v1/repayments/{Giao dịch trả nợ}', 'Xem giao dịch trả nợ'),
+  view('/api/v1/transactions/holds', 'Xem tiền tạm giữ'),
+  view('/api/v1/wallets/banks', 'Xem danh sách ngân hàng'),
+  view('/api/v1/wallets/me', 'Xem ví'),
+  view('/api/v1/wallets/me/bank-accounts', 'Xem tài khoản ngân hàng liên kết'),
+  view('/api/v1/wallets/me/top-ups/{Lệnh nạp tiền}', 'Xem lệnh nạp tiền'),
+  view('/api/v1/wallets/me/transactions', 'Xem lịch sử giao dịch ví'),
+  view('/api/v1/wallets/me/withdrawals', 'Xem lệnh rút tiền của mình'),
+  view('/api/v1/wallets/me/withdrawals/{Lệnh rút tiền}', 'Xem lệnh rút tiền'),
+  view('/api/v1/wallets/withdrawal-policy', 'Xem chính sách rút tiền'),
+
+  // ── Đầu tư (finora-investment) ──
+  view('/api/v1/investments/admin/investors/{Nhà đầu tư}/notes', 'Xem phần vốn của nhà đầu tư'),
+  view('/api/v1/investments/admin/commitments/{Lệnh góp vốn}/notes', 'Xem phần vốn của lệnh góp vốn'),
+  view(`/api/v1/investments/admin/listings/${LISTING}/investors`, 'Xem nhà đầu tư của khoản gọi vốn'),
+  view('/api/v1/investments/admin/order-books', 'Xem chợ chuyển nhượng'),
+  view('/api/v1/investments/admin/order-books/summary', 'Xem chợ chuyển nhượng'),
+  view('/api/v1/investments/admin/order-books/trades', 'Xem danh sách lần khớp lệnh'),
+  view(`/api/v1/investments/admin/order-books/trades/${TRADE}`, 'Xem lần khớp lệnh'),
+  view(`/api/v1/investments/admin/order-books/trades/${TRADE}/notes`, 'Xem phần vốn của lần khớp lệnh'),
+  view(`/api/v1/investments/admin/order-books/${LISTING}`, 'Xem sổ lệnh'),
+  view(`/api/v1/investments/admin/order-books/${LISTING}/notes`, 'Xem phần vốn của khoản gọi vốn'),
+  view('/api/v1/investments/admin/order-incidents', 'Xem sự cố lệnh góp vốn'),
+  view('/api/v1/investments/admin/settings', 'Xem cài đặt gọi vốn'),
+  view('/api/v1/investments/admin/statistics/series', 'Xem thống kê đầu tư'),
+  view('/api/v1/investments/admin/statistics/summary', 'Xem thống kê đầu tư'),
+  view('/api/v1/investments/admin/transfer-documents', 'Xem giấy xác nhận chuyển nhượng'),
+  view(`/api/v1/investments/admin/transfer-documents/${TRADE}`, 'Xem giấy xác nhận chuyển nhượng'),
+  view(`/api/v1/investments/admin/transfer-documents/${TRADE}/pdf`, 'Tải giấy xác nhận chuyển nhượng'),
+  view('/api/v1/investments/commitments', 'Xem lệnh góp vốn của mình'),
+  view('/api/v1/investments/order-books', 'Xem chợ chuyển nhượng'),
+  view('/api/v1/investments/order-books/orders/mine', 'Xem lệnh mua/bán của mình'),
+  view(`/api/v1/investments/order-books/${LISTING}`, 'Xem sổ lệnh'),
+  view(`/api/v1/investments/order-books/${LISTING}/me`, 'Xem lệnh của mình trên sổ lệnh'),
+  view('/api/v1/investments/portfolio', 'Xem danh mục đầu tư'),
+  view('/api/v1/investments/reschedule-consents', 'Xem yêu cầu đồng ý cơ cấu nợ'),
+  view(`/api/v1/investments/reschedule-consents/${RESCHEDULE}`, 'Xem yêu cầu đồng ý cơ cấu nợ'),
+  view('/api/v1/market/listings', 'Xem danh sách gọi vốn'),
+  view(`/api/v1/market/listings/${LISTING}`, 'Xem khoản gọi vốn'),
+  view(`/api/v1/market/listings/${LISTING}/progress`, 'Xem tiến độ gọi vốn'),
+
+  // ── Thông báo, blockchain, AI ──
+  view('/api/v1/notifications', 'Xem thông báo'),
+  view('/api/v1/notifications/unread-count', 'Đếm thông báo chưa đọc'),
+  view('/api/v1/notifications/preferences', 'Xem cài đặt thông báo'),
+  view('/api/v1/notifications/admin/deferred-events', 'Xem thông báo chờ gửi'),
+  view('/api/v1/notifications/admin/push-deliveries', 'Xem tình trạng gửi thông báo đẩy'),
+  view('/api/v1/blockchain/proofs', 'Xem bằng chứng blockchain'),
+  view('/api/v1/blockchain/proofs/{Bằng chứng}', 'Xem bằng chứng blockchain'),
+  view('/api/v1/ai/config/product', 'Xem chính sách đánh giá AI'),
+  view('/api/v1/ai/config/rules', 'Xem bộ luật chấm điểm'),
+];
+
 interface CompiledRule {
-  method: WriteMethod;
+  method: RuleMethod;
   regex: RegExp;
   labels: string[];
   name: ActionRule['name'];
@@ -233,10 +378,10 @@ function compile(rule: ActionRule): CompiledRule {
   return { method: rule.method, regex: new RegExp(`^${source}$`), labels, name: rule.name };
 }
 
-const COMPILED = RULES.map(compile);
+const COMPILED = [...RULES, ...VIEW_RULES].map(compile);
 
 /** Số mẫu thao tác trong bảng tra (dùng cho kiểm thử). */
-export const ACTION_RULE_COUNT = RULES.length;
+export const ACTION_RULE_COUNT = RULES.length + VIEW_RULES.length;
 
 /** Giá trị trên đường dẫn có thể đã mã hóa URL (khoảng trắng, dấu tiếng Việt); giải mã hỏng thì giữ nguyên. */
 function decode(value: string): string {
@@ -252,11 +397,11 @@ export const isWriteMethod = (method: string): method is WriteMethod =>
   method === 'POST' || method === 'PUT' || method === 'PATCH' || method === 'DELETE';
 
 /**
- * Tra tên thao tác của một lượt gọi ghi. Trả `null` khi là GET hoặc đường dẫn chưa có trong bảng tra
- * (endpoint mới, đường dẫn gõ sai): giao diện khi đó hiện nhãn phương thức và đường dẫn như cũ.
+ * Tra tên thao tác của một lượt gọi. Trả `null` khi đường dẫn chưa có trong bảng tra (endpoint mới, đường dẫn gõ sai)
+ * hoặc phương thức lạ: giao diện khi đó hiện đường dẫn.
  */
 export function describeAction(method: string, path: string, body: string | null = null): ActivityAction | null {
-  if (!isWriteMethod(method)) return null;
+  if (method !== 'GET' && !isWriteMethod(method)) return null;
   // Gateway ghi path không kèm query; bỏ dấu `/` cuối để `/api/v1/auth/login/` vẫn khớp.
   const clean = path.length > 1 ? path.replace(/\/+$/, '') : path;
   for (const rule of COMPILED) {

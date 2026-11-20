@@ -1,18 +1,44 @@
 import { useId, useState } from 'react';
 import { Modal } from '@/components/Modal';
 import { toast } from '@/lib/toast';
-import { isAttemptAlreadyDecided } from '../api/ekycReviewApi';
+import { isAttemptAlreadyDecided, isAttemptWithdrawn } from '../api/ekycReviewApi';
 import { useDecideEkycAttemptMutation } from '../api/ekycReviewQueries';
 import { REJECT_NOTE_SUGGESTIONS, REVIEW_NOTE_MAX } from '../constants';
+import {
+  identityFormFields,
+  identityFormMode,
+  initialIdentity,
+  toStaffCorrections,
+  toStaffIdentity,
+  validateIdentity,
+  type IdentityErrors,
+  type IdentityFormMode,
+  type IdentityValues,
+} from '../mappers/identityForm';
 import type { EkycAttemptDetail, EkycReviewDecision } from '../types';
+import { StaffIdentityForm } from './StaffIdentityForm';
+
+/** Vì sao quyết định không thực hiện được do người khác: quản trị viên khác đã xử lý, hoặc người dùng đã rút lại. */
+export type DecisionConflict = 'decided' | 'withdrawn';
+
+/** Câu báo đầu form nhập thông tin, theo chế độ. */
+const IDENTITY_NOTICE: Record<IdentityFormMode, string> = {
+  fill: 'Hệ thống không đọc được thẻ của hồ sơ này. Nhập thông tin theo ảnh thẻ trước khi duyệt.',
+  correct: 'Người dùng báo thông tin đọc từ thẻ chưa đúng. Đối chiếu từng trường với ảnh thẻ, sửa trường sai rồi duyệt.',
+};
+
+const IDENTITY_LEGEND: Record<IdentityFormMode, string> = {
+  fill: 'Đối chiếu ảnh hai mặt thẻ rồi nhập đúng như in trên thẻ.',
+  correct: 'Sửa trường sai cho đúng như in trên thẻ; trường đúng giữ nguyên.',
+};
 
 interface ReviewDecisionModalProps {
   attempt: EkycAttemptDetail;
   decision: EkycReviewDecision;
   onClose: () => void;
   onDone: (message: string) => void;
-  /** Quản trị viên khác đã quyết định trước (409): trang đóng hộp thoại và báo, dữ liệu tự tải lại. */
-  onConflict: () => void;
+  /** Quản trị viên khác đã quyết định trước, hoặc người dùng đã rút lại (409): trang đóng hộp thoại và báo, dữ liệu tự tải lại. */
+  onConflict: (reason: DecisionConflict) => void;
   /** Họ tên khách nếu đã có, để tiêu đề phụ và thông báo gọi đúng người; không có thì dùng email của lượt. */
   displayName?: string | null;
 }
@@ -24,6 +50,12 @@ interface ReviewDecisionModalProps {
  * giữa chừng, nên không gửi trùng. Backend khoá lạc quan bằng `@Version`: bên bấm sau nhận
  * `ATTEMPT_ALREADY_DECIDED`, khi đó không gửi lại mà để trang tải trạng thái mới. Lỗi khác (mạng, quyền,
  * số định danh đã thuộc tài khoản khác…) hiện ngay trong hộp thoại kèm mã lỗi để người duyệt xử lý.
+ *
+ * Hồ sơ AI gặp sự cố (không đọc được thẻ): duyệt phải kèm các trường định danh còn trống, nhân viên đọc từ ảnh thẻ
+ * ({@link StaffIdentityForm}); backend kiểm lại toàn bộ (đủ 18 tuổi, thẻ còn hạn, trùng số).
+ *
+ * Hồ sơ người dùng báo thông tin sai: form điền sẵn bản nháp, nhân viên sửa trường sai, chỉ trường đã đổi được gửi
+ * (không sửa gì thì duyệt nguyên bản nháp).
  */
 export function ReviewDecisionModal({ attempt, decision, onClose, onDone, onConflict, displayName }: ReviewDecisionModalProps) {
   const fieldId = useId();
@@ -32,6 +64,13 @@ export function ReviewDecisionModal({ attempt, decision, onClose, onDone, onConf
   const [decide, state] = useDecideEkycAttemptMutation();
   const isReject = decision === 'reject';
   const name = displayName || attempt.email;
+  const mode = isReject ? null : identityFormMode(attempt);
+  const identityFields = mode ? identityFormFields(attempt, mode) : [];
+  // Giá trị điền sẵn lấy một lần lúc mở hộp thoại; so với nó để biết nhân viên đã sửa trường nào.
+  const [initial] = useState(() => initialIdentity(attempt, mode));
+  const [identity, setIdentity] = useState<IdentityValues>(initial.values);
+  const [identityErrors, setIdentityErrors] = useState<IdentityErrors>({});
+  const [noExpiry, setNoExpiry] = useState(initial.noExpiry);
 
   const submit = async () => {
     if (state.isLoading) return;
@@ -41,10 +80,26 @@ export function ReviewDecisionModal({ attempt, decision, onClose, onDone, onConf
       return;
     }
     setFieldError('');
+    if (mode) {
+      const errors = validateIdentity(identityFields, identity, noExpiry);
+      setIdentityErrors(errors);
+      if (Object.keys(errors).length > 0) return;
+    }
     try {
-      await decide({ attemptId: attempt.attemptId, decision, note: trimmed, userProfileId: attempt.userProfileId }).unwrap();
+      await decide({
+        attemptId: attempt.attemptId,
+        decision,
+        note: trimmed,
+        userProfileId: attempt.userProfileId,
+        identity: mode === 'fill'
+          ? toStaffIdentity(identityFields, identity, noExpiry)
+          : mode === 'correct'
+            ? toStaffCorrections(identityFields, identity, noExpiry, initial)
+            : undefined,
+      }).unwrap();
     } catch (error) {
-      if (isAttemptAlreadyDecided(error)) onConflict();
+      if (isAttemptAlreadyDecided(error)) onConflict('decided');
+      else if (isAttemptWithdrawn(error)) onConflict('withdrawn');
       // Lỗi còn lại báo bằng toast; hộp vẫn mở và giữ ghi chú để bấm gửi lại.
       else toast.error(error);
       return;
@@ -61,6 +116,7 @@ export function ReviewDecisionModal({ attempt, decision, onClose, onDone, onConf
       onClose={onClose}
       busy={state.isLoading}
       dismissOnBackdrop={false}
+      wide={mode !== null}
       footer={(
         <>
           <button type="button" className="ui-btn ghost" onClick={onClose} disabled={state.isLoading}>Hủy</button>
@@ -71,6 +127,29 @@ export function ReviewDecisionModal({ attempt, decision, onClose, onDone, onConf
       )}
     >
       <div className="ekr-modal-body grid gap-2">
+        {mode ? (
+          <div className="mb-2 grid gap-2 border-b border-b-divider pb-3.5">
+            <p className="py-2 px-3 rounded-md bg-warning-bg text-warning text-[13px] font-medium">
+              {IDENTITY_NOTICE[mode]}
+            </p>
+            <StaffIdentityForm
+              legend={IDENTITY_LEGEND[mode]}
+              fields={identityFields}
+              values={identity}
+              errors={identityErrors}
+              noExpiry={noExpiry}
+              disabled={state.isLoading}
+              onChange={(key, value) => {
+                setIdentity((current) => ({ ...current, [key]: value }));
+                if (identityErrors[key]) setIdentityErrors((current) => ({ ...current, [key]: undefined }));
+              }}
+              onNoExpiryChange={(value) => {
+                setNoExpiry(value);
+                if (value) setIdentityErrors((current) => ({ ...current, expiryDate: undefined }));
+              }}
+            />
+          </div>
+        ) : null}
         {/* Lý do từ chối được trả cho app khách (GET /users/me/ekyc-status); ghi chú khi duyệt chỉ để nội bộ. */}
         <label className="ekr-label block text-primary text-[13px] font-semibold" htmlFor={fieldId}>
           {isReject ? 'Lý do gửi cho khách' : 'Ghi chú nội bộ (không bắt buộc)'}

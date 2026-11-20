@@ -15,6 +15,8 @@ interface ModalProps {
   wide?: boolean;
   /** Hộp xem hồ sơ (880px, thân cuộn riêng), ví dụ chi tiết khách hàng; đè `wide`. */
   large?: boolean;
+  /** Hộp xem chi tiết vừa (760px, thân cuộn riêng như `large`), ví dụ một lượt gọi ở Nhật ký hoạt động. */
+  medium?: boolean;
   /** Nội dung đứng ngay sau tiêu đề trên cùng hàng, ví dụ nhãn trạng thái. */
   titleAside?: ReactNode;
   /**
@@ -37,7 +39,8 @@ const FOCUSABLE = 'button:not(:disabled), [href], input:not(:disabled), select:n
  * đóng thì trả focus về chỗ cũ. Cùng cách giữ focus với `Drawer`.
  */
 export function Modal({
-  title, subtitle, onClose, busy = false, footer, children, wide = false, large = false, titleAside, dismissOnBackdrop = true,
+  title, subtitle, onClose, busy = false, footer, children, wide = false, large = false, medium = false, titleAside,
+  dismissOnBackdrop = true,
 }: ModalProps) {
   const titleId = useId();
   const dialogRef = useRef<HTMLDivElement>(null);
@@ -96,7 +99,7 @@ export function Modal({
     >
       <div
         ref={dialogRef}
-        className={large ? 'ui-modal large' : wide ? 'ui-modal wide' : 'ui-modal'}
+        className={large ? 'ui-modal large' : medium ? 'ui-modal large medium' : wide ? 'ui-modal wide' : 'ui-modal'}
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}

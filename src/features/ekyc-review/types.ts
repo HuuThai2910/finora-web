@@ -4,8 +4,18 @@
  * Mã trạng thái/lý do có thể được backend bổ sung: mapper luôn có nhánh cho mã lạ thay vì làm vỡ UI.
  */
 
-/** Vòng đời một lượt: `IN_PROGRESS → VERIFIED | MANUAL_REVIEW | ABANDONED`; `MANUAL_REVIEW → APPROVED | REJECTED`. */
-export type EkycAttemptStatus = 'IN_PROGRESS' | 'VERIFIED' | 'MANUAL_REVIEW' | 'APPROVED' | 'REJECTED' | 'ABANDONED';
+/**
+ * Vòng đời một lượt: `IN_PROGRESS → VERIFIED | MANUAL_REVIEW | ABANDONED`; `MANUAL_REVIEW → APPROVED | REJECTED | WITHDRAWN`.
+ * `WITHDRAWN`: người dùng rút lại hồ sơ khi nhân viên chưa xử lý — không duyệt được nữa.
+ */
+export type EkycAttemptStatus =
+  | 'IN_PROGRESS'
+  | 'VERIFIED'
+  | 'MANUAL_REVIEW'
+  | 'APPROVED'
+  | 'REJECTED'
+  | 'ABANDONED'
+  | 'WITHDRAWN';
 
 export type EkycCardType = 'CCCD_CHIP_2021' | 'CAN_CUOC_2024' | 'CCCD_CHIP_UNKNOWN' | 'CCCD_BARCODE' | 'CMND' | 'UNKNOWN';
 
@@ -15,8 +25,8 @@ export type EkycDocumentDecision = 'AUTO_OK' | 'NEEDS_REVIEW';
 /** Kết quả liveness đã lưu vào lượt (`ck_ekyc_attempts_liveness_result`); `null` khi chưa quay. */
 export type EkycLivenessResult = 'PASS' | 'REVIEW' | 'FAIL';
 
-/** Nguồn của một trường: QR, MRZ, OCR (chữ in), AI (Gemini) hoặc USER (người dùng đã sửa). */
-export type EkycFieldSource = 'QR' | 'MRZ' | 'OCR' | 'AI' | 'USER';
+/** Nguồn của một trường: QR, MRZ, OCR (chữ in), AI (Gemini), USER (người dùng đã sửa) hoặc STAFF (nhân viên nhập khi duyệt). */
+export type EkycFieldSource = 'QR' | 'MRZ' | 'OCR' | 'AI' | 'USER' | 'STAFF';
 
 export interface EkycDraftField {
   value: string | null;
@@ -64,6 +74,10 @@ export interface EkycAttemptSummary {
   decidedAt?: string | null;
   /** Ghi chú của người duyệt; với lượt bị từ chối đây là lý do khách thấy trên app. */
   reviewNote?: string | null;
+  /** Hồ sơ chuyển duyệt tay vì hệ thống xác minh (AI) gặp sự cố: nhân viên phải tự đọc thẻ và/hoặc so mặt. */
+  aiUnavailable?: boolean;
+  /** Người dùng chụp lại nhiều lần mà vẫn báo thông tin đọc từ thẻ chưa đúng: nhân viên đối chiếu ảnh thẻ và sửa trường. */
+  userReportedIncorrect?: boolean;
 }
 
 export type EkycEvidenceKind = 'CCCD_FRONT' | 'CCCD_BACK' | 'LIVENESS_VIDEO' | 'LIVENESS_FRAME' | 'RESULT';
@@ -96,6 +110,26 @@ export interface EkycAttemptDetail extends EkycAttemptSummary {
   reviewerEmail?: string | null;
   /** Họ tên người duyệt theo cùng cách tra; `null` nếu hồ sơ chưa có họ tên. */
   reviewerName?: string | null;
+  /**
+   * Trường nhân viên phải nhập trước khi duyệt hồ sơ AI gặp sự cố hoặc người dùng báo sai (tên trường của bản nháp, thêm
+   * `cardType`); rỗng khi hồ sơ đã đủ thông tin.
+   */
+  requiredIdentityFields?: string[];
+}
+
+/** Trường định danh nhân viên nhập theo ảnh thẻ (`EkycApproveRequest.identity`); ngày dạng dd/mm/yyyy như trên thẻ. */
+export interface EkycStaffIdentity {
+  cardType?: string;
+  idNumber?: string;
+  fullName?: string;
+  dateOfBirth?: string;
+  gender?: string;
+  address?: string;
+  placeOfOrigin?: string;
+  birthRegistrationPlace?: string;
+  issueDate?: string;
+  expiryDate?: string;
+  noExpiry?: boolean;
 }
 
 export type EkycReviewDecision = 'approve' | 'reject';
@@ -113,4 +147,6 @@ export interface EkycDecisionArgs {
   note: string;
   /** Hồ sơ bị đổi trạng thái eKYC sau quyết định, để làm mới cache người dùng tương ứng. */
   userProfileId: number;
+  /** Chỉ khi duyệt hồ sơ AI gặp sự cố hoặc người dùng báo sai: trường định danh nhân viên đọc từ ảnh thẻ. */
+  identity?: EkycStaffIdentity;
 }

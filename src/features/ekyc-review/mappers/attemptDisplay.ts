@@ -14,6 +14,7 @@ const STATUS_DISPLAY: Record<EkycAttemptStatus, PillDisplay> = {
   VERIFIED: { label: 'Xác minh tự động', tone: 'success' },
   IN_PROGRESS: { label: 'Đang thực hiện', tone: 'info' },
   ABANDONED: { label: 'Bỏ dở', tone: 'neutral' },
+  WITHDRAWN: { label: 'Người dùng đã rút lại', tone: 'neutral' },
 };
 
 /** Trạng thái lượt; mã lạ hiện nguyên văn, màu trung tính, để UI không vỡ khi backend thêm trạng thái. */
