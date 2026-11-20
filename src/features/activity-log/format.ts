@@ -6,6 +6,9 @@ export const formatClock = (value: string) => CLOCK.format(new Date(value));
 
 export const formatDay = (value: string) => DAY.format(new Date(value));
 
+/** "09:27:42 17/11/2026": một ô thời gian của bảng và hộp chi tiết. */
+export const formatWhen = (value: string) => `${formatClock(value)} ${formatDay(value)}`;
+
 /** JSON thì in thụt lề cho dễ đọc; body bị cắt hoặc không phải JSON thì giữ nguyên. */
 export function prettyBody(body: string): string {
   try {

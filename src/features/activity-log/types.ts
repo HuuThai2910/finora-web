@@ -38,7 +38,10 @@ export interface ActivityLogPage {
 }
 
 export type ActivityRange = '1h' | '24h' | '7d' | '30d';
-export type ActivityOutcome = 'SUCCESS' | 'CLIENT_ERROR' | 'SERVER_ERROR';
+/** Backend còn nhận `CLIENT_ERROR`, `SERVER_ERROR`; trang chỉ dùng hai kết quả. */
+export type ActivityOutcome = 'SUCCESS' | 'ERROR';
+/** Tham số `method`: `GET` chỉ lượt xem, `WRITE` mọi lượt gọi làm thay đổi. */
+export type ActivityKind = 'GET' | 'WRITE';
 
 export interface ActivityLogSearchArgs {
   range: ActivityRange;

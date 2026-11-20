@@ -31,6 +31,8 @@ interface FilterBarProps {
   unit?: string;
   /** Nút thêm đặt cạnh nút "Bộ lọc" (ví dụ "Thêm nhân viên"). */
   actions?: ReactNode;
+  /** Ô đặt trước nút "Bộ lọc", luôn thấy được (ví dụ chọn khoảng thời gian của Nhật ký hoạt động). */
+  leading?: ReactNode;
   /** Tiêu đề bảng lọc; mặc định "Bộ lọc". */
   title?: string;
   className?: string;
@@ -44,7 +46,7 @@ interface FilterBarProps {
  * focus vào mục đầu khi mở và trả về nút khi đóng. Màn hẹp: bảng thành tấm trải hết bề ngang, neo đáy màn hình.
  */
 export function FilterBar({
-  search, activeCount, chips, onOpen, onApply, onClearAll, children, total, unit, actions, title = 'Bộ lọc', className,
+  search, activeCount, chips, onOpen, onApply, onClearAll, children, total, unit, actions, leading, title = 'Bộ lọc', className,
 }: FilterBarProps) {
   const [open, setOpen] = useState(false);
   const panelId = useId();
@@ -103,12 +105,13 @@ export function FilterBar({
           label={search.label}
           placeholder={search.placeholder}
         />
-        <div ref={rootRef} className="relative flex items-center gap-2 ml-auto max-[760px]:ml-0 max-[760px]:w-full">
+        <div ref={rootRef} className="relative flex flex-wrap items-center gap-2 ml-auto max-[760px]:ml-0 max-[760px]:w-full">
           {total != null && (
             <span className="ui-filter-total mr-1 text-secondary text-[13px] tabular-nums whitespace-nowrap max-[760px]:mr-auto" role="status">
               {formatNumber(total)} {unit}
             </span>
           )}
+          {leading}
           <button
             ref={buttonRef}
             type="button"

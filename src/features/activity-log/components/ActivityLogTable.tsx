@@ -1,29 +1,25 @@
-import { StatusPill } from '@/components/StatusPill';
 import { describeAction } from '../actions';
-import {
-  CLIENT_LABELS, ROLE_LABELS, methodInfo, serviceLabel, statusTone,
-} from '../constants';
-import { entryKey, formatClock, formatDay } from '../format';
+import { CLIENT_LABELS, ROLE_LABELS } from '../constants';
+import { entryKey, formatWhen } from '../format';
 import type { ActivityLogEntry } from '../types';
+import { ResultPill } from './ResultPill';
 
 interface Props {
   entries: ActivityLogEntry[];
-  openKey: string | null;
+  /** Đang lọc kết quả Lỗi: cột Vai trò, Ứng dụng nhường chỗ cho cột Lỗi trả về. */
+  errorsOnly: boolean;
   onOpen: (entry: ActivityLogEntry) => void;
 }
 
-function Row({ entry, open, onOpen }: { entry: ActivityLogEntry; open: boolean; onOpen: (entry: ActivityLogEntry) => void }) {
-  const method = methodInfo(entry.method);
-  // Lượt gọi ghi có trong bảng tra thì hiện tên việc đã làm; GET và đường dẫn lạ giữ cách cũ (nhãn + đường dẫn).
+function Row({ entry, errorsOnly, onOpen }: { entry: ActivityLogEntry; errorsOnly: boolean; onOpen: (entry: ActivityLogEntry) => void }) {
+  // Lượt gọi có trong bảng tra thì hiện tên việc đã làm; đường dẫn lạ hiện nguyên đường dẫn.
   const action = describeAction(entry.method, entry.path, entry.requestBody);
-  const target = action?.targets.map((item) => `${item.label} ${item.value}`).join(', ');
-  const caller = [entry.role ? ROLE_LABELS[entry.role] ?? entry.role : null, entry.client ? CLIENT_LABELS[entry.client] : null];
-  // Dòng đang mở ngăn chi tiết tô nền xanh nhạt; khi dòng có focus bàn phím thì nhường nền focus của .ui-table.
+  const target = action?.targets.map((item) => item.value).join(', ');
   return (
     <tr
-      className={`${open ? 'clickable is-open' : 'clickable'} [&.is-open:not(:focus-visible)_td]:bg-brand-50`}
+      className="clickable"
       tabIndex={0}
-      aria-label={`Xem chi tiết ${action?.name ?? method.label} ${entry.path}`}
+      aria-label={`Xem chi tiết ${action?.name ?? entry.path}`}
       onClick={() => onOpen(entry)}
       onKeyDown={(event) => {
         if (event.key === 'Enter' || event.key === ' ') {
@@ -32,71 +28,53 @@ function Row({ entry, open, onOpen }: { entry: ActivityLogEntry; open: boolean; 
         }
       }}
     >
-      <td className="act-time whitespace-nowrap">
-        {/* Dưới 900px cột Kết quả bị ẩn: mã kết quả nằm cạnh giờ để vẫn quét được lượt lỗi. */}
-        <span className="flex items-center gap-1.5">
-          <span className="strong">{formatClock(entry.at)}</span>
-          <span className="act-time-status hidden max-[900px]:inline-flex"><StatusPill tone={statusTone(entry.status)} small>{entry.status}</StatusPill></span>
-        </span>
-        <span className="ui-sub">{formatDay(entry.at)}</span>
+      <td className="whitespace-nowrap tabular-nums">{formatWhen(entry.at)}</td>
+      <td className="min-w-45 whitespace-normal font-medium text-primary">
+        {action ? action.name : <span className="ui-mono wrap-anywhere">{entry.path}</span>}
       </td>
-      <td>
-        <div className="act-call flex min-w-0 items-center gap-2">
-          <StatusPill tone={method.tone} small>{method.label}</StatusPill>
-          {action ? (
-            <span className="act-action max-w-105 truncate font-semibold text-primary max-[900px]:whitespace-normal" title={entry.path}>{action.name}</span>
-          ) : (
-            <span className="ui-mono act-path max-w-105 truncate text-primary">{entry.path}{entry.query ? `?${entry.query}` : ''}</span>
-          )}
-        </div>
-        {/* Mã đối tượng (hồ sơ, hợp đồng, lần khớp...) lấy từ đường dẫn: thông tin điều tra nên vẫn hiện. Màn rộng cắt bớt
-            cho dòng gọn; màn hẹp cho xuống dòng để đọc đủ tên thao tác và mã. */}
-        <span className="ui-sub max-w-105 truncate max-[900px]:whitespace-normal max-[900px]:wrap-anywhere">
-          {target && <span className="act-target">{target} · </span>}
-          {serviceLabel(entry.service)}
-        </span>
-      </td>
-      <td>
-        <span className="strong">{entry.user ?? 'Chưa đăng nhập'}</span>
-        <span className="ui-sub">{caller.filter(Boolean).join(' · ')}</span>
-      </td>
-      <td className="max-[900px]:hidden">
-        <StatusPill tone={statusTone(entry.status)}>{entry.status}</StatusPill>
-        <span className="ui-sub">{entry.durationMs} ms</span>
-      </td>
-      <td className="act-error max-w-85 max-[900px]:hidden">
-        {entry.status >= 400 ? (
-          <>
-            {entry.errorCode && <span className="ui-mono act-code block text-[12px] text-danger">{entry.errorCode}</span>}
-            <span className="act-message line-clamp-2 text-[13px] text-secondary">{entry.errorMessage ?? 'Không có nội dung lỗi'}</span>
-          </>
-        ) : (
-          <span className="ui-sub">-</span>
-        )}
-      </td>
+      {/* Mã dài (lượt xác minh là UUID) cắt bớt cho bảng không tràn; đủ mã ở hộp chi tiết. */}
+      <td className="max-w-50 truncate max-[760px]:hidden" title={target}>{target}</td>
+      <td>{entry.user ?? <span className="text-muted">Chưa đăng nhập</span>}</td>
+      {errorsOnly ? null : (
+        <>
+          <td className="max-[1380px]:hidden">{entry.role ? ROLE_LABELS[entry.role] ?? entry.role : null}</td>
+          <td className="max-[760px]:hidden">{entry.client ? CLIENT_LABELS[entry.client] : null}</td>
+        </>
+      )}
+      <td><ResultPill status={entry.status} small /></td>
+      {errorsOnly && (
+        <td className="min-w-55 max-w-90 whitespace-normal text-[13px] text-secondary max-[760px]:hidden">{entry.errorMessage}</td>
+      )}
     </tr>
   );
 }
 
-/** Mỗi dòng là một lượt gọi API; bấm dòng để xem đối tượng, body gửi lên và nội dung lỗi. */
-export function ActivityLogTable({ entries, openKey, onOpen }: Props) {
+/**
+ * Mỗi dòng là một lượt gọi API, mỗi ô một giá trị. Đối tượng chỉ ghi mã hoặc tên vì tên thao tác đã nói loại đối tượng;
+ * thời gian xử lý, IP, đường dẫn và mã tra cứu nằm trong hộp chi tiết (bấm dòng).
+ */
+export function ActivityLogTable({ entries, errorsOnly, onOpen }: Props) {
   return (
     <div className="ui-table-wrap">
-      <table className="ui-table list act-table [&_td]:align-top">
+      <table className="ui-table list">
         <thead>
           <tr>
             <th>Thời gian</th>
             <th>Thao tác</th>
+            <th className="max-[760px]:hidden">Đối tượng</th>
             <th>Người gọi</th>
-            <th className="max-[900px]:hidden">Kết quả</th>
-            <th className="max-[900px]:hidden">Lỗi trả về</th>
+            {errorsOnly ? null : (
+              <>
+                <th className="max-[1380px]:hidden">Vai trò</th>
+                <th className="max-[760px]:hidden">Ứng dụng</th>
+              </>
+            )}
+            <th>Kết quả</th>
+            {errorsOnly && <th className="max-[760px]:hidden">Lỗi trả về</th>}
           </tr>
         </thead>
         <tbody>
-          {entries.map((entry) => {
-            const key = entryKey(entry);
-            return <Row key={key} entry={entry} open={key === openKey} onOpen={onOpen} />;
-          })}
+          {entries.map((entry) => <Row key={entryKey(entry)} entry={entry} errorsOnly={errorsOnly} onOpen={onOpen} />)}
         </tbody>
       </table>
     </div>

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { ErrorNotice } from '@/components/ErrorNotice';
+import { Icon } from '@/components/Icon';
 import { StatusPill } from '@/components/StatusPill';
 import { toast } from '@/lib/toast';
 import { usePermission } from '@/features/auth';
@@ -11,7 +12,7 @@ import { useGetEkycAttemptQuery } from '../api/ekycReviewQueries';
 import { CheckSlip } from '../components/CheckSlip';
 import { DocumentCard, FaceCard } from '../components/EvidenceCards';
 import { PendingAttemptNav } from '../components/PendingAttemptNav';
-import { ReviewDecisionModal } from '../components/ReviewDecisionModal';
+import { ReviewDecisionModal, type DecisionConflict } from '../components/ReviewDecisionModal';
 import { ekycReviewDetailPath } from '../constants';
 import { attemptStatusDisplay } from '../mappers/attemptDisplay';
 import type { EkycReviewDecision } from '../types';
@@ -20,7 +21,19 @@ import type { EkycReviewDecision } from '../types';
  * Màn xác minh một lượt (`/customers/kyc/review/:attemptId`): giấy tờ (ảnh thẻ cạnh các trường đọc được), khuôn mặt
  * (video, khung hình theo động tác) bên trái; kết quả kiểm tra tự động và nút Duyệt/Từ chối bên phải. Về danh sách bằng
  * breadcrumb (nhớ bộ lọc qua `state`).
+ *
+ * Hồ sơ chuyển duyệt tay vì hệ thống xác minh (AI) gặp sự cố có dải cảnh báo đầu trang: nhân viên phải tự đọc thẻ và so
+ * mặt. Hồ sơ người dùng chụp lại nhiều lần mà vẫn báo thông tin sai cũng có dải cảnh báo; nhân viên sửa trường khi bấm
+ * Duyệt. Lượt người dùng đã rút lại chỉ để xem, không duyệt được.
  */
+
+/** Câu báo khi quyết định không thực hiện được vì người khác đã đổi trạng thái lượt trước. */
+const CONFLICT_MESSAGE: Record<DecisionConflict, string> = {
+  decided: 'Lượt này vừa được quản trị viên khác xử lý trước. Trang đã tải lại kết quả mới nhất.',
+  withdrawn: 'Người dùng vừa rút lại hồ sơ này nên không thể duyệt hoặc từ chối. Trang đã tải lại trạng thái mới nhất.',
+};
+
+const NOTICE = 'ekr-notice py-2.5 px-4 rounded-md bg-warning-bg text-warning text-[13px] font-medium';
 export default function EkycReviewDetailPage() {
   const { attemptId = '' } = useParams<{ attemptId: string }>();
   // Đổi sang lượt khác thì dựng lại từ đầu: hộp thoại, thông báo và object URL của lượt trước không mang sang.
@@ -33,7 +46,7 @@ function EkycReviewView({ attemptId }: { attemptId: string }) {
   const detail = useGetEkycAttemptQuery(attemptId, { skip: !attemptId });
   const attempt = detail.data;
   const [decision, setDecision] = useState<EkycReviewDecision | null>(null);
-  const [conflict, setConflict] = useState(false);
+  const [conflict, setConflict] = useState<DecisionConflict | null>(null);
   const [profileOpen, setProfileOpen] = useState(false);
   const canViewCustomer = usePermission().canView('customer');
   // Họ tên khách (chỉ có sau khi lượt được duyệt); thiếu thì tiêu đề là email của lượt. Cần quyền Xem "Khách hàng".
@@ -80,8 +93,18 @@ function EkycReviewView({ attemptId }: { attemptId: string }) {
       </header>
 
       {conflict ? (
-        <div className="ekr-notice py-2.5 px-4 rounded-md bg-warning-bg text-warning text-[13px] font-medium" role="alert">
-          Lượt này vừa được quản trị viên khác xử lý trước. Trang đã tải lại kết quả mới nhất.
+        <div className={NOTICE} role="alert">{CONFLICT_MESSAGE[conflict]}</div>
+      ) : null}
+      {attempt.aiUnavailable && attempt.status === 'MANUAL_REVIEW' ? (
+        <div className={`${NOTICE} flex items-center gap-2 [&_svg]:size-4 [&_svg]:flex-none`} role="note">
+          <Icon name="alert" />
+          AI gặp sự cố — cần nhân viên đọc thẻ và so mặt.
+        </div>
+      ) : null}
+      {attempt.userReportedIncorrect && attempt.status === 'MANUAL_REVIEW' ? (
+        <div className={`${NOTICE} flex items-center gap-2 [&_svg]:size-4 [&_svg]:flex-none`} role="note">
+          <Icon name="alert" />
+          Người dùng báo thông tin đọc từ thẻ chưa đúng — đối chiếu từng trường với ảnh thẻ, sửa trường sai trước khi duyệt.
         </div>
       ) : null}
       {/* Lỗi khi tải lại: vẫn giữ dữ liệu lần trước để người duyệt không mất chỗ đang xem. */}
@@ -97,7 +120,7 @@ function EkycReviewView({ attemptId }: { attemptId: string }) {
           attempt={attempt}
           refreshing={detail.isFetching}
           onDecide={(next) => {
-            setConflict(false);
+            setConflict(null);
             setDecision(next);
           }}
         />
@@ -113,9 +136,9 @@ function EkycReviewView({ attemptId }: { attemptId: string }) {
             setDecision(null);
             toast.success(message);
           }}
-          onConflict={() => {
+          onConflict={(reason) => {
             setDecision(null);
-            setConflict(true);
+            setConflict(reason);
           }}
         />
       ) : null}

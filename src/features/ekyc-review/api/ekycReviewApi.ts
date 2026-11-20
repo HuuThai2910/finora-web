@@ -7,6 +7,7 @@ import type {
   EkycAttemptSummary,
   EkycEvidenceId,
   EkycReviewDecision,
+  EkycStaffIdentity,
 } from '../types';
 
 /**
@@ -41,18 +42,24 @@ export const ekycReviewApi = {
 
   /**
    * Duyệt hoặc từ chối một lượt đang `MANUAL_REVIEW`; backend trả lại chi tiết sau quyết định.
-   * Ghi chú gửi dạng chuỗi (rỗng khi duyệt không ghi chú); từ chối bắt buộc có ghi chú.
+   * Ghi chú gửi dạng chuỗi (rỗng khi duyệt không ghi chú); từ chối bắt buộc có ghi chú. `identity` chỉ gửi khi duyệt
+   * hồ sơ AI gặp sự cố (backend từ chối `IDENTITY_NOT_ALLOWED` với hồ sơ thường).
    */
-  decide: (attemptId: string, decision: EkycReviewDecision, note: string): Promise<EkycAttemptDetail> =>
+  decide: (attemptId: string, decision: EkycReviewDecision, note: string, identity?: EkycStaffIdentity): Promise<EkycAttemptDetail> =>
     apiFetch<EkycAttemptDetail>(`${attemptPath(attemptId)}/${decision}`, {
       method: 'POST',
-      body: JSON.stringify({ note }),
+      body: JSON.stringify(identity ? { note, identity } : { note }),
     }),
 };
 
 /** 409 khi quản trị viên khác đã quyết định trước (`@Version` trên lượt). Các lỗi 409 khác, như trùng số, không thuộc nhánh này. */
 export function isAttemptAlreadyDecided(error: unknown): boolean {
   return toUiApiError(error).code === 'ATTEMPT_ALREADY_DECIDED';
+}
+
+/** 409 khi người dùng đã rút lại hồ sơ (trước hoặc đúng lúc quản trị viên bấm duyệt/từ chối). */
+export function isAttemptWithdrawn(error: unknown): boolean {
+  return toUiApiError(error).code === 'ATTEMPT_WITHDRAWN';
 }
 
 /** 410 `EVIDENCE_DELETED`: tệp đã bị xoá sau khi trang tải danh sách bằng chứng. */
