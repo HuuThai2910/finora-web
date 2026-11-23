@@ -15,12 +15,13 @@ import { PendingAttemptNav } from '../components/PendingAttemptNav';
 import { ReviewDecisionModal, type DecisionConflict } from '../components/ReviewDecisionModal';
 import { ekycReviewDetailPath } from '../constants';
 import { attemptStatusDisplay } from '../mappers/attemptDisplay';
+import { hasFaceEvidence } from '../mappers/evidenceDisplay';
 import type { EkycReviewDecision } from '../types';
 
 /**
- * Màn xác minh một lượt (`/customers/kyc/review/:attemptId`): giấy tờ (ảnh thẻ cạnh các trường đọc được), khuôn mặt
- * (video, khung hình theo động tác) bên trái; kết quả kiểm tra tự động và nút Duyệt/Từ chối bên phải. Về danh sách bằng
- * breadcrumb (nhớ bộ lọc qua `state`).
+ * Màn xác minh một lượt (`/customers/kyc/review/:attemptId`): giấy tờ (ảnh thẻ cạnh các trường đọc được) bên trái;
+ * kết quả kiểm tra tự động và nút Duyệt/Từ chối bên phải. Về danh sách bằng breadcrumb (nhớ bộ lọc qua `state`).
+ * Từ 23/11 eKYC chỉ đọc CCCD; thẻ "Khuôn mặt" (video, khung hình theo động tác) chỉ còn ở lượt cũ có quay video.
  *
  * Hồ sơ chuyển duyệt tay vì hệ thống xác minh (AI) gặp sự cố có dải cảnh báo đầu trang: nhân viên phải tự đọc thẻ và so
  * mặt. Hồ sơ người dùng chụp lại nhiều lần mà vẫn báo thông tin sai cũng có dải cảnh báo; nhân viên sửa trường khi bấm
@@ -98,7 +99,9 @@ function EkycReviewView({ attemptId }: { attemptId: string }) {
       {attempt.aiUnavailable && attempt.status === 'MANUAL_REVIEW' ? (
         <div className={`${NOTICE} flex items-center gap-2 [&_svg]:size-4 [&_svg]:flex-none`} role="note">
           <Icon name="alert" />
-          AI gặp sự cố — cần nhân viên đọc thẻ và so mặt.
+          {hasFaceEvidence(attempt.evidence)
+            ? 'AI gặp sự cố — cần nhân viên đọc thẻ và so mặt.'
+            : 'AI gặp sự cố — cần nhân viên đọc thẻ.'}
         </div>
       ) : null}
       {attempt.userReportedIncorrect && attempt.status === 'MANUAL_REVIEW' ? (

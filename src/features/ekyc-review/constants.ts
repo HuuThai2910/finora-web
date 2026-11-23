@@ -15,7 +15,11 @@ export const REVIEW_NOTE_MAX = 1000;
 /** Lý do gợi ý khi từ chối; quản trị viên vẫn sửa tự do, backend chỉ yêu cầu ghi chú không rỗng. */
 export const REJECT_NOTE_SUGGESTIONS = [
   'Ảnh thẻ không rõ, không đối chiếu được thông tin.',
-  'Khuôn mặt trong video không khớp ảnh chân dung trên thẻ.',
   'Thông tin đọc được không khớp với ảnh thẻ.',
+];
+
+/** Thêm vào gợi ý chỉ khi lượt có video khuôn mặt (lượt trước 23/11, khi eKYC còn bước kiểm tra khuôn mặt). */
+export const FACE_REJECT_NOTE_SUGGESTIONS = [
+  'Khuôn mặt trong video không khớp ảnh chân dung trên thẻ.',
   'Video không cho thấy người thật thực hiện động tác.',
 ];

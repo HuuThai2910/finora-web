@@ -31,6 +31,11 @@ const FRAME_LABELS: Record<string, string> = {
 /** Thứ tự khung hình theo chuỗi động tác; nhãn lạ xếp cuối. */
 const FRAME_ORDER = ['FRONTAL', 'TURN_LEFT', 'TURN_RIGHT', 'LOOK_UP', 'LOOK_DOWN'];
 
+/** Lượt có video/khung hình khuôn mặt. Từ 23/11 eKYC chỉ đọc CCCD nên lượt mới không có; lượt cũ vẫn còn. */
+export function hasFaceEvidence(evidence: EkycEvidenceItem[]): boolean {
+  return evidence.some((item) => item.kind === 'LIVENESS_VIDEO' || item.kind === 'LIVENESS_FRAME');
+}
+
 export function frameRank(label: string | null): number {
   const index = FRAME_ORDER.indexOf(label ?? '');
   return index < 0 ? FRAME_ORDER.length : index;
