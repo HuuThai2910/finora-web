@@ -50,7 +50,7 @@ export function useDashboardData() {
     { key: 'collection', function: 'collection', icon: 'clock', title: 'Hồ sơ thu hồi đang mở', hint: 'Mọi nhóm nợ quá hạn', to: '/loans?servicing=OVERDUE', count: loan.isError ? null : collections?.openCases },
     { key: 'reschedule', function: 'reschedule', icon: 'calendar', title: 'Yêu cầu cơ cấu chờ duyệt', hint: 'Người vay xin giãn kỳ hạn', to: '/loans?servicing=RESCHEDULE_PENDING', count: countIn(loan.data?.reschedules.byStatus, 'PENDING_REVIEW', loan.isError) },
     { key: 'reconcile', function: 'reconciliation', icon: 'list', title: 'Khoản vay có sự cố', hint: 'Sai lệch số liệu, giải ngân chờ xử lý', to: '/loans?servicing=INCIDENT', count: incidentLoans.isError ? null : incidentLoans.data?.totalElements },
-    { key: 'ekyc', function: 'customer', icon: 'idCard', title: 'Xác minh danh tính chờ duyệt tay', hint: 'Giấy tờ hoặc khuôn mặt cần người xem lại', to: '/customers/kyc?ekyc=MANUAL_REVIEW', count: userStats.isError ? null : manualReview },
+    { key: 'ekyc', function: 'customer', icon: 'idCard', title: 'Xác minh danh tính chờ duyệt tay', hint: 'Giấy tờ cần người xem lại', to: '/customers/kyc?ekyc=MANUAL_REVIEW', count: userStats.isError ? null : manualReview },
     { key: 'proofs', function: 'blockchain', icon: 'alert', title: 'Bằng chứng dừng gửi', hint: 'Chưa ghi được lên sổ cái, cần gửi lại', to: '/blockchain/proofs?status=DEAD_LETTER', count: deadProofs.isError ? null : deadProofs.data?.totalElements, alarming: true },
   ];
 

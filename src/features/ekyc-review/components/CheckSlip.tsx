@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { Icon } from '@/components/Icon';
 import { usePermission } from '@/features/auth';
 import { formatDayTime, formatFaceScore } from '../mappers/attemptDisplay';
+import { hasFaceEvidence } from '../mappers/evidenceDisplay';
 import { faceMatchZone } from '../mappers/reasonDisplay';
 import type { EkycAttemptDetail, EkycReviewDecision } from '../types';
 
@@ -65,7 +66,12 @@ interface CheckSlipProps {
  */
 export function CheckSlip({ attempt, refreshing, onDecide }: CheckSlipProps) {
   const canDecide = usePermission().canAct('ekyc');
-  const doc = DOCUMENT[attempt.documentDecision] ?? [attempt.documentDecision, 'warning'];
+  // Từ 23/11 người dùng xác nhận đúng thông tin là xác minh luôn, kể cả khi AI chưa chắc (NEEDS_REVIEW): lượt đã
+  // VERIFIED thì không còn "cần duyệt tay".
+  const userConfirmed = attempt.status === 'VERIFIED' && attempt.documentDecision !== 'AUTO_OK';
+  const doc: [string, keyof typeof TONE_TEXT] = userConfirmed
+    ? ['Người dùng xác nhận', 'ok']
+    : DOCUMENT[attempt.documentDecision] ?? [attempt.documentDecision, 'warning'];
   const liveness = attempt.livenessResult ? LIVENESS[attempt.livenessResult] ?? [attempt.livenessResult, 'warning'] : null;
   const zoneCode = attempt.faceMatchZone ?? faceMatchZone(attempt.livenessReasons);
   const zone = zoneCode ? ZONE[zoneCode] : null;
@@ -79,12 +85,15 @@ export function CheckSlip({ attempt, refreshing, onDecide }: CheckSlipProps) {
 
   const rows: Array<[string, ReactNode]> = [
     ['Giấy tờ', cardUnread ? <Toned text="AI chưa đọc được — cần đọc thẻ" tone="warning" /> : <Toned text={doc[0]} tone={doc[1]} />],
-    ['Người thật', liveness
+  ];
+  // eKYC chỉ đọc CCCD (từ 23/11): lượt không có kết quả hay video khuôn mặt thì bỏ hẳn dòng này.
+  if (liveness || hasFaceEvidence(attempt.evidence)) {
+    rows.push(['Người thật', liveness
       ? <Toned text={liveness[0]} tone={liveness[1]} />
       : faceUnchecked
         ? <Toned text="AI chưa kiểm tra — cần so mặt" tone="warning" />
-        : <span className="font-normal text-muted">Chưa quay</span>],
-  ];
+        : <span className="font-normal text-muted">Chưa quay</span>]);
+  }
   if (attempt.faceMatchScore != null) {
     const score = formatFaceScore(attempt.faceMatchScore);
     rows.push(['So khuôn mặt', zone ? <Toned text={`${score} (${zone[0]})`} tone={zone[1]} /> : score]);

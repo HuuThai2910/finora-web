@@ -3,7 +3,8 @@ import { Modal } from '@/components/Modal';
 import { toast } from '@/lib/toast';
 import { isAttemptAlreadyDecided, isAttemptWithdrawn } from '../api/ekycReviewApi';
 import { useDecideEkycAttemptMutation } from '../api/ekycReviewQueries';
-import { REJECT_NOTE_SUGGESTIONS, REVIEW_NOTE_MAX } from '../constants';
+import { FACE_REJECT_NOTE_SUGGESTIONS, REJECT_NOTE_SUGGESTIONS, REVIEW_NOTE_MAX } from '../constants';
+import { hasFaceEvidence } from '../mappers/evidenceDisplay';
 import {
   identityFormFields,
   identityFormMode,
@@ -156,7 +157,7 @@ export function ReviewDecisionModal({ attempt, decision, onClose, onDone, onConf
         </label>
         {isReject ? (
           <div className="ekr-chips flex flex-wrap gap-1.5" aria-label="Lý do gợi ý">
-            {REJECT_NOTE_SUGGESTIONS.map((reason) => (
+            {[...REJECT_NOTE_SUGGESTIONS, ...(hasFaceEvidence(attempt.evidence) ? FACE_REJECT_NOTE_SUGGESTIONS : [])].map((reason) => (
               <button
                 key={reason}
                 type="button"
